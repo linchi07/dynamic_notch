@@ -169,15 +169,15 @@ final class MediaKeyInterceptor {
         activeHoldingKey = keyType
         
         let timer = DispatchSource.makeTimerSource(queue: DispatchQueue.main)
-        // 220ms initial delay before continuous stepping, then repeat every 45ms (fast, stable, smooth)
-        timer.schedule(deadline: .now() + .milliseconds(220), repeating: .milliseconds(45))
+        // 200ms initial delay before continuous stepping, then repeat every 40ms (100 steps * 40ms = 4.0s full traversal)
+        timer.schedule(deadline: .now() + .milliseconds(200), repeating: .milliseconds(40))
         
         var ticks = 0
         timer.setEventHandler { [weak self] in
             guard let self = self, self.activeHoldingKey == keyType else { return }
             ticks += 1
-            // Watchdog: auto stop after ~1.8 seconds if KeyUp was lost
-            if ticks > 40 {
+            // Watchdog: auto stop after 125 ticks (~5 seconds) if KeyUp was lost
+            if ticks > 125 {
                 self.stopHoldTimer()
                 return
             }
@@ -193,7 +193,12 @@ final class MediaKeyInterceptor {
             timer.cancel()
             holdTimer = nil
         }
-        activeHoldingKey = nil
+        if activeHoldingKey != nil {
+            activeHoldingKey = nil
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(name: .notchMediaKeyDidRelease, object: nil)
+            }
+        }
     }
     
     private func handleOptionAction(for keyType: NXKeyType, command: Bool) -> Bool {
@@ -285,12 +290,11 @@ final class MediaKeyInterceptor {
                 VolumeManager.shared.toggleMuteAction()
             }
         case .brightnessUp, .keyboardBrightnessUp:
-            let multiplier: Float = isHolding ? 1.6 : 1.0
-            let delta = (step * multiplier) / stepDivisor
+            // Single tap = 1/16; Holding = 1/100 (4.0s full traversal)
+            let delta = (isHolding ? (2.5 / 100.0) : step) / stepDivisor
             adjustBrightness(delta: delta, keyboard: keyType == .keyboardBrightnessUp || command)
         case .brightnessDown, .keyboardBrightnessDown:
-            let multiplier: Float = isHolding ? 1.6 : 1.0
-            let delta = -((step * multiplier) / stepDivisor)
+            let delta = -((isHolding ? (2.5 / 100.0) : step) / stepDivisor)
             adjustBrightness(delta: delta, keyboard: keyType == .keyboardBrightnessDown || command)
         }
     }

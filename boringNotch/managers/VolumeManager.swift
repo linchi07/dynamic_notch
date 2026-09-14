@@ -36,20 +36,28 @@ final class VolumeManager: NSObject, ObservableObject {
     // MARK: - Public Control API
     @MainActor func increase(stepDivisor: Float = 1.0, isHolding: Bool = false) {
         let divisor = max(stepDivisor, 0.25)
-        let delta = step / Float32(divisor)
+        let effectiveStep: Float32 = isHolding ? (2.5 / 100.0) : step
+        let delta = effectiveStep / Float32(divisor)
         let current = readVolumeInternal() ?? rawVolume
         let target = max(0, min(1, current + delta))
         setAbsolute(target)
         BoringViewCoordinator.shared.toggleSneakPeek(status: true, type: .volume, value: CGFloat(target))
+        if current >= 0.999 || target >= 0.999 {
+            NotificationCenter.default.post(name: .notchBoundaryHit, object: true)
+        }
     }
 
     @MainActor func decrease(stepDivisor: Float = 1.0, isHolding: Bool = false) {
         let divisor = max(stepDivisor, 0.25)
-        let delta = step / Float32(divisor)
+        let effectiveStep: Float32 = isHolding ? (2.5 / 100.0) : step
+        let delta = effectiveStep / Float32(divisor)
         let current = readVolumeInternal() ?? rawVolume
         let target = max(0, min(1, current - delta))
         setAbsolute(target)
         BoringViewCoordinator.shared.toggleSneakPeek(status: true, type: .volume, value: CGFloat(target))
+        if current <= 0.001 || target <= 0.001 {
+            NotificationCenter.default.post(name: .notchBoundaryHit, object: false)
+        }
     }
 
     @MainActor func toggleMuteAction() {

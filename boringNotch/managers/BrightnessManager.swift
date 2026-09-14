@@ -38,6 +38,11 @@ final class BrightnessManager: ObservableObject {
 				refresh()
 			}
 			BoringViewCoordinator.shared.toggleSneakPeek(status: true, type: .brightness, value: CGFloat(target))
+			if (starting >= 0.999 || target >= 0.999) && delta > 0 {
+				NotificationCenter.default.post(name: .notchBoundaryHit, object: true)
+			} else if (starting <= 0.001 || target <= 0.001) && delta < 0 {
+				NotificationCenter.default.post(name: .notchBoundaryHit, object: false)
+			}
 		}
 	}
 
@@ -103,6 +108,11 @@ final class KeyboardBacklightManager: ObservableObject {
 				type: .backlight,
 				value: CGFloat(target)
 			)
+			if (starting >= 0.999 || target >= 0.999) && delta > 0 {
+				NotificationCenter.default.post(name: .notchBoundaryHit, object: true)
+			} else if (starting <= 0.001 || target <= 0.001) && delta < 0 {
+				NotificationCenter.default.post(name: .notchBoundaryHit, object: false)
+			}
 		}
 	}
 

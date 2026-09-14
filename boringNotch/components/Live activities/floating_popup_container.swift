@@ -27,7 +27,11 @@ struct FloatingPopupContainer<Content: View>: View {
                 }
             )
             .clipShape(RoundedRectangle(cornerRadius: FloatingPopupStyle.CORNER_RADIUS, style: .continuous))
-            .shadow(color: .black.opacity(0.25), radius: 10, x: 0, y: 4)
+            // Ambient hover glow to pop out from wallpaper
+            .shadow(color: Color.white.opacity(0.14), radius: 6, x: 0, y: 0)
+            .shadow(color: Color.white.opacity(0.06), radius: 14, x: 0, y: 0)
+            // Spatial drop shadow
+            .shadow(color: Color.black.opacity(0.35), radius: 12, x: 0, y: 5)
     }
 }
 
@@ -44,6 +48,16 @@ enum FloatingPopupStyle {
     /// Fluid slider physics with inertia: slight launch delay followed by vigorous acceleration
     static var fluidSliderSpring: Animation {
         .interpolatingSpring(mass: 0.85, stiffness: 135, damping: 14.5)
+    }
+
+    /// Responsive bouncy spring for boundary collisions and rubber-banding
+    static var bounceSpring: Animation {
+        .interpolatingSpring(mass: 0.5, stiffness: 220, damping: 12)
+    }
+
+    /// High-impact elastic bounce for releasing boundary tension (BOING effect)
+    static var strongBounceSpring: Animation {
+        .interpolatingSpring(mass: 0.45, stiffness: 340, damping: 9.5)
     }
 
     static var transition: AnyTransition {
