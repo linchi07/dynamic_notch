@@ -9612,6 +9612,9 @@
         }
       }
     },
+    "Floating Bar (iOS)" : {
+
+    },
     "Full screen behavior" : {
       "localizations" : {
         "ar" : {
@@ -15513,6 +15516,9 @@
           }
         }
       }
+    },
+    "On" : {
+
     },
     "Open Calendar Settings" : {
       "localizations" : {

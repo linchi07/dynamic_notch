@@ -465,6 +465,7 @@ struct Charge: View {
 struct HUD: View {
     @EnvironmentObject var vm: BoringViewModel
     @Default(.inlineHUD) var inlineHUD
+    @Default(.closedNotchHUDStyle) var closedNotchHUDStyle
     @Default(.enableGradient) var enableGradient
     @Default(.optionKeyAction) var optionKeyAction
     @Default(.hudReplacement) var hudReplacement
@@ -549,14 +550,17 @@ struct HUD: View {
             .disabled(!hudReplacement)
             
             Section {
-                Picker("HUD style", selection: $inlineHUD) {
-                    Text("Default")
-                        .tag(false)
+                Picker("HUD style", selection: $closedNotchHUDStyle) {
+                    Text("Floating Bar (iOS)")
+                        .tag(ClosedNotchHUDStyle.floatingBar)
                     Text("Inline")
-                        .tag(true)
+                        .tag(ClosedNotchHUDStyle.inline)
+                    Text("Default")
+                        .tag(ClosedNotchHUDStyle.standard)
                 }
-                .onChange(of: Defaults[.inlineHUD]) {
-                    if Defaults[.inlineHUD] {
+                .onChange(of: closedNotchHUDStyle) {
+                    Defaults[.inlineHUD] = (closedNotchHUDStyle == .inline)
+                    if closedNotchHUDStyle == .inline || closedNotchHUDStyle == .floatingBar {
                         withAnimation {
                             Defaults[.systemEventIndicatorShadow] = false
                             Defaults[.enableGradient] = false

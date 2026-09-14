@@ -29,6 +29,8 @@ final class MediaKeyInterceptor {
     private var runLoopSource: CFRunLoopSource?
     private let step: Float = 1.0 / 16.0
     private var audioPlayer: AVAudioPlayer?
+    private var holdTimer: DispatchSourceTimer?
+    private var activeHoldingKey: NXKeyType?
     
     private init() {}
     
@@ -88,6 +90,7 @@ final class MediaKeyInterceptor {
     }
     
     func stop() {
+        stopHoldTimer()
         if let eventTap {
             CGEvent.tapEnable(tap: eventTap, enable: false)
         }
@@ -115,9 +118,21 @@ final class MediaKeyInterceptor {
         let keyCode = (data1 & 0xFFFF_0000) >> 16
         let stateByte = ((data1 & 0xFF00) >> 8)
         
-        // 0xA = key down, 0xB = key up. Only handle key down.
-        guard stateByte == 0xA,
-              let keyType = NXKeyType(rawValue: keyCode) else {
+        guard let keyType = NXKeyType(rawValue: keyCode) else {
+            return Unmanaged.passRetained(cgEvent)
+        }
+        
+        // 0xB = key up: immediately cancel hold stepping
+        if stateByte == 0xB {
+            if activeHoldingKey == keyType {
+                stopHoldTimer()
+                return nil
+            }
+            return Unmanaged.passRetained(cgEvent)
+        }
+        
+        // 0xA = key down
+        guard stateByte == 0xA else {
             return Unmanaged.passRetained(cgEvent)
         }
         
@@ -126,6 +141,11 @@ final class MediaKeyInterceptor {
         let shift = flags.contains(.shift)
         let command = flags.contains(.command)
         
+        // If this is an OS key repeat while our hold timer is already active, consume it silently
+        if activeHoldingKey == keyType {
+            return nil
+        }
+        
         // Handle option key action (without shift)
         if option && !shift {
             if handleOptionAction(for: keyType, command: command) {
@@ -133,9 +153,47 @@ final class MediaKeyInterceptor {
             }
         }
         
-        // Handle normal key press
-        handleKeyPress(keyType: keyType, option: option, shift: shift, command: command)
+        // Handle initial single key press
+        handleKeyPress(keyType: keyType, option: option, shift: shift, command: command, isHolding: false)
+        
+        // Start hold timer for continuous keys (volume & brightness) to bypass macOS repeat lag
+        if keyType != .mute {
+            startHoldTimer(for: keyType, option: option, shift: shift, command: command)
+        }
+        
         return nil
+    }
+    
+    private func startHoldTimer(for keyType: NXKeyType, option: Bool, shift: Bool, command: Bool) {
+        stopHoldTimer()
+        activeHoldingKey = keyType
+        
+        let timer = DispatchSource.makeTimerSource(queue: DispatchQueue.main)
+        // 220ms initial delay before continuous stepping, then repeat every 45ms (fast, stable, smooth)
+        timer.schedule(deadline: .now() + .milliseconds(220), repeating: .milliseconds(45))
+        
+        var ticks = 0
+        timer.setEventHandler { [weak self] in
+            guard let self = self, self.activeHoldingKey == keyType else { return }
+            ticks += 1
+            // Watchdog: auto stop after ~1.8 seconds if KeyUp was lost
+            if ticks > 40 {
+                self.stopHoldTimer()
+                return
+            }
+            self.handleKeyPress(keyType: keyType, option: option, shift: shift, command: command, isHolding: true)
+        }
+        
+        holdTimer = timer
+        timer.resume()
+    }
+    
+    private func stopHoldTimer() {
+        if let timer = holdTimer {
+            timer.cancel()
+            holdTimer = nil
+        }
+        activeHoldingKey = nil
     }
     
     private func handleOptionAction(for keyType: NXKeyType, command: Bool) -> Bool {
@@ -175,19 +233,27 @@ final class MediaKeyInterceptor {
         }
     }
 
+    private var cachedFeedbackSetting: Bool?
+    private var lastFeedbackCheckTime: TimeInterval = 0
+
+    private func isFeedbackSoundEnabled() -> Bool {
+        let now = Date().timeIntervalSince1970
+        if let cached = cachedFeedbackSetting, now - lastFeedbackCheckTime < 2.0 {
+            return cached
+        }
+        let feedback = UserDefaults.standard.persistentDomain(forName: "NSGlobalDomain")?["com.apple.sound.beep.feedback"] as? Int
+        let enabled = (feedback == 1)
+        cachedFeedbackSetting = enabled
+        lastFeedbackCheckTime = now
+        return enabled
+    }
+
     private func playFeedbackSound() {
-        guard let feedback = UserDefaults.standard.persistentDomain(forName: "NSGlobalDomain")?["com.apple.sound.beep.feedback"] as? Int,
-              feedback == 1 else { return }
+        guard isFeedbackSoundEnabled() else { return }
 
         prepareAudioPlayerIfNeeded()
         guard let player = audioPlayer else {
-            print("⚠️ [MediaKeyInterceptor] No audio player available to play feedback sound")
             return
-        }
-        if let url = player.url {
-            print("🔊 [MediaKeyInterceptor] Playing feedback sound from: \(url.path)")
-        } else {
-            print("🔊 [MediaKeyInterceptor] Playing feedback sound (no url available for AVAudioPlayer)")
         }
         if player.isPlaying {
             player.stop()
@@ -196,29 +262,35 @@ final class MediaKeyInterceptor {
         player.play()
     }
 
-    private func handleKeyPress(keyType: NXKeyType, option: Bool, shift: Bool, command: Bool) {
+    private func handleKeyPress(keyType: NXKeyType, option: Bool, shift: Bool, command: Bool, isHolding: Bool) {
         let stepDivisor: Float = (option && shift) ? 4.0 : 1.0
         
         switch keyType {
         case .soundUp:
             Task { @MainActor in
-                self.playFeedbackSound()
-                VolumeManager.shared.increase(stepDivisor: stepDivisor)
+                if !isHolding {
+                    self.playFeedbackSound()
+                }
+                VolumeManager.shared.increase(stepDivisor: stepDivisor, isHolding: isHolding)
             }
         case .soundDown:
             Task { @MainActor in
-                self.playFeedbackSound()
-                VolumeManager.shared.decrease(stepDivisor: stepDivisor)
+                if !isHolding {
+                    self.playFeedbackSound()
+                }
+                VolumeManager.shared.decrease(stepDivisor: stepDivisor, isHolding: isHolding)
             }
         case .mute:
             Task { @MainActor in
                 VolumeManager.shared.toggleMuteAction()
             }
         case .brightnessUp, .keyboardBrightnessUp:
-            let delta = step / stepDivisor
+            let multiplier: Float = isHolding ? 1.6 : 1.0
+            let delta = (step * multiplier) / stepDivisor
             adjustBrightness(delta: delta, keyboard: keyType == .keyboardBrightnessUp || command)
         case .brightnessDown, .keyboardBrightnessDown:
-            let delta = -(step / stepDivisor)
+            let multiplier: Float = isHolding ? 1.6 : 1.0
+            let delta = -((step * multiplier) / stepDivisor)
             adjustBrightness(delta: delta, keyboard: keyType == .keyboardBrightnessDown || command)
         }
     }

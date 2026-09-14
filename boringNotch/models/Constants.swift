@@ -59,6 +59,15 @@ enum SneakPeekStyle: String, CaseIterable, Identifiable, Defaults.Serializable {
     var id: String { self.rawValue }
 }
 
+// Closed notch HUD styles
+enum ClosedNotchHUDStyle: String, CaseIterable, Identifiable, Defaults.Serializable {
+    case standard = "Default"
+    case inline = "Inline"
+    case floatingBar = "Floating Bar (iOS)"
+    
+    var id: String { self.rawValue }
+}
+
 // Action to perform when Option (⌥) is held while pressing media keys
 enum OptionKeyAction: String, CaseIterable, Identifiable, Defaults.Serializable {
     case openSettings = "Open System Settings"
@@ -153,6 +162,7 @@ extension Defaults.Keys {
     // MARK: HUD
     static let hudReplacement = Key<Bool>("hudReplacement", default: false)
     static let inlineHUD = Key<Bool>("inlineHUD", default: false)
+    static let closedNotchHUDStyle = Key<ClosedNotchHUDStyle>("closedNotchHUDStyle", default: .floatingBar)
     static let enableGradient = Key<Bool>("enableGradient", default: false)
     static let systemEventIndicatorShadow = Key<Bool>("systemEventIndicatorShadow", default: false)
     static let systemEventIndicatorUseAccent = Key<Bool>("systemEventIndicatorUseAccent", default: false)

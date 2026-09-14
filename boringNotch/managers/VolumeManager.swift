@@ -34,7 +34,7 @@ final class VolumeManager: NSObject, ObservableObject {
     var shouldShowOverlay: Bool { Date().timeIntervalSince(lastChangeAt) < visibleDuration }
 
     // MARK: - Public Control API
-    @MainActor func increase(stepDivisor: Float = 1.0) {
+    @MainActor func increase(stepDivisor: Float = 1.0, isHolding: Bool = false) {
         let divisor = max(stepDivisor, 0.25)
         let delta = step / Float32(divisor)
         let current = readVolumeInternal() ?? rawVolume
@@ -43,7 +43,7 @@ final class VolumeManager: NSObject, ObservableObject {
         BoringViewCoordinator.shared.toggleSneakPeek(status: true, type: .volume, value: CGFloat(target))
     }
 
-    @MainActor func decrease(stepDivisor: Float = 1.0) {
+    @MainActor func decrease(stepDivisor: Float = 1.0, isHolding: Bool = false) {
         let divisor = max(stepDivisor, 0.25)
         let delta = step / Float32(divisor)
         let current = readVolumeInternal() ?? rawVolume

@@ -121,6 +121,9 @@
 		B17266E12C6532560031BA0D /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = B17266E02C6532560031BA0D /* Localizable.xcstrings */; };
 		B17266E32C65F7FB0031BA0D /* WhatsNewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B17266E22C65F7FB0031BA0D /* WhatsNewView.swift */; };
 		B172AAC02C95DA0B001623F1 /* InlineHUD.swift in Sources */ = {isa = PBXBuildFile; fileRef = B172AABF2C95DA0B001623F1 /* InlineHUD.swift */; };
+		111BEA732ED166E20079DD4E /* floating_hud_bar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 111BEA722ED166E20079DD4E /* floating_hud_bar.swift */; };
+		111BEA752ED166E20079DD4E /* floating_popup_container.swift in Sources */ = {isa = PBXBuildFile; fileRef = 111BEA742ED166E20079DD4E /* floating_popup_container.swift */; };
+		111BEA772ED166E20079DD4E /* volume_slider_content.swift in Sources */ = {isa = PBXBuildFile; fileRef = 111BEA762ED166E20079DD4E /* volume_slider_content.swift */; };
 		B18654392C6F4990000B926A /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = B18654382C6F4990000B926A /* KeyboardShortcuts */; };
 		B186543C2C6F49AE000B926A /* ShortcutConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = B186543B2C6F49AE000B926A /* ShortcutConstants.swift */; };
 		B19016222CC15B3D00E3F12E /* Defaults in Frameworks */ = {isa = PBXBuildFile; productRef = B19016212CC15B3D00E3F12E /* Defaults */; };
@@ -290,6 +293,9 @@
 		B17266E02C6532560031BA0D /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		B17266E22C65F7FB0031BA0D /* WhatsNewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhatsNewView.swift; sourceTree = "<group>"; };
 		B172AABF2C95DA0B001623F1 /* InlineHUD.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InlineHUD.swift; sourceTree = "<group>"; };
+		111BEA722ED166E20079DD4E /* floating_hud_bar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = floating_hud_bar.swift; sourceTree = "<group>"; };
+		111BEA742ED166E20079DD4E /* floating_popup_container.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = floating_popup_container.swift; sourceTree = "<group>"; };
+		111BEA762ED166E20079DD4E /* volume_slider_content.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = volume_slider_content.swift; sourceTree = "<group>"; };
 		B186543B2C6F49AE000B926A /* ShortcutConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutConstants.swift; sourceTree = "<group>"; };
 		B19016232CC15B4D00E3F12E /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		B19424082CD0FEFE003E5DC2 /* LottieAnimationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LottieAnimationView.swift; sourceTree = "<group>"; };
@@ -734,6 +740,9 @@
 				B1D365CF2C6A9A6C0047BDBC /* SystemEventIndicatorModifier.swift */,
 				14E9FEA92C70BF610062E83F /* DownloadView.swift */,
 				B172AABF2C95DA0B001623F1 /* InlineHUD.swift */,
+				111BEA722ED166E20079DD4E /* floating_hud_bar.swift */,
+				111BEA742ED166E20079DD4E /* floating_popup_container.swift */,
+				111BEA762ED166E20079DD4E /* volume_slider_content.swift */,
 			);
 			path = "Live activities";
 			sourceTree = "<group>";
@@ -955,6 +964,9 @@
 				1153BD8F2D986B1F00979FB0 /* MediaControllerProtocol.swift in Sources */,
 				9AB0C6BD2C73C9CB00F7CD30 /* NotchHomeView.swift in Sources */,
 				B172AAC02C95DA0B001623F1 /* InlineHUD.swift in Sources */,
+				111BEA732ED166E20079DD4E /* floating_hud_bar.swift in Sources */,
+				111BEA752ED166E20079DD4E /* floating_popup_container.swift in Sources */,
+				111BEA772ED166E20079DD4E /* volume_slider_content.swift in Sources */,
 				14E9FEAA2C70BF610062E83F /* DownloadView.swift in Sources */,
 				B1B112912C6A572100093D8F /* EditPanelView.swift in Sources */,
 				B1C4489B2C97376A001F0858 /* TipStore.swift in Sources */,
