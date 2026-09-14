@@ -8,6 +8,63 @@
 import Cocoa
 import UniformTypeIdentifiers
 
+/// Owns the one process-wide global event monitor used by every display-specific
+/// detector. The monitor is removed as soon as the last detector unregisters.
+private final class GlobalDragEventMonitor {
+    static let shared = GlobalDragEventMonitor()
+
+    private final class WeakDetector {
+        weak var value: DragDetector?
+
+        init(_ value: DragDetector) {
+            self.value = value
+        }
+    }
+
+    private var monitor: Any?
+    private var detectors: [ObjectIdentifier: WeakDetector] = [:]
+
+    func add(_ detector: DragDetector) {
+        detectors[ObjectIdentifier(detector)] = WeakDetector(detector)
+        guard monitor == nil else { return }
+
+        monitor = NSEvent.addGlobalMonitorForEvents(
+            matching: [.leftMouseDown, .leftMouseDragged, .leftMouseUp]
+        ) { [weak self] event in
+            // Global monitor callbacks bridge CGEvent data into several autoreleased
+            // AppKit objects. Drain those objects for every high-frequency callback.
+            autoreleasepool {
+                self?.dispatch(event)
+            }
+        }
+    }
+
+    func remove(_ detector: DragDetector) {
+        detectors.removeValue(forKey: ObjectIdentifier(detector))
+        removeReleasedDetectors()
+
+        guard detectors.isEmpty, let monitor else { return }
+        NSEvent.removeMonitor(monitor)
+        self.monitor = nil
+    }
+
+    private func dispatch(_ event: NSEvent) {
+        removeReleasedDetectors()
+        let activeDetectors = detectors.values.compactMap(\.value)
+        activeDetectors.forEach { $0.handle(event) }
+    }
+
+    private func removeReleasedDetectors() {
+        detectors = detectors.filter { $0.value.value != nil }
+    }
+
+    deinit {
+        if let monitor {
+            NSEvent.removeMonitor(monitor)
+        }
+    }
+}
+
 final class DragDetector {
 
     // MARK: - Callbacks
@@ -20,9 +77,7 @@ final class DragDetector {
     var onDragMove: PositionCallback?
 
 
-    private var mouseDownMonitor: Any?
-    private var mouseDraggedMonitor: Any?
-    private var mouseUpMonitor: Any?
+    private var isMonitoring = false
 
     private var pasteboardChangeCount: Int = -1
     private var isDragging: Bool = false
@@ -50,68 +105,62 @@ final class DragDetector {
 
     func startMonitoring() {
         stopMonitoring()
+        isMonitoring = true
+        GlobalDragEventMonitor.shared.add(self)
+    }
 
-        // Track pasteboard to detect content drag
-        mouseDownMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown]) { [weak self] _ in
-            guard let self = self else { return }
-            self.pasteboardChangeCount = self.dragPasteboard.changeCount
-            self.isDragging = true
-            self.isContentDragging = false
-            self.hasEnteredNotchRegion = false
-        }
+    fileprivate func handle(_ event: NSEvent) {
+        switch event.type {
+        case .leftMouseDown:
+            pasteboardChangeCount = dragPasteboard.changeCount
+            isDragging = true
+            isContentDragging = false
+            hasEnteredNotchRegion = false
 
-        // Track drag movement and notch region intersection
-        mouseDraggedMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDragged]) { [weak self] event in
-            guard let self = self else { return }
-            guard self.isDragging else { return }
+        case .leftMouseDragged:
+            guard isDragging else { return }
 
-            let newContent = self.dragPasteboard.changeCount != self.pasteboardChangeCount
-            
-            // Detect if actual content is being dragged AND it's valid content
-            if newContent && !self.isContentDragging && self.hasValidDragContent() {
-                self.isContentDragging = true
+            if !isContentDragging,
+               dragPasteboard.changeCount != pasteboardChangeCount,
+               hasValidDragContent() {
+                isContentDragging = true
             }
 
-            // Only process position when content is being dragged
-            if self.isContentDragging {
-                let mouseLocation = NSEvent.mouseLocation
-                self.onDragMove?(mouseLocation)
-                
-                // Track notch region entry/exit
-                let containsMouse = self.notchRegion.contains(mouseLocation)
-                if containsMouse && !self.hasEnteredNotchRegion {
-                    self.hasEnteredNotchRegion = true
-                    self.onDragEntersNotchRegion?()
-                } else if !containsMouse && self.hasEnteredNotchRegion {
-                    self.hasEnteredNotchRegion = false
-                    self.onDragExitsNotchRegion?()
-                }
-            }
-        }
+            guard isContentDragging else { return }
 
-        mouseUpMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseUp]) { [weak self] _ in
-            guard let self = self else { return }
-            guard self.isDragging else { return }
-            
-            self.isDragging = false
-            self.isContentDragging = false
-            self.hasEnteredNotchRegion = false
-            self.pasteboardChangeCount = -1
+            let mouseLocation = NSEvent.mouseLocation
+            onDragMove?(mouseLocation)
+
+            let containsMouse = notchRegion.contains(mouseLocation)
+            if containsMouse && !hasEnteredNotchRegion {
+                hasEnteredNotchRegion = true
+                onDragEntersNotchRegion?()
+            } else if !containsMouse && hasEnteredNotchRegion {
+                hasEnteredNotchRegion = false
+                onDragExitsNotchRegion?()
+            }
+
+        case .leftMouseUp:
+            resetDragState()
+
+        default:
+            break
         }
     }
 
-    func stopMonitoring() {
-        [mouseDownMonitor, mouseDraggedMonitor, mouseUpMonitor].forEach { monitor in
-            if let monitor = monitor {
-                NSEvent.removeMonitor(monitor)
-            }
-        }
-        mouseDownMonitor = nil
-        mouseDraggedMonitor = nil
-        mouseUpMonitor = nil
+    private func resetDragState() {
         isDragging = false
         isContentDragging = false
         hasEnteredNotchRegion = false
+        pasteboardChangeCount = -1
+    }
+
+    func stopMonitoring() {
+        if isMonitoring {
+            GlobalDragEventMonitor.shared.remove(self)
+        }
+        isMonitoring = false
+        resetDragState()
     }
 
     deinit {

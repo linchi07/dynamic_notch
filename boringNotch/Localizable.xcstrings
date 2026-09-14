@@ -3803,6 +3803,7 @@
       }
     },
     "boring.notch" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -3901,6 +3902,9 @@
           }
         }
       }
+    },
+    "boring.notch (Dev)" : {
+
     },
     "Calendar" : {
       "localizations" : {

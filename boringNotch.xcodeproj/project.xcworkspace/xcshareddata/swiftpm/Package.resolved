@@ -1,5 +1,5 @@
 {
-  "originHash" : "ab961f5de25797b1a82bd0f8c39b561332a3dfe10de0a118e1252262fbd45864",
+  "originHash" : "b9cc6f02ca949f69befa17dfae23cf740e8545ad9a9b789086ef9f91e12e2baf",
   "pins" : [
     {
       "identity" : "asyncxpcconnection",
@@ -24,8 +24,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/sindresorhus/KeyboardShortcuts",
       "state" : {
-        "revision" : "1aef85578fdd4f9eaeeb8d53b7b4fc31bf08fe27",
-        "version" : "2.4.0"
+        "revision" : "7ecc38bb6edf7d087d30e737057b8d8a9b7f51eb",
+        "version" : "2.2.4"
       }
     },
     {
@@ -44,15 +44,6 @@
       "state" : {
         "revision" : "04f2fd18cc9404a0a0917265a449002674f24ec9",
         "version" : "4.5.2"
-      }
-    },
-    {
-      "identity" : "macrovisionkit",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/TheBoredTeam/MacroVisionKit",
-      "state" : {
-        "revision" : "da481a6be8d8b1bf7fcb218507a72428bbcae7b0",
-        "version" : "0.2.0"
       }
     },
     {

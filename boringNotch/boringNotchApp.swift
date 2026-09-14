@@ -29,7 +29,7 @@ struct DynamicNotchApp: App {
     }
 
     var body: some Scene {
-        MenuBarExtra("boring.notch", systemImage: "sparkle", isInserted: $showMenuBarIcon) {
+        MenuBarExtra("boring.notch (Dev)", systemImage: "sparkle", isInserted: $showMenuBarIcon) {
             Button("Settings") {
                 DispatchQueue.main.async {
                     SettingsWindowController.shared.showWindow()
@@ -67,12 +67,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var isScreenLocked: Bool = false
     private var windowScreenDidChangeObserver: Any?
     private var dragDetectors: [String: DragDetector] = [:] // UUID -> DragDetector
+    private var screenConfigurationTask: Task<Void, Never>?
+    private var windowRecoveryTask: Task<Void, Never>?
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         return false
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        screenConfigurationTask?.cancel()
+        windowRecoveryTask?.cancel()
         NotificationCenter.default.removeObserver(self)
         if let observer = screenLockedObserver {
             DistributedNotificationCenter.default().removeObserver(observer)
@@ -92,7 +96,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func onScreenLocked(_ notification: Notification) {
         isScreenLocked = true
         if !Defaults[.showOnLockScreen] {
-            cleanupWindows()
+            windowRecoveryTask?.cancel()
+            cleanupDragDetectors()
+            hideAllNotchWindows()
         } else {
             enableSkyLightOnAllWindows()
         }
@@ -102,10 +108,80 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func onScreenUnlocked(_ notification: Notification) {
         isScreenLocked = false
         if !Defaults[.showOnLockScreen] {
-            adjustWindowPosition(changeAlpha: true)
+            scheduleWindowRecovery(changeAlpha: true)
         } else {
             disableSkyLightOnAllWindows()
+            scheduleWindowRecovery(changeAlpha: false)
         }
+    }
+
+    @MainActor
+    private func hideAllNotchWindows() {
+        if Defaults[.showOnAllDisplays] {
+            windows.values.forEach { $0.orderOut(nil) }
+        } else {
+            window?.orderOut(nil)
+        }
+    }
+
+    /// Display enumeration can lag behind the unlock notification while an external
+    /// display completes its handshake. Keep the existing windows alive and retry
+    /// positioning until the preferred display becomes available.
+    @MainActor
+    private func scheduleWindowRecovery(changeAlpha: Bool, debounce: Duration = .milliseconds(250)) {
+        windowRecoveryTask?.cancel()
+        windowRecoveryTask = Task { @MainActor [weak self] in
+            do {
+                try await Task.sleep(for: debounce)
+            } catch {
+                return
+            }
+
+            let retryDelays: [Duration] = [.zero, .milliseconds(350), .milliseconds(750), .seconds(1.5), .seconds(3)]
+            for delay in retryDelays {
+                if delay != .zero {
+                    do {
+                        try await Task.sleep(for: delay)
+                    } catch {
+                        return
+                    }
+                }
+
+                guard let self, !self.isScreenLocked else { return }
+                if self.restoreAndPositionWindows(changeAlpha: changeAlpha) {
+                    self.setupDragDetectors()
+                    self.windowRecoveryTask = nil
+                    return
+                }
+            }
+
+            self?.windowRecoveryTask = nil
+        }
+    }
+
+    @MainActor
+    @discardableResult
+    private func restoreAndPositionWindows(changeAlpha: Bool) -> Bool {
+        if !Defaults[.showOnAllDisplays] {
+            let preferredIsAvailable = NSScreen.screen(
+                withUUID: coordinator.preferredScreenUUID ?? ""
+            ) != nil
+            let fallbackIsAvailable = Defaults[.automaticallySwitchDisplay] && NSScreen.main != nil
+            guard preferredIsAvailable || fallbackIsAvailable else {
+                window?.alphaValue = 0
+                window?.orderOut(nil)
+                return false
+            }
+        }
+
+        adjustWindowPosition(changeAlpha: changeAlpha)
+
+        if Defaults[.showOnAllDisplays] {
+            windows.values.forEach { $0.orderFrontRegardless() }
+        } else {
+            window?.orderFrontRegardless()
+        }
+        return true
     }
     
     @MainActor

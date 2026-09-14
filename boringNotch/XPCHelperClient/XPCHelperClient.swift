@@ -5,14 +5,16 @@ import AsyncXPCConnection
 final class XPCHelperClient: NSObject {
     nonisolated static let shared = XPCHelperClient()
     
-    private let serviceName = "theboringteam.boringnotch.BoringNotchXPCHelper"
+    private let serviceName = "theboringteam.boringnotch.dev.BoringNotchXPCHelper"
     
     private var remoteService: RemoteXPCService<BoringNotchXPCHelperProtocol>?
     private var connection: NSXPCConnection?
+    private var reconnectTask: Task<Void, Never>?
     private var lastKnownAuthorization: Bool?
     private var monitoringTask: Task<Void, Never>?
     
     deinit {
+        reconnectTask?.cancel()
         connection?.invalidate()
         stopMonitoringAccessibilityAuthorization()
     }
@@ -24,20 +26,23 @@ final class XPCHelperClient: NSObject {
         if let existing = remoteService {
             return existing
         }
+
+        reconnectTask?.cancel()
+        reconnectTask = nil
         
         let conn = NSXPCConnection(serviceName: serviceName)
         
-        conn.interruptionHandler = { [weak self] in
+        conn.interruptionHandler = { [weak self, weak conn] in
             Task { @MainActor in
-                self?.connection = nil
-                self?.remoteService = nil
+                guard let conn else { return }
+                self?.handleConnectionLoss(conn)
             }
         }
         
-        conn.invalidationHandler = { [weak self] in
+        conn.invalidationHandler = { [weak self, weak conn] in
             Task { @MainActor in
-                self?.connection = nil
-                self?.remoteService = nil
+                guard let conn else { return }
+                self?.handleConnectionLoss(conn)
             }
         }
         
@@ -52,10 +57,42 @@ final class XPCHelperClient: NSObject {
         remoteService = service
         return service
     }
-    
+
     @MainActor
-    private func getRemoteService() -> RemoteXPCService<BoringNotchXPCHelperProtocol>? {
-        remoteService
+    private func handleConnectionLoss(_ failedConnection: NSXPCConnection) {
+        // A delayed callback from an old connection must never clear a newer one.
+        guard connection === failedConnection else { return }
+
+        failedConnection.interruptionHandler = nil
+        failedConnection.invalidationHandler = nil
+        failedConnection.invalidate()
+        connection = nil
+        remoteService = nil
+
+        scheduleReconnect()
+    }
+
+    @MainActor
+    private func scheduleReconnect() {
+        guard reconnectTask == nil else { return }
+
+        reconnectTask = Task { @MainActor [weak self] in
+            do {
+                try await Task.sleep(for: .milliseconds(500))
+            } catch {
+                return
+            }
+            guard let self else { return }
+            self.reconnectTask = nil
+            _ = self.ensureRemoteService()
+        }
+    }
+
+    nonisolated private func markConnectionUnhealthy() async {
+        await MainActor.run {
+            guard let connection = self.connection else { return }
+            self.handleConnectionLoss(connection)
+        }
     }
     
     @MainActor
@@ -123,6 +160,7 @@ final class XPCHelperClient: NSObject {
             }
             return result
         } catch {
+            await markConnectionUnhealthy()
             return false
         }
     }
@@ -142,6 +180,7 @@ final class XPCHelperClient: NSObject {
             }
             return result
         } catch {
+            await markConnectionUnhealthy()
             return false
         }
     }
@@ -159,6 +198,7 @@ final class XPCHelperClient: NSObject {
                 }
             }
         } catch {
+            await markConnectionUnhealthy()
             return false
         }
     }
@@ -175,6 +215,7 @@ final class XPCHelperClient: NSObject {
             }
             return result?.floatValue
         } catch {
+            await markConnectionUnhealthy()
             return nil
         }
     }
@@ -190,6 +231,7 @@ final class XPCHelperClient: NSObject {
                 }
             }
         } catch {
+            await markConnectionUnhealthy()
             return false
         }
     }
@@ -207,6 +249,7 @@ final class XPCHelperClient: NSObject {
                 }
             }
         } catch {
+            await markConnectionUnhealthy()
             return false
         }
     }
@@ -223,6 +266,7 @@ final class XPCHelperClient: NSObject {
             }
             return result?.floatValue
         } catch {
+            await markConnectionUnhealthy()
             return nil
         }
     }
@@ -238,6 +282,7 @@ final class XPCHelperClient: NSObject {
                 }
             }
         } catch {
+            await markConnectionUnhealthy()
             return false
         }
     }
@@ -246,5 +291,4 @@ final class XPCHelperClient: NSObject {
 extension Notification.Name {
     static let accessibilityAuthorizationChanged = Notification.Name("accessibilityAuthorizationChanged")
 }
-
 
