@@ -97,6 +97,37 @@ struct ContentView: View {
         }()
         
         ZStack(alignment: .top) {
+            if isFloatingHUDVisible {
+                FloatingHUDBar(
+                    type: $coordinator.sneakPeek.type,
+                    value: $coordinator.sneakPeek.value,
+                    icon: $coordinator.sneakPeek.icon
+                )
+                .padding(.top, vm.effectiveClosedNotchHeight + 8)
+                .transition(FloatingPopupStyle.transition)
+                .zIndex(0)
+            }
+
+            if let notification = coordinator.activeNotification {
+                FloatingNotificationContainer(
+                    isPresented: $coordinator.isNotificationPresented,
+                    autoDismissAfter: notification.duration,
+                    onDismiss: {
+                        coordinator.activeNotification = nil
+                    }
+                ) { isContentVisible in
+                    FloatingNotificationPopup(
+                        item: notification,
+                        isContentVisible: isContentVisible
+                    ) {
+                        coordinator.dismissNotification()
+                    }
+                }
+                .id(notification.id)
+                .padding(.top, vm.effectiveClosedNotchHeight + 8)
+                .zIndex(0.5)
+            }
+
             VStack(spacing: 0) {
                 let mainLayout = NotchLayout()
                     .frame(alignment: .top)
@@ -209,17 +240,7 @@ struct ContentView: View {
                         .frame(width: computedChinWidth, height: vm.chinHeight)
                 }
             }
-
-            if isFloatingHUDVisible {
-                FloatingHUDBar(
-                    type: $coordinator.sneakPeek.type,
-                    value: $coordinator.sneakPeek.value,
-                    icon: $coordinator.sneakPeek.icon
-                )
-                .padding(.top, vm.effectiveClosedNotchHeight + 8)
-                .transition(FloatingPopupStyle.transition)
-                .zIndex(10)
-            }
+            .zIndex(1)
         }
         .animation(FloatingPopupStyle.springAnimation, value: isFloatingHUDVisible)
         .padding(.bottom, 8)

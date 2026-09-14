@@ -52,9 +52,37 @@ class BoringViewCoordinator: ObservableObject {
 
     @Published var currentView: NotchViews = .home
     @Published var helloAnimationRunning: Bool = false
+    @Published var activeNotification: FloatingNotificationItem? = nil
+    @Published var isNotificationPresented: Bool = false
     private var sneakPeekDispatch: DispatchWorkItem?
     private var expandingViewDispatch: DispatchWorkItem?
     private var hudEnableTask: Task<Void, Never>?
+
+    func postNotification(
+        title: String,
+        message: String,
+        iconName: String = "bell.fill",
+        iconColor: Color = .white,
+        iconBackground: Color = Color.white.opacity(0.12),
+        trailingText: String? = nil,
+        duration: TimeInterval = 4.0
+    ) {
+        let item = FloatingNotificationItem(
+            iconName: iconName,
+            iconColor: iconColor,
+            iconBackground: iconBackground,
+            title: title,
+            message: message,
+            trailingText: trailingText,
+            duration: duration
+        )
+        self.activeNotification = item
+        self.isNotificationPresented = true
+    }
+
+    func dismissNotification() {
+        self.isNotificationPresented = false
+    }
 
     @AppStorage("firstLaunch") var firstLaunch: Bool = true
     @AppStorage("showWhatsNew") var showWhatsNew: Bool = true

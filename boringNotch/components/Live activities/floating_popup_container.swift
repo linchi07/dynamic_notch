@@ -7,8 +7,7 @@
 
 import SwiftUI
 
-/// Reusable floating container positioned beneath the MacBook notch.
-/// Designed for modular popups (volume/brightness sliders, clipboard, shortcuts, etc.)
+/// Reusable floating container positioned beneath the MacBook notch for fast sliders (volume/brightness).
 struct FloatingPopupContainer<Content: View>: View {
     let content: Content
 
@@ -62,11 +61,11 @@ enum FloatingPopupStyle {
 
     static var transition: AnyTransition {
         .asymmetric(
-            insertion: .scale(scale: 0.85, anchor: .top)
-                .combined(with: .offset(y: -14))
+            insertion: .scale(scale: 0.88, anchor: .top)
+                .combined(with: .offset(y: -16))
                 .combined(with: .opacity),
-            removal: .scale(scale: 0.9, anchor: .top)
-                .combined(with: .offset(y: -10))
+            removal: .scale(scale: 0.88, anchor: .top)
+                .combined(with: .offset(y: -14))
                 .combined(with: .opacity)
         )
     }

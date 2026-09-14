@@ -15,7 +15,11 @@ struct FloatingHUDBar: View {
 
     var body: some View {
         FloatingPopupContainer {
-            VolumeSliderContent(type: $type, value: $value, icon: $icon)
+            VolumeSliderContent(
+                type: $type,
+                value: $value,
+                icon: $icon
+            )
         }
     }
 }
