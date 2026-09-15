@@ -116,11 +116,25 @@ struct ContentView: View {
                         coordinator.activeNotification = nil
                     }
                 ) { isContentVisible in
-                    FloatingNotificationPopup(
-                        item: notification,
-                        isContentVisible: isContentVisible
-                    ) {
-                        coordinator.dismissNotification()
+                    switch notification.payload {
+                    case .standard:
+                        FloatingNotificationPopup(
+                            item: notification,
+                            isContentVisible: isContentVisible
+                        ) {
+                            coordinator.dismissNotification()
+                        }
+                    case .battery(let batteryData):
+                        BatteryNotificationPopup(
+                            payload: batteryData,
+                            isContentVisible: isContentVisible,
+                            onEnableLowPowerMode: {
+                                BatteryStatusViewModel.shared.enableLowPowerMode()
+                            },
+                            onClose: {
+                                coordinator.dismissNotification()
+                            }
+                        )
                     }
                 }
                 .id(notification.id)

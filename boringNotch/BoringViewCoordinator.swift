@@ -60,12 +60,12 @@ class BoringViewCoordinator: ObservableObject {
 
     func postNotification(
         title: String,
-        message: String,
+        message: String = "",
         iconName: String = "bell.fill",
         iconColor: Color = .white,
         iconBackground: Color = Color.white.opacity(0.12),
         trailingText: String? = nil,
-        duration: TimeInterval = 4.0
+        duration: TimeInterval = 2.0
     ) {
         let item = FloatingNotificationItem(
             iconName: iconName,
@@ -77,6 +77,27 @@ class BoringViewCoordinator: ObservableObject {
             duration: duration
         )
         self.activeNotification = item
+        self.isNotificationPresented = true
+    }
+
+    func postBatteryNotification(
+        level: Float,
+        isPluggedIn: Bool,
+        isCharging: Bool,
+        isInLowPowerMode: Bool,
+        isLowBatteryAlert: Bool = false,
+        timeToFullCharge: Int = 0,
+        duration: TimeInterval = 2.0
+    ) {
+        let payload = BatteryNotificationPayload(
+            level: level,
+            isPluggedIn: isPluggedIn,
+            isCharging: isCharging,
+            isInLowPowerMode: isInLowPowerMode,
+            isLowBatteryAlert: isLowBatteryAlert,
+            timeToFullCharge: timeToFullCharge
+        )
+        self.activeNotification = FloatingNotificationItem(battery: payload, duration: duration)
         self.isNotificationPresented = true
     }
 

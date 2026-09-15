@@ -60,6 +60,9 @@ struct SettingsView: View {
                 NavigationLink(value: "Advanced") {
                     Label("Advanced", systemImage: "gearshape.2")
                 }
+                NavigationLink(value: "Developer") {
+                    Label("Developer", systemImage: "hammer")
+                }
                 NavigationLink(value: "About") {
                     Label("About", systemImage: "info.circle")
                 }
@@ -91,6 +94,8 @@ struct SettingsView: View {
                     GeneralSettings()
                 case "Advanced":
                     Advanced()
+                case "Developer":
+                    DeveloperSettingsView()
                 case "About":
                     if let controller = updaterController {
                         About(updaterController: controller)
@@ -376,6 +381,16 @@ struct Charge: View {
                 }
             } header: {
                 Text("Battery Information")
+            }
+
+            Section {
+                Button {
+                    BatteryStatusViewModel.shared.triggerBatteryNotification(isLowBatteryAlert: false)
+                } label: {
+                    Label("触发当前电池通知", systemImage: "bolt.fill")
+                }
+            } header: {
+                Text("Developer / Debug")
             }
         }
         .onAppear {

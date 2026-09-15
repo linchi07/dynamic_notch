@@ -126,6 +126,8 @@
 		111BEA772ED166E20079DD4E /* volume_slider_content.swift in Sources */ = {isa = PBXBuildFile; fileRef = 111BEA762ED166E20079DD4E /* volume_slider_content.swift */; };
 		111BEA812ED166E20079DD4E /* floating_notification_container.swift in Sources */ = {isa = PBXBuildFile; fileRef = 111BEA802ED166E20079DD4E /* floating_notification_container.swift */; };
 		111BEA832ED166E20079DD4E /* floating_notification_popup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 111BEA822ED166E20079DD4E /* floating_notification_popup.swift */; };
+		111BEA852ED166E20079DD4E /* battery_notification_popup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 111BEA842ED166E20079DD4E /* battery_notification_popup.swift */; };
+		111BEA872ED166E20079DD4E /* developer_settings_view.swift in Sources */ = {isa = PBXBuildFile; fileRef = 111BEA862ED166E20079DD4E /* developer_settings_view.swift */; };
 		B18654392C6F4990000B926A /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = B18654382C6F4990000B926A /* KeyboardShortcuts */; };
 		B186543C2C6F49AE000B926A /* ShortcutConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = B186543B2C6F49AE000B926A /* ShortcutConstants.swift */; };
 		B19016222CC15B3D00E3F12E /* Defaults in Frameworks */ = {isa = PBXBuildFile; productRef = B19016212CC15B3D00E3F12E /* Defaults */; };
@@ -300,6 +302,8 @@
 		111BEA762ED166E20079DD4E /* volume_slider_content.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = volume_slider_content.swift; sourceTree = "<group>"; };
 		111BEA802ED166E20079DD4E /* floating_notification_container.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = floating_notification_container.swift; sourceTree = "<group>"; };
 		111BEA822ED166E20079DD4E /* floating_notification_popup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = floating_notification_popup.swift; sourceTree = "<group>"; };
+		111BEA842ED166E20079DD4E /* battery_notification_popup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = battery_notification_popup.swift; sourceTree = "<group>"; };
+		111BEA862ED166E20079DD4E /* developer_settings_view.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = developer_settings_view.swift; sourceTree = "<group>"; };
 		B186543B2C6F49AE000B926A /* ShortcutConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutConstants.swift; sourceTree = "<group>"; };
 		B19016232CC15B4D00E3F12E /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		B19424082CD0FEFE003E5DC2 /* LottieAnimationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LottieAnimationView.swift; sourceTree = "<group>"; };
@@ -727,6 +731,7 @@
 				11F748832ECB27DC00F841DB /* MusicSlotConfigurationView.swift */,
 				11C5E3152DFE88510065821E /* SettingsView.swift */,
 				11C5E3112DFE85970065821E /* SettingsWindowController.swift */,
+				111BEA862ED166E20079DD4E /* developer_settings_view.swift */,
 				B1D6FD422C6603730015F173 /* SoftwareUpdater.swift */,
 				B1B112902C6A572100093D8F /* EditPanelView.swift */,
 				B1C448972C972CC4001F0858 /* ListItemPopover.swift */,
@@ -749,6 +754,7 @@
 				111BEA762ED166E20079DD4E /* volume_slider_content.swift */,
 				111BEA802ED166E20079DD4E /* floating_notification_container.swift */,
 				111BEA822ED166E20079DD4E /* floating_notification_popup.swift */,
+				111BEA842ED166E20079DD4E /* battery_notification_popup.swift */,
 			);
 			path = "Live activities";
 			sourceTree = "<group>";
@@ -975,6 +981,8 @@
 				111BEA772ED166E20079DD4E /* volume_slider_content.swift in Sources */,
 				111BEA812ED166E20079DD4E /* floating_notification_container.swift in Sources */,
 				111BEA832ED166E20079DD4E /* floating_notification_popup.swift in Sources */,
+				111BEA852ED166E20079DD4E /* battery_notification_popup.swift in Sources */,
+				111BEA872ED166E20079DD4E /* developer_settings_view.swift in Sources */,
 				14E9FEAA2C70BF610062E83F /* DownloadView.swift in Sources */,
 				B1B112912C6A572100093D8F /* EditPanelView.swift in Sources */,
 				B1C4489B2C97376A001F0858 /* TipStore.swift in Sources */,
