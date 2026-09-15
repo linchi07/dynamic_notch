@@ -9,7 +9,9 @@ import AppKit
 import Combine
 import Foundation
 
-final class NowPlayingController: ObservableObject, MediaControllerProtocol {
+// Process/pipe lifecycle state is serialized on MainActor; protocol entry points
+// only hop into that state through the isolated helpers below.
+final class NowPlayingController: ObservableObject, MediaControllerProtocol, @unchecked Sendable {
     func updatePlaybackInfo() async {
         await ensureAdapterIsResponsive()
         await fetchFavoriteStateIfSupported()
@@ -73,6 +75,7 @@ final class NowPlayingController: ObservableObject, MediaControllerProtocol {
     private var watchdogTask: Task<Void, Never>?
     private var adapterGeneration = 0
     private var consecutiveFailures = 0
+    private var adapterStartedAt: Date?
     private var lastAdapterUpdate: Date?
 
     // MARK: - Initialization
@@ -230,6 +233,7 @@ final class NowPlayingController: ObservableObject, MediaControllerProtocol {
 
             self.process = process
             self.pipeHandler = pipeHandler
+            self.adapterStartedAt = Date()
 
             do {
                 try process.run()
@@ -272,6 +276,9 @@ final class NowPlayingController: ObservableObject, MediaControllerProtocol {
     @MainActor
     private func adapterDidStop(generation: Int) {
         guard generation == adapterGeneration else { return }
+        // EOF and Process.terminationHandler can report the same failure. Move
+        // the generation forward so only the first report schedules recovery.
+        adapterGeneration += 1
 
         streamTask?.cancel()
         streamTask = nil
@@ -327,7 +334,7 @@ final class NowPlayingController: ObservableObject, MediaControllerProtocol {
                 } catch {
                     return
                 }
-                await self?.checkAdapterHealth()
+                self?.checkAdapterHealth()
             }
         }
     }
@@ -342,8 +349,19 @@ final class NowPlayingController: ObservableObject, MediaControllerProtocol {
             return
         }
 
+        if lastAdapterUpdate == nil,
+           let adapterStartedAt,
+           Date().timeIntervalSince(adapterStartedAt) > 15 {
+            NSLog("MediaRemote adapter did not deliver its initial state; rebuilding its stream")
+            consecutiveFailures += 1
+            restartNowPlayingObserver()
+            return
+        }
+
         guard let lastAdapterUpdate else { return }
-        let timeout: TimeInterval = playbackState.isPlaying ? 45 : 300
+        // MediaRemote is event driven and can legitimately be quiet for a full
+        // track, so use conservative thresholds to avoid process churn.
+        let timeout: TimeInterval = playbackState.isPlaying ? 180 : 300
         if Date().timeIntervalSince(lastAdapterUpdate) > timeout {
             NSLog("MediaRemote adapter timed out; rebuilding its stream")
             consecutiveFailures += 1
@@ -353,8 +371,15 @@ final class NowPlayingController: ObservableObject, MediaControllerProtocol {
 
     @MainActor
     private func ensureAdapterIsResponsive() {
+        if process?.isRunning == true,
+           lastAdapterUpdate == nil,
+           let adapterStartedAt,
+           Date().timeIntervalSince(adapterStartedAt) <= 15 {
+            return
+        }
+
         let updateIsStale = lastAdapterUpdate.map {
-            Date().timeIntervalSince($0) > 15
+            Date().timeIntervalSince($0) > 60
         } ?? true
 
         if process?.isRunning != true || updateIsStale {
@@ -465,12 +490,12 @@ final class NowPlayingController: ObservableObject, MediaControllerProtocol {
     
 }
 
-struct NowPlayingUpdate: Codable {
+struct NowPlayingUpdate: Codable, Sendable {
     let payload: NowPlayingPayload
     let diff: Bool?
 }
 
-struct NowPlayingPayload: Codable {
+struct NowPlayingPayload: Codable, Sendable {
     let title: String?
     let artist: String?
     let album: String?
@@ -500,7 +525,10 @@ actor JSONLinesPipeHandler {
         return pipe
     }
     
-    func readJSONLines<T: Decodable>(as type: T.Type, onLine: @escaping (T) async -> Void) async {
+    func readJSONLines<T: Decodable & Sendable>(
+        as type: T.Type,
+        onLine: @escaping @Sendable (T) async -> Void
+    ) async {
         do {
             for try await line in fileHandle.bytes.lines {
                 try Task.checkCancellation()

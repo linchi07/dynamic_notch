@@ -147,6 +147,7 @@ struct GeneralSettings: View {
     @Default(.automaticallySwitchDisplay) var automaticallySwitchDisplay
     @Default(.enableGestures) var enableGestures
     @Default(.openNotchOnHover) var openNotchOnHover
+    @Default(.hideNotchOption) var hideNotchOption
     
 
     var body: some View {
@@ -159,6 +160,7 @@ struct GeneralSettings: View {
                     Text("Show menu bar icon")
                 }
                 .tint(.effectiveAccent)
+                .disabled(hideNotchOption != .never)
                 LaunchAtLogin.Toggle("Launch at login")
                 Defaults.Toggle(key: .showOnAllDisplays) {
                     Text("Show on all displays")
@@ -190,6 +192,10 @@ struct GeneralSettings: View {
                     .disabled(showOnAllDisplays)
             } header: {
                 Text("System features")
+            } footer: {
+                if hideNotchOption != .never {
+                    Text("The menu bar icon stays visible while automatic notch hiding is enabled, so Settings and Quit remain accessible.")
+                }
             }
 
             Section {
@@ -676,6 +682,11 @@ struct Media: View {
                     Text("Hide for media app only").tag(
                         HideNotchOption.nowPlayingOnly)
                     Text("Never hide").tag(HideNotchOption.never)
+                }
+                .onChange(of: hideNotchOption) { _, option in
+                    if option != .never {
+                        Defaults[.menubarIcon] = true
+                    }
                 }
             } header: {
                 Text("Media playback live activity")

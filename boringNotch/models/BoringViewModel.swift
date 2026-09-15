@@ -63,7 +63,12 @@ class BoringViewModel: NSObject, ObservableObject {
             .map { shelf, drag, general in
                 shelf || drag || general
             }
-            .assign(to: \.anyDropZoneTargeting, on: self)
+            // Subscribers.Assign strongly retains its target. Since this model also
+            // owns the cancellable, using assign(to:on:) creates a permanent cycle
+            // every time a display-specific view model is replaced.
+            .sink { [weak self] isTargeting in
+                self?.anyDropZoneTargeting = isTargeting
+            }
             .store(in: &cancellables)
         
         setupDetectorObserver()

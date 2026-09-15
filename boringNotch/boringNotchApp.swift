@@ -21,6 +21,12 @@ struct DynamicNotchApp: App {
     let updaterController: SPUStandardUpdaterController
 
     init() {
+        // Never launch as an accessory-only app with every visible entry point
+        // disabled. Existing preferences from older versions are repaired here.
+        if Defaults[.hideNotchOption] != .never && !Defaults[.menubarIcon] {
+            Defaults[.menubarIcon] = true
+        }
+
         updaterController = SPUStandardUpdaterController(
             startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
 
@@ -86,6 +92,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             DistributedNotificationCenter.default().removeObserver(observer)
             screenUnlockedObserver = nil
         }
+        if let observer = windowScreenDidChangeObserver {
+            NotificationCenter.default.removeObserver(observer)
+            windowScreenDidChangeObserver = nil
+        }
         MusicManager.shared.destroy()
         cleanupDragDetectors()
         cleanupWindows()
@@ -96,6 +106,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func onScreenLocked(_ notification: Notification) {
         isScreenLocked = true
         if !Defaults[.showOnLockScreen] {
+            screenConfigurationTask?.cancel()
+            screenConfigurationTask = nil
             windowRecoveryTask?.cancel()
             cleanupDragDetectors()
             hideAllNotchWindows()
@@ -233,10 +245,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         } else if let window = window {
             window.close()
             NotchSpaceManager.shared.notchSpace.windows.remove(window)
-            if let obs = windowScreenDidChangeObserver {
-                NotificationCenter.default.removeObserver(obs)
-                windowScreenDidChangeObserver = nil
-            }
             self.window = nil
         }
     }
@@ -328,15 +336,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         window.orderFrontRegardless()
         NotchSpaceManager.shared.notchSpace.windows.insert(window)
 
-        // Observe when the window's screen changes so we can update drag detectors
-        windowScreenDidChangeObserver = NotificationCenter.default.addObserver(
-            forName: NSWindow.didChangeScreenNotification,
-            object: window,
-            queue: .main) { [weak self] _ in
-                Task { @MainActor in
-                    self?.setupDragDetectors()
-                }
-        }
         return window
     }
 
@@ -353,9 +352,25 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 y: screenFrame.origin.y + screenFrame.height - window.frame.height
             ))
         window.alphaValue = 1
+        if !isScreenLocked || Defaults[.showOnLockScreen] {
+            window.orderFrontRegardless()
+        }
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+
+        // Use one app-wide observer. Registering a new block observer for every
+        // recreated notch window leaked observer tokens across display changes.
+        windowScreenDidChangeObserver = NotificationCenter.default.addObserver(
+            forName: NSWindow.didChangeScreenNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard notification.object is BoringNotchSkyLightWindow else { return }
+            Task { @MainActor in
+                self?.setupDragDetectors()
+            }
+        }
 
         NotificationCenter.default.addObserver(
             self,
@@ -542,10 +557,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         previousScreens = currentScreens
 
         if screensChanged {
-            DispatchQueue.main.async { [weak self] in
-                self?.cleanupWindows()
-                self?.adjustWindowPosition()
-                self?.setupDragDetectors()
+            screenConfigurationTask?.cancel()
+            screenConfigurationTask = Task { @MainActor [weak self] in
+                do {
+                    try await Task.sleep(for: .milliseconds(350))
+                } catch {
+                    return
+                }
+                guard let self else { return }
+                self.screenConfigurationTask = nil
+                guard !self.isScreenLocked else { return }
+                self.scheduleWindowRecovery(changeAlpha: true, debounce: .zero)
             }
         }
     }
@@ -597,6 +619,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             } else {
                 if let window = window {
                     window.alphaValue = 0
+                    window.orderOut(nil)
                 }
                 return
             }
