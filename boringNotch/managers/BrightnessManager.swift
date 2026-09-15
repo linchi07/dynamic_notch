@@ -14,6 +14,9 @@ final class BrightnessManager: ObservableObject {
 
 	private let visibleDuration: TimeInterval = 1.2
 	private let client = XPCHelperClient.shared
+	private var pendingRelativeDelta: Float = 0
+	private var pendingAbsoluteValue: Float?
+	private var updateTask: Task<Void, Never>?
 
 	private init() { refresh() }
 
@@ -28,43 +31,91 @@ final class BrightnessManager: ObservableObject {
 	}
 
 	@MainActor func setRelative(delta: Float) {
-		Task { @MainActor in
-			let starting = await client.currentScreenBrightness() ?? rawBrightness
-			let target = max(0, min(1, starting + delta))
-			let ok = await client.setScreenBrightness(target)
-			if ok {
-				publish(brightness: target, touchDate: true)
-			} else {
-				refresh()
-			}
-			BoringViewCoordinator.shared.toggleSneakPeek(status: true, type: .brightness, value: CGFloat(target))
-			if (starting >= 0.999 || target >= 0.999) && delta > 0 {
-				NotificationCenter.default.post(name: .notchBoundaryHit, object: true)
-			} else if (starting <= 0.001 || target <= 0.001) && delta < 0 {
-				NotificationCenter.default.post(name: .notchBoundaryHit, object: false)
-			}
-		}
+		pendingRelativeDelta += delta
+		startUpdateLoop()
 	}
 
 	func setAbsolute(value: Float) {
 		let clamped = max(0, min(1, value))
-		Task { @MainActor in
-			let ok = await client.setScreenBrightness(clamped)
-			if ok {
-				publish(brightness: clamped, touchDate: true)
-			} else {
-				refresh()
-			}
+		Task { @MainActor [weak self] in
+			guard let self else { return }
+			// An absolute slider position supersedes older queued deltas. Any
+			// relative input arriving afterwards is applied on top of this value.
+			self.pendingAbsoluteValue = clamped
+			self.pendingRelativeDelta = 0
+			self.startUpdateLoop()
 		}
 	}
 
-	private func publish(brightness: Float, touchDate: Bool) {
-		DispatchQueue.main.async {
-			if self.rawBrightness != brightness || touchDate {
-				if touchDate { self.lastChangeAt = Date() }
-				self.rawBrightness = brightness
-				self.animatedBrightness = brightness
+	@MainActor
+	private func startUpdateLoop() {
+		guard updateTask == nil else { return }
+		updateTask = Task { @MainActor [weak self] in
+			await self?.drainPendingUpdates()
+		}
+	}
+
+	@MainActor
+	private func drainPendingUpdates() async {
+		var current = rawBrightness
+		var hasAuthoritativeCurrent = false
+
+		while !Task.isCancelled {
+			if pendingAbsoluteValue == nil,
+			   pendingRelativeDelta != 0,
+			   !hasAuthoritativeCurrent {
+				current = await client.currentScreenBrightness() ?? current
+				hasAuthoritativeCurrent = true
+				continue
 			}
+
+			let absolute = pendingAbsoluteValue
+			let delta = pendingRelativeDelta
+			guard absolute != nil || delta != 0 else { break }
+
+			pendingAbsoluteValue = nil
+			pendingRelativeDelta = 0
+			let starting = absolute ?? current
+			let target = max(0, min(1, starting + delta))
+
+			if await client.setScreenBrightness(target) {
+				current = target
+				hasAuthoritativeCurrent = true
+				publish(brightness: target, touchDate: true)
+				if absolute == nil {
+					BoringViewCoordinator.shared.toggleSneakPeek(
+						status: true,
+						type: .brightness,
+						value: CGFloat(target)
+					)
+					notifyBoundaryHit(starting: starting, target: target, delta: delta)
+				}
+			} else {
+				hasAuthoritativeCurrent = false
+			}
+		}
+
+		updateTask = nil
+		if pendingAbsoluteValue != nil || pendingRelativeDelta != 0 {
+			startUpdateLoop()
+		}
+	}
+
+	@MainActor
+	private func notifyBoundaryHit(starting: Float, target: Float, delta: Float) {
+		if (starting >= 0.999 || target >= 0.999) && delta > 0 {
+			NotificationCenter.default.post(name: .notchBoundaryHit, object: true)
+		} else if (starting <= 0.001 || target <= 0.001) && delta < 0 {
+			NotificationCenter.default.post(name: .notchBoundaryHit, object: false)
+		}
+	}
+
+	@MainActor
+	private func publish(brightness: Float, touchDate: Bool) {
+		if rawBrightness != brightness || touchDate {
+			if touchDate { lastChangeAt = Date() }
+			rawBrightness = brightness
+			animatedBrightness = brightness
 		}
 	}
 }
@@ -80,6 +131,9 @@ final class KeyboardBacklightManager: ObservableObject {
 
 	private let visibleDuration: TimeInterval = 1.2
 	private let client = XPCHelperClient.shared
+	private var pendingRelativeDelta: Float = 0
+	private var pendingAbsoluteValue: Float?
+	private var updateTask: Task<Void, Never>?
 
 	private init() { refresh() }
 
@@ -94,47 +148,88 @@ final class KeyboardBacklightManager: ObservableObject {
 	}
 
 	@MainActor func setRelative(delta: Float) {
-		Task { @MainActor in
-			let starting = await client.currentKeyboardBrightness() ?? rawBrightness
-			let target = max(0, min(1, starting + delta))
-			let ok = await client.setKeyboardBrightness(target)
-			if ok {
-				publish(brightness: target, touchDate: true)
-			} else {
-				refresh()
-			}
-			BoringViewCoordinator.shared.toggleSneakPeek(
-				status: true,
-				type: .backlight,
-				value: CGFloat(target)
-			)
-			if (starting >= 0.999 || target >= 0.999) && delta > 0 {
-				NotificationCenter.default.post(name: .notchBoundaryHit, object: true)
-			} else if (starting <= 0.001 || target <= 0.001) && delta < 0 {
-				NotificationCenter.default.post(name: .notchBoundaryHit, object: false)
-			}
-		}
+		pendingRelativeDelta += delta
+		startUpdateLoop()
 	}
 
 	func setAbsolute(value: Float) {
 		let clamped = max(0, min(1, value))
-		Task { @MainActor in
-			let ok = await client.setKeyboardBrightness(clamped)
-			if ok {
-				publish(brightness: clamped, touchDate: true)
-			} else {
-				refresh()
-			}
+		Task { @MainActor [weak self] in
+			guard let self else { return }
+			self.pendingAbsoluteValue = clamped
+			self.pendingRelativeDelta = 0
+			self.startUpdateLoop()
 		}
 	}
 
-	private func publish(brightness: Float, touchDate: Bool) {
-		DispatchQueue.main.async {
-			if self.rawBrightness != brightness || touchDate {
-				if touchDate { self.lastChangeAt = Date() }
-				self.rawBrightness = brightness
+	@MainActor
+	private func startUpdateLoop() {
+		guard updateTask == nil else { return }
+		updateTask = Task { @MainActor [weak self] in
+			await self?.drainPendingUpdates()
+		}
+	}
+
+	@MainActor
+	private func drainPendingUpdates() async {
+		var current = rawBrightness
+		var hasAuthoritativeCurrent = false
+
+		while !Task.isCancelled {
+			if pendingAbsoluteValue == nil,
+			   pendingRelativeDelta != 0,
+			   !hasAuthoritativeCurrent {
+				current = await client.currentKeyboardBrightness() ?? current
+				hasAuthoritativeCurrent = true
+				continue
 			}
+
+			let absolute = pendingAbsoluteValue
+			let delta = pendingRelativeDelta
+			guard absolute != nil || delta != 0 else { break }
+
+			pendingAbsoluteValue = nil
+			pendingRelativeDelta = 0
+			let starting = absolute ?? current
+			let target = max(0, min(1, starting + delta))
+
+			if await client.setKeyboardBrightness(target) {
+				current = target
+				hasAuthoritativeCurrent = true
+				publish(brightness: target, touchDate: true)
+				if absolute == nil {
+					BoringViewCoordinator.shared.toggleSneakPeek(
+						status: true,
+						type: .backlight,
+						value: CGFloat(target)
+					)
+					notifyBoundaryHit(starting: starting, target: target, delta: delta)
+				}
+			} else {
+				hasAuthoritativeCurrent = false
+			}
+		}
+
+		updateTask = nil
+		if pendingAbsoluteValue != nil || pendingRelativeDelta != 0 {
+			startUpdateLoop()
+		}
+	}
+
+	@MainActor
+	private func notifyBoundaryHit(starting: Float, target: Float, delta: Float) {
+		if (starting >= 0.999 || target >= 0.999) && delta > 0 {
+			NotificationCenter.default.post(name: .notchBoundaryHit, object: true)
+		} else if (starting <= 0.001 || target <= 0.001) && delta < 0 {
+			NotificationCenter.default.post(name: .notchBoundaryHit, object: false)
+		}
+	}
+
+	@MainActor
+	private func publish(brightness: Float, touchDate: Bool) {
+		if rawBrightness != brightness || touchDate {
+			if touchDate { lastChangeAt = Date() }
+			rawBrightness = brightness
 		}
 	}
 }
-
