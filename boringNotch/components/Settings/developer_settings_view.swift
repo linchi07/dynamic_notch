@@ -5,12 +5,14 @@
 //  Created on 2026-09-14.
 //
 
+import Defaults
 import SwiftUI
 
 /// Developer control panel for testing floating notifications, battery ejection states, and debug toggles
 struct DeveloperSettingsView: View {
     @ObservedObject private var coordinator = BoringViewCoordinator.shared
     @ObservedObject private var batteryModel = BatteryStatusViewModel.shared
+    @Default(.notchOuterPadding) private var notchOuterPadding
 
     @State private var simulatedLevel: Float = 85.0
     @State private var simulatedIsPluggedIn: Bool = true
@@ -29,6 +31,15 @@ struct DeveloperSettingsView: View {
                     Text("Idle、Active 和 Notification 使用同一状态模型。所有 Active 都严格保持与音乐播放一致的固定长度。")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
+
+                    HStack {
+                        Text("Active 外侧留白")
+                        Slider(value: $notchOuterPadding, in: 0...24, step: 1)
+                        Text("\(Int(notchOuterPadding)) pt")
+                            .monospacedDigit()
+                            .foregroundStyle(.secondary)
+                            .frame(width: 44, alignment: .trailing)
+                    }
 
                     HStack {
                         Button("单 Activity（占据两侧）") {

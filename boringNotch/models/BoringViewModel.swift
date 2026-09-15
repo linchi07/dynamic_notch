@@ -197,6 +197,12 @@ class BoringViewModel: NSObject, ObservableObject {
     func open() {
         self.notchSize = openNotchSize
         self.notchState = .open
+
+        // Playback is the primary expanded experience. Shelf remains available
+        // from the bottom navigation after the notch opens.
+        if MusicManager.shared.isPlaying {
+            coordinator.currentView = .home
+        }
         
         // Force music information update when notch is opened
         MusicManager.shared.forceUpdate()

@@ -20,6 +20,7 @@ struct ContentView: View {
 
     @ObservedObject var coordinator = BoringViewCoordinator.shared
     @ObservedObject var musicManager = MusicManager.shared
+    @ObservedObject private var shelfState = ShelfStateViewModel.shared
     @ObservedObject var brightnessManager = BrightnessManager.shared
     @ObservedObject var volumeManager = VolumeManager.shared
     @State private var hoverTask: Task<Void, Never>?
@@ -33,6 +34,7 @@ struct ContentView: View {
     @Namespace var albumArtNamespace
 
     @Default(.useMusicVisualizer) var useMusicVisualizer
+    @Default(.notchOuterPadding) private var notchOuterPadding
 
     @Default(.showNotHumanFace) var showNotHumanFace
     @Default(.closedNotchHUDStyle) var closedNotchHUDStyle
@@ -90,6 +92,10 @@ struct ContentView: View {
         }
     }
 
+    private var shouldShowBottomNavigation: Bool {
+        Defaults[.boringShelf] && (!shelfState.isEmpty || coordinator.alwaysShowTabs)
+    }
+
     private var topCornerRadius: CGFloat {
        ((vm.notchState == .open) && Defaults[.cornerRadiusScaling])
                 ? cornerRadiusInsets.opened.top
@@ -111,7 +117,8 @@ struct ContentView: View {
         if case .active = effectiveDisplayMode, vm.notchState == .closed {
             chinWidth = NotchLayoutMetrics.activeWidth(
                 physicalNotchWidth: vm.closedNotchSize.width,
-                notchHeight: vm.effectiveClosedNotchHeight
+                notchHeight: vm.effectiveClosedNotchHeight,
+                outerPadding: notchOuterPadding
             )
         } else if vm.notchState == .closed
             && (!musicManager.isPlaying && musicManager.isPlayerIdle) && Defaults[.showNotHumanFace]
@@ -406,14 +413,22 @@ struct ContentView: View {
               }
               .zIndex(2)
             if vm.notchState == .open {
-                VStack {
+                VStack(spacing: 6) {
                     switch coordinator.currentView {
                     case .home:
                         NotchHomeView(albumArtNamespace: albumArtNamespace)
                     case .shelf:
                         ShelfView()
                     }
+
+                    if shouldShowBottomNavigation {
+                        Spacer(minLength: 0)
+                        TabSelectionView()
+                            .padding(.bottom, 2)
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                    }
                 }
+                .frame(maxHeight: .infinity)
                 .transition(
                     .scale(scale: 0.8, anchor: .top)
                     .combined(with: .opacity)

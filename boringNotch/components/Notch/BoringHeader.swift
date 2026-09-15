@@ -8,101 +8,105 @@
 import Defaults
 import SwiftUI
 
+/// The expanded notch header keeps compact status controls on both sides of
+/// the physical notch. Primary navigation lives in the bottom bar.
 struct BoringHeader: View {
-    @EnvironmentObject var vm: BoringViewModel
-    @ObservedObject var batteryModel = BatteryStatusViewModel.shared
-    @ObservedObject var coordinator = BoringViewCoordinator.shared
-    @StateObject var tvm = ShelfStateViewModel.shared
+    @EnvironmentObject private var vm: BoringViewModel
+    @ObservedObject private var batteryModel = BatteryStatusViewModel.shared
+    @ObservedObject private var coordinator = BoringViewCoordinator.shared
+
     var body: some View {
         HStack(spacing: 0) {
-            HStack {
-                if (!tvm.isEmpty || coordinator.alwaysShowTabs) && Defaults[.boringShelf] {
-                    TabSelectionView()
-                } else if vm.notchState == .open {
-                    EmptyView()
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .opacity(vm.notchState == .closed ? 0 : 1)
-            .blur(radius: vm.notchState == .closed ? 20 : 0)
-            .zIndex(2)
+            leadingStatus
+                .frame(maxWidth: .infinity, alignment: .leading)
 
             if vm.notchState == .open {
                 Rectangle()
-                    .fill(NSScreen.screen(withUUID: coordinator.selectedScreenUUID)?.safeAreaInsets.top ?? 0 > 0 ? .black : .clear)
+                    .fill(hasPhysicalNotch ? .black : .clear)
                     .frame(width: vm.closedNotchSize.width)
-                    .mask {
-                        NotchShape()
-                    }
+                    .mask { NotchShape() }
             }
 
+            trailingStatus
+                .frame(maxWidth: .infinity, alignment: .trailing)
+        }
+        .foregroundStyle(.gray)
+        .opacity(vm.notchState == .closed ? 0 : 1)
+        .blur(radius: vm.notchState == .closed ? 20 : 0)
+        .font(.system(.headline, design: .rounded))
+    }
+
+    private var hasPhysicalNotch: Bool {
+        NSScreen.screen(withUUID: coordinator.selectedScreenUUID)?.safeAreaInsets.top ?? 0 > 0
+    }
+
+    @ViewBuilder
+    private var leadingStatus: some View {
+        if vm.notchState == .open {
             HStack(spacing: 4) {
-                if vm.notchState == .open {
-                    if isHUDType(coordinator.sneakPeek.type) && coordinator.sneakPeek.show && Defaults[.showOpenNotchHUD] {
-                        OpenNotchHUD(type: $coordinator.sneakPeek.type, value: $coordinator.sneakPeek.value, icon: $coordinator.sneakPeek.icon)
-                            .transition(.scale(scale: 0.8).combined(with: .opacity))
-                    } else {
-                        if Defaults[.showMirror] {
-                            Button(action: {
-                                vm.toggleCameraPreview()
-                            }) {
-                                Capsule()
-                                    .fill(.black)
-                                    .frame(width: 30, height: 30)
-                                    .overlay {
-                                        Image(systemName: "web.camera")
-                                            .foregroundColor(.white)
-                                            .padding()
-                                            .imageScale(.medium)
-                                    }
-                            }
-                            .buttonStyle(PlainButtonStyle())
-                        }
-                        if Defaults[.settingsIconInNotch] {
-                            Button(action: {
-                                DispatchQueue.main.async {
-                                    SettingsWindowController.shared.showWindow()
-                                }
-                                
-                            }) {
-                                Capsule()
-                                    .fill(.black)
-                                    .frame(width: 30, height: 30)
-                                    .overlay {
-                                        Image(systemName: "gear")
-                                            .foregroundColor(.white)
-                                            .padding()
-                                            .imageScale(.medium)
-                                    }
-                            }
-                            .buttonStyle(PlainButtonStyle())
-                        }
-                        if Defaults[.showBatteryIndicator] {
-                            BoringBatteryView(
-                                batteryWidth: 30,
-                                isCharging: batteryModel.isCharging,
-                                isInLowPowerMode: batteryModel.isInLowPowerMode,
-                                isPluggedIn: batteryModel.isPluggedIn,
-                                levelBattery: batteryModel.levelBattery,
-                                maxCapacity: batteryModel.maxCapacity,
-                                timeToFullCharge: batteryModel.timeToFullCharge,
-                                isForNotification: false
-                            )
+                if Defaults[.showMirror] {
+                    headerButton(systemName: "web.camera") {
+                        vm.toggleCameraPreview()
+                    }
+                }
+
+                if Defaults[.settingsIconInNotch] {
+                    headerButton(systemName: "gear") {
+                        DispatchQueue.main.async {
+                            SettingsWindowController.shared.showWindow()
                         }
                     }
                 }
             }
-            .font(.system(.headline, design: .rounded))
-            .frame(maxWidth: .infinity, alignment: .trailing)
-            .opacity(vm.notchState == .closed ? 0 : 1)
-            .blur(radius: vm.notchState == .closed ? 20 : 0)
-            .zIndex(2)
         }
-        .foregroundColor(.gray)
-        .environmentObject(vm)
     }
 
-    func isHUDType(_ type: SneakContentType) -> Bool {
+    @ViewBuilder
+    private var trailingStatus: some View {
+        if vm.notchState == .open {
+            if isHUDType(coordinator.sneakPeek.type)
+                && coordinator.sneakPeek.show
+                && Defaults[.showOpenNotchHUD]
+            {
+                OpenNotchHUD(
+                    type: $coordinator.sneakPeek.type,
+                    value: $coordinator.sneakPeek.value,
+                    icon: $coordinator.sneakPeek.icon
+                )
+                .transition(.scale(scale: 0.8).combined(with: .opacity))
+            } else if Defaults[.showBatteryIndicator] {
+                BoringBatteryView(
+                    batteryWidth: 30,
+                    isCharging: batteryModel.isCharging,
+                    isInLowPowerMode: batteryModel.isInLowPowerMode,
+                    isPluggedIn: batteryModel.isPluggedIn,
+                    levelBattery: batteryModel.levelBattery,
+                    maxCapacity: batteryModel.maxCapacity,
+                    timeToFullCharge: batteryModel.timeToFullCharge,
+                    isForNotification: false
+                )
+            }
+        }
+    }
+
+    private func headerButton(
+        systemName: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Capsule()
+                .fill(.black)
+                .frame(width: 30, height: 30)
+                .overlay {
+                    Image(systemName: systemName)
+                        .foregroundStyle(.white)
+                        .imageScale(.medium)
+                }
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func isHUDType(_ type: SneakContentType) -> Bool {
         switch type {
         case .volume, .brightness, .backlight, .mic:
             return true

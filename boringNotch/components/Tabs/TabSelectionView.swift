@@ -46,6 +46,8 @@ struct TabSelectionView: View {
                     }
             }
         }
+        .padding(3)
+        .background(Capsule().fill(Color.white.opacity(0.07)))
         .clipShape(Capsule())
     }
 }

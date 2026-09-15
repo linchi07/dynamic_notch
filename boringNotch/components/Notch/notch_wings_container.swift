@@ -5,6 +5,7 @@
 //  Created on 2026-09-15.
 //
 
+import Defaults
 import SwiftUI
 
 /// Fixed-width active notch. Visuals touch the physical notch on their inner
@@ -12,6 +13,7 @@ import SwiftUI
 struct NotchWingsContainer: View {
     @EnvironmentObject private var vm: BoringViewModel
     @ObservedObject private var musicManager = MusicManager.shared
+    @Default(.notchOuterPadding) private var outerPadding
 
     let state: NotchActiveState
 
@@ -20,7 +22,10 @@ struct NotchWingsContainer: View {
     }
 
     private var wingWidth: CGFloat {
-        NotchLayoutMetrics.wingWidth(for: vm.effectiveClosedNotchHeight)
+        NotchLayoutMetrics.wingWidth(
+            for: vm.effectiveClosedNotchHeight,
+            outerPadding: outerPadding
+        )
     }
 
     var body: some View {
@@ -39,7 +44,8 @@ struct NotchWingsContainer: View {
         .frame(
             width: NotchLayoutMetrics.activeWidth(
                 physicalNotchWidth: vm.closedNotchSize.width,
-                notchHeight: vm.effectiveClosedNotchHeight
+                notchHeight: vm.effectiveClosedNotchHeight,
+                outerPadding: outerPadding
             ),
             height: vm.effectiveClosedNotchHeight
         )
@@ -65,7 +71,7 @@ struct NotchWingsContainer: View {
             if let item {
                 activityVisual(item)
                     .frame(width: visualSize, height: visualSize)
-                    .padding(edge.outerPaddingEdge, NotchLayoutMetrics.outerWingPadding)
+                    .padding(edge.outerPaddingEdge, outerPadding)
                     .accessibilityLabel(item.accessibilityLabel)
             }
         }

@@ -901,6 +901,9 @@
         }
       }
     },
+    "%lld pt" : {
+
+    },
     "%lld%%" : {
       "localizations" : {
         "ar" : {
@@ -1721,6 +1724,9 @@
           }
         }
       }
+    },
+    "Active 外侧留白" : {
+
     },
     "Add" : {
       "localizations" : {
