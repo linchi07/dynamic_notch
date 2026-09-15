@@ -16,7 +16,7 @@ struct InlineHUD: View {
     @Binding var hoverAnimation: Bool
     @Binding var gestureProgress: CGFloat
     var body: some View {
-        HStack {
+        HStack(spacing: 0) {
             HStack(spacing: 5) {
                 Group {
                     switch (type) {
@@ -61,11 +61,12 @@ struct InlineHUD: View {
                     .allowsTightening(true)
                     .contentTransition(.numericText())
             }
+            .padding(.leading, 8)
             .frame(width: 100 - (hoverAnimation ? 0 : 12) + gestureProgress / 2, height: vm.notchSize.height - (hoverAnimation ? 0 : 12), alignment: .leading)
             
             Rectangle()
                 .fill(.black)
-                .frame(width: vm.closedNotchSize.width - 20)
+                .frame(width: vm.closedNotchSize.width)
             
             HStack {
                 if (type == .mic) {

@@ -23,6 +23,93 @@ struct DeveloperSettingsView: View {
     var body: some View {
         Form {
             Section {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("刘海状态与 Activity 演示")
+                        .font(.headline)
+                    Text("Idle、Active 和 Notification 使用同一状态模型。所有 Active 都严格保持与音乐播放一致的固定长度。")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+
+                    HStack {
+                        Button("单 Activity（占据两侧）") {
+                            coordinator.setActiveState(
+                                NotchActiveState(
+                                    activity: NotchLiveActivity(
+                                        id: "single.download",
+                                        leading: NotchActivityItem(
+                                            visual: .system(name: "arrow.down.circle.fill"),
+                                            tintColor: .cyan,
+                                            accessibilityLabel: "Download"
+                                        ),
+                                        trailing: NotchActivityItem(
+                                            visual: .system(name: "chart.bar.fill"),
+                                            tintColor: .cyan,
+                                            accessibilityLabel: "Download progress",
+                                            isPulsing: true
+                                        )
+                                    )
+                                )
+                            )
+                        }
+
+                        Button("双 Activity（各占一侧）") {
+                            coordinator.setActiveState(
+                                NotchActiveState(
+                                    activities: [
+                                        NotchLiveActivity(
+                                            id: "left.music",
+                                            leading: NotchActivityItem(
+                                                visual: .system(name: "music.note"),
+                                                tintColor: .pink,
+                                                accessibilityLabel: "Music"
+                                            )
+                                        ),
+                                        NotchLiveActivity(
+                                            id: "right.download",
+                                            trailing: NotchActivityItem(
+                                                visual: .system(name: "arrow.down.circle.fill"),
+                                                tintColor: .cyan,
+                                                accessibilityLabel: "Download"
+                                            )
+                                        )
+                                    ]
+                                )
+                            )
+                        }
+                    }
+
+                    HStack {
+                        Button("Notification 胶囊") {
+                            coordinator.postNotification(
+                                title: "AirDrop Received",
+                                message: "DynamicNotch.zip",
+                                iconName: "airdrop",
+                                iconColor: .cyan,
+                                iconBackground: Color.cyan.opacity(0.18),
+                                trailingText: "Now",
+                                duration: 2.5
+                            )
+                        }
+
+                        Button("运行 Notification → Active → Notification") {
+                            runComboDemo()
+                        }
+                        .buttonStyle(.borderedProminent)
+                    }
+
+                    HStack {
+                        Button("恢复 Idle") {
+                            coordinator.clearDisplayMode()
+                            coordinator.dismissNotification()
+                        }
+                        .foregroundStyle(.secondary)
+                    }
+                }
+                .padding(.vertical, 4)
+            } header: {
+                Text("统一状态模型")
+            }
+            Section {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("电池状态胶囊快速触发")
                         .font(.headline)
@@ -228,5 +315,59 @@ struct DeveloperSettingsView: View {
             timeToFullCharge: timeToFull,
             duration: duration
         )
+    }
+
+    private func runComboDemo() {
+        let initialNotification = FloatingNotificationItem(
+            iconName: "arrow.down.circle.fill",
+            iconColor: .cyan,
+            iconBackground: Color.cyan.opacity(0.18),
+            title: "下载已开始",
+            message: "Xcode_16.dmg",
+            trailingText: "0%",
+            duration: 2.0
+        )
+
+        let activeState = NotchActiveState(
+            activity: NotchLiveActivity(
+                id: "combo.download",
+                leading: NotchActivityItem(
+                    visual: .system(name: "arrow.down"),
+                    tintColor: .cyan,
+                    accessibilityLabel: "Xcode download"
+                ),
+                trailing: NotchActivityItem(
+                    visual: .system(name: "circle.dotted"),
+                    tintColor: .cyan,
+                    accessibilityLabel: "68 percent",
+                    isPulsing: true
+                )
+            )
+        )
+
+        let completionNotification = FloatingNotificationItem(
+            iconName: "checkmark.circle.fill",
+            iconColor: .green,
+            iconBackground: Color.green.opacity(0.18),
+            title: "下载完成",
+            message: "Xcode_16.dmg 已保存",
+            trailingText: "完成",
+            duration: 3.0
+        )
+
+        let combo = NotchComboActivity(
+            initialNotification: initialNotification,
+            initialNotifyDuration: 2.0,
+            activeState: activeState,
+            completionNotification: completionNotification
+        )
+
+        coordinator.startComboActivity(combo)
+
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(5.0))
+            guard coordinator.activeCombo?.id == combo.id else { return }
+            coordinator.finishComboActivity()
+        }
     }
 }

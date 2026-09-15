@@ -84,10 +84,10 @@ class BatteryStatusViewModel: ObservableObject {
             self.previousPluggedIn = isPluggedIn
 
             // Trigger notification when plugged into power source
-            if isPluggedIn && !wasPluggedIn {
+            if isPluggedIn && !wasPluggedIn && Defaults[.showPowerStatusNotifications] {
                 self.hasAlertedLowBatteryForCurrentCycle = false
                 self.triggerBatteryNotification(isLowBatteryAlert: false)
-            } else if !isPluggedIn {
+            } else if !isPluggedIn && wasPluggedIn && Defaults[.showPowerStatusNotifications] {
                 self.notifyImportanChangeStatus()
             }
 
@@ -105,7 +105,10 @@ class BatteryStatusViewModel: ObservableObject {
             }
 
             // Trigger red warning notification when falling to or below 20% on battery
-            if !self.isPluggedIn && level <= 20 && oldLevel > 20 && !self.hasAlertedLowBatteryForCurrentCycle {
+            if !self.isPluggedIn && level <= 20 && oldLevel > 20
+                && !self.hasAlertedLowBatteryForCurrentCycle
+                && Defaults[.showPowerStatusNotifications]
+            {
                 self.hasAlertedLowBatteryForCurrentCycle = true
                 self.triggerBatteryNotification(isLowBatteryAlert: true)
             }
@@ -120,7 +123,7 @@ class BatteryStatusViewModel: ObservableObject {
             self.previousLowPowerMode = isEnabled
 
             // Trigger yellow notification when low power mode is enabled
-            if isEnabled && !wasEnabled {
+            if isEnabled && !wasEnabled && Defaults[.showPowerStatusNotifications] {
                 self.triggerBatteryNotification(isLowBatteryAlert: false)
             }
 
@@ -134,7 +137,9 @@ class BatteryStatusViewModel: ObservableObject {
                     : (self.levelBattery < self.maxCapacity ? "Not charging" : "Full charge")
             }
 
-            if isCharging && self.isPluggedIn && self.previousPluggedIn == false {
+            if isCharging && self.isPluggedIn && self.previousPluggedIn == false
+                && Defaults[.showPowerStatusNotifications]
+            {
                 self.triggerBatteryNotification(isLowBatteryAlert: false)
             }
 
@@ -186,12 +191,13 @@ class BatteryStatusViewModel: ObservableObject {
         }
     }
 
-    /// Notifies important changes in the battery status with an optional delay
-    /// - Parameter delay: The delay before notifying the change, default is 0.0
+    /// Routes power disconnection through the same notification state as every
+    /// other battery event.
     private func notifyImportanChangeStatus(delay: Double = 0.0) {
-        Task {
+        Task { @MainActor in
             try? await Task.sleep(for: .seconds(delay))
-            self.coordinator.toggleExpandingView(status: true, type: .battery)
+            guard !Task.isCancelled else { return }
+            self.triggerBatteryNotification(isLowBatteryAlert: false)
         }
     }
 

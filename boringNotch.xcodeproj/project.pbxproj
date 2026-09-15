@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		111BEA902ED170010079DD4E /* notch_display_mode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 111BEA912ED170010079DD4E /* notch_display_mode.swift */; };
+		111BEA922ED170020079DD4E /* notch_wings_container.swift in Sources */ = {isa = PBXBuildFile; fileRef = 111BEA932ED170020079DD4E /* notch_wings_container.swift */; };
 		1100290C2E847E2800035A57 /* NSItemProvider+LoadHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1100290B2E847E2800035A57 /* NSItemProvider+LoadHelpers.swift */; };
 		110029272E84FD4C00035A57 /* TemporaryFileStorageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110029262E84FD4C00035A57 /* TemporaryFileStorageService.swift */; };
 		1100292A2E8691B400035A57 /* FileShareView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110029292E8691B400035A57 /* FileShareView.swift */; };
@@ -141,7 +143,6 @@
 		B1C4489B2C97376A001F0858 /* TipStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1C4489A2C97376A001F0858 /* TipStore.swift */; };
 		B1C974342C642B6D0000E707 /* MarqueeTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1C974332C642B6D0000E707 /* MarqueeTextView.swift */; };
 		B1CE8CFE2C6F659400DD9871 /* KeyboardShortcutsHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CE8CFD2C6F659400DD9871 /* KeyboardShortcutsHelper.swift */; };
-		B1D365CE2C6A979C0047BDBC /* LiveActivityModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1D365CD2C6A979C0047BDBC /* LiveActivityModifier.swift */; };
 		B1D365D02C6A9A6C0047BDBC /* SystemEventIndicatorModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1D365CF2C6A9A6C0047BDBC /* SystemEventIndicatorModifier.swift */; };
 		B1D6FD432C6603730015F173 /* SoftwareUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1D6FD422C6603730015F173 /* SoftwareUpdater.swift */; };
 		B1F0A0022E60000100000001 /* BrightnessManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1F0A0012E60000100000001 /* BrightnessManager.swift */; };
@@ -186,6 +187,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		111BEA912ED170010079DD4E /* notch_display_mode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = notch_display_mode.swift; sourceTree = "<group>"; };
+		111BEA932ED170020079DD4E /* notch_wings_container.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = notch_wings_container.swift; sourceTree = "<group>"; };
 		1100290B2E847E2800035A57 /* NSItemProvider+LoadHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSItemProvider+LoadHelpers.swift"; sourceTree = "<group>"; };
 		110029262E84FD4C00035A57 /* TemporaryFileStorageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemporaryFileStorageService.swift; sourceTree = "<group>"; };
 		110029292E8691B400035A57 /* FileShareView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileShareView.swift; sourceTree = "<group>"; };
@@ -315,7 +318,6 @@
 		B1C4489A2C97376A001F0858 /* TipStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TipStore.swift; sourceTree = "<group>"; };
 		B1C974332C642B6D0000E707 /* MarqueeTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarqueeTextView.swift; sourceTree = "<group>"; };
 		B1CE8CFD2C6F659400DD9871 /* KeyboardShortcutsHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardShortcutsHelper.swift; sourceTree = "<group>"; };
-		B1D365CD2C6A979C0047BDBC /* LiveActivityModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveActivityModifier.swift; sourceTree = "<group>"; };
 		B1D365CF2C6A9A6C0047BDBC /* SystemEventIndicatorModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemEventIndicatorModifier.swift; sourceTree = "<group>"; };
 		B1D6FD422C6603730015F173 /* SoftwareUpdater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoftwareUpdater.swift; sourceTree = "<group>"; };
 		B1F0A0012E60000100000001 /* BrightnessManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrightnessManager.swift; sourceTree = "<group>"; };
@@ -644,6 +646,7 @@
 				B19016232CC15B4D00E3F12E /* Constants.swift */,
 				14D570C82C5F38890011E668 /* BoringViewModel.swift */,
 				14D570CA2C5F4B2C0011E668 /* BatteryStatusViewModel.swift */,
+				111BEA912ED170010079DD4E /* notch_display_mode.swift */,
 				1153BD902D986DB300979FB0 /* PlaybackState.swift */,
 			);
 			path = models;
@@ -719,6 +722,7 @@
 				1160F8D72DD98230006FBB94 /* NotchShape.swift */,
 				9AB0C6BB2C73C9CB00F7CD30 /* NotchHomeView.swift */,
 				14D570C52C5F38210011E668 /* BoringHeader.swift */,
+				111BEA932ED170020079DD4E /* notch_wings_container.swift */,
 				14D570D12C5F6C6A0011E668 /* BoringExtrasMenu.swift */,
 				1471A8582C6281BD0058408D /* BoringNotchWindow.swift */,
 			);
@@ -745,7 +749,6 @@
 				115C12EB2ED3D003009754CA /* OpenNotchHUD.swift */,
 				14D570CC2C5F4BB70011E668 /* BoringBattery.swift */,
 				B1C974332C642B6D0000E707 /* MarqueeTextView.swift */,
-				B1D365CD2C6A979C0047BDBC /* LiveActivityModifier.swift */,
 				B1D365CF2C6A9A6C0047BDBC /* SystemEventIndicatorModifier.swift */,
 				14E9FEA92C70BF610062E83F /* DownloadView.swift */,
 				B172AABF2C95DA0B001623F1 /* InlineHUD.swift */,
@@ -927,7 +930,6 @@
 				11CC44A22CEE614100C7244B /* BoringViewCoordinator.swift in Sources */,
 				B186543C2C6F49AE000B926A /* ShortcutConstants.swift in Sources */,
 				11A45C792E34E63100CEB175 /* MediaChecker.swift in Sources */,
-				B1D365CE2C6A979C0047BDBC /* LiveActivityModifier.swift in Sources */,
 				1113ABD02E80E6BB00EC13B2 /* ThumbnailService.swift in Sources */,
 				11CFC65B2E097E9D00748C80 /* WelcomeView.swift in Sources */,
 				14D570C02C5EA5870011E668 /* AnimatedFace.swift in Sources */,
@@ -937,6 +939,8 @@
 				1194E87C2EA19E09009C82D6 /* ImageProcessingService.swift in Sources */,
 				1194E8872EA6DDA7009C82D6 /* BoringNotchSkyLightWindow.swift in Sources */,
 				14D570CB2C5F4B2C0011E668 /* BatteryStatusViewModel.swift in Sources */,
+				111BEA902ED170010079DD4E /* notch_display_mode.swift in Sources */,
+				111BEA922ED170020079DD4E /* notch_wings_container.swift in Sources */,
 				9A0887322C7A693000C160EA /* TabButton.swift in Sources */,
 				1153BD9C2D98853B00979FB0 /* NowPlayingController.swift in Sources */,
 				1194E9402EACC652009C82D6 /* Color+AccentColor.swift in Sources */,

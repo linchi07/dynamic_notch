@@ -190,7 +190,7 @@ class MusicManager: ObservableObject {
             }
 
             if state.isPlaying && !state.title.isEmpty && !state.artist.isEmpty {
-                self.updateSneakPeek()
+                self.updateSneakPeek(title: state.title, artist: state.artist)
             }
         }
 
@@ -229,7 +229,7 @@ class MusicManager: ObservableObject {
 
             // Only update sneak peek if there's actual content and something changed
             if !state.title.isEmpty && !state.artist.isEmpty && state.isPlaying {
-                self.updateSneakPeek()
+                self.updateSneakPeek(title: state.title, artist: state.artist)
             }
 
             // Fetch lyrics on content change
@@ -582,12 +582,19 @@ class MusicManager: ObservableObject {
         }
     }
 
-    private func updateSneakPeek() {
+    private func updateSneakPeek(title: String, artist: String) {
         if isPlaying && Defaults[.enableSneakPeek] {
             if Defaults[.sneakPeekStyles] == .standard {
                 coordinator.toggleSneakPeek(status: true, type: .music)
             } else {
-                coordinator.toggleExpandingView(status: true, type: .music)
+                coordinator.postNotification(
+                    title: title,
+                    message: artist,
+                    iconName: "music.note",
+                    iconColor: .pink,
+                    iconBackground: Color.pink.opacity(0.18),
+                    duration: 3.0
+                )
             }
         }
     }

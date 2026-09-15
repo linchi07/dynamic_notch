@@ -19,7 +19,7 @@ enum NotificationEjectionPhase {
 /// Metrics and layout constants for floating notifications
 private enum FloatingNotificationMetrics {
     static let HIDDEN_OFFSET_Y: CGFloat = -45
-    static let CORNER_RADIUS: CGFloat = 10
+    static let CORNER_RADIUS: CGFloat = 16
 }
 
 /// Specialized floating container for strong notifications and alerts.
@@ -110,7 +110,7 @@ struct FloatingNotificationContainer<Content: View>: View {
                         .opacity(0.96)
                 }
             )
-            .clipShape(RoundedRectangle(cornerRadius: FloatingNotificationMetrics.CORNER_RADIUS, style: .continuous))
+            .clipShape(Capsule())
             // Pure spatial depth shadows for clean layering without colored halo glow
             .shadow(color: Color.black.opacity(0.42), radius: 10, x: 0, y: 5)
             .shadow(color: Color.black.opacity(0.20), radius: 2, x: 0, y: 1)

@@ -26,7 +26,7 @@ struct BatteryNotificationPopup: View {
 
     private static let POPUP_WIDTH: CGFloat = 246
     private static let POPUP_HEIGHT: CGFloat = 30
-    private static let CORNER_RADIUS: CGFloat = 10
+    private static let CORNER_RADIUS: CGFloat = 15
 
     @State private var isPulsing: Bool = false
 

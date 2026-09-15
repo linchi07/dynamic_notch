@@ -445,8 +445,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         KeyboardShortcuts.onKeyDown(for: .toggleSneakPeek) { [weak self] in
             guard let self = self else { return }
             if Defaults[.sneakPeekStyles] == .inline {
-                let newStatus = !self.coordinator.expandingView.show
-                self.coordinator.toggleExpandingView(status: newStatus, type: .music)
+                self.coordinator.postNotification(
+                    title: MusicManager.shared.songTitle,
+                    message: MusicManager.shared.artistName,
+                    iconName: "music.note",
+                    iconColor: .pink,
+                    iconBackground: Color.pink.opacity(0.18),
+                    duration: 3.0
+                )
             } else {
                 self.coordinator.toggleSneakPeek(
                     status: !self.coordinator.sneakPeek.show,

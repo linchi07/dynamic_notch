@@ -53,7 +53,9 @@ enum MusicPlayerImageSizes {
         if let topLeftNotchpadding: CGFloat = screen.auxiliaryTopLeftArea?.width,
            let topRightNotchpadding: CGFloat = screen.auxiliaryTopRightArea?.width
         {
-            notchWidth = screen.frame.width - topLeftNotchpadding - topRightNotchpadding + 4
+            // The auxiliary menu-bar areas terminate at the physical notch edges.
+            // Do not add virtual padding here; active wings own their outer padding.
+            notchWidth = screen.frame.width - topLeftNotchpadding - topRightNotchpadding
         }
 
         // Check if the Mac has a notch

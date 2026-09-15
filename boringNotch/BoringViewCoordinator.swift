@@ -34,29 +34,105 @@ struct SharedSneakPeek: Codable {
     var icon: String
 }
 
-enum BrowserType {
-    case chromium
-    case safari
-}
-
-struct ExpandedItem {
-    var show: Bool = false
-    var type: SneakContentType = .battery
-    var value: CGFloat = 0
-    var browser: BrowserType = .chromium
-}
-
 @MainActor
 class BoringViewCoordinator: ObservableObject {
     static let shared = BoringViewCoordinator()
 
     @Published var currentView: NotchViews = .home
     @Published var helloAnimationRunning: Bool = false
-    @Published var activeNotification: FloatingNotificationItem? = nil
     @Published var isNotificationPresented: Bool = false
+    @Published var displayMode: NotchDisplayMode = .idle
+    @Published var activeCombo: NotchComboActivity? = nil
+    private var stateBeforeNotification: NotchDisplayMode = .idle
+    private var comboTask: Task<Void, Never>?
     private var sneakPeekDispatch: DispatchWorkItem?
-    private var expandingViewDispatch: DispatchWorkItem?
     private var hudEnableTask: Task<Void, Never>?
+
+    private func setDisplayMode(_ mode: NotchDisplayMode) {
+        withAnimation(.smooth(duration: 0.3)) {
+            self.displayMode = mode
+        }
+    }
+
+    func clearDisplayMode() {
+        comboTask?.cancel()
+        comboTask = nil
+        isNotificationPresented = false
+        stateBeforeNotification = .idle
+        withAnimation(.smooth(duration: 0.3)) {
+            self.displayMode = .idle
+            self.activeCombo = nil
+        }
+    }
+
+    func setActiveState(_ state: NotchActiveState) {
+        comboTask?.cancel()
+        comboTask = nil
+        activeCombo = nil
+        isNotificationPresented = false
+        stateBeforeNotification = .idle
+        setDisplayMode(.active(state))
+    }
+
+    var activeNotification: FloatingNotificationItem? {
+        guard case .notification(let item) = displayMode else { return nil }
+        return item
+    }
+
+    func postNotificationItem(_ item: FloatingNotificationItem) {
+        switch displayMode {
+        case .notification:
+            break // Preserve the state from before the first notification.
+        case .active:
+            stateBeforeNotification = displayMode
+        case .idle:
+            stateBeforeNotification = .idle
+        }
+
+        withAnimation(.smooth(duration: 0.24)) {
+            displayMode = .notification(item)
+        }
+        self.isNotificationPresented = true
+    }
+
+    func startComboActivity(_ combo: NotchComboActivity) {
+        comboTask?.cancel()
+        activeCombo = combo
+        postNotificationItem(combo.initialNotification)
+
+        comboTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(combo.initialNotifyDuration))
+            guard !Task.isCancelled else { return }
+
+            self.dismissNotification()
+
+            try? await Task.sleep(for: .milliseconds(250))
+            guard !Task.isCancelled else { return }
+
+            withAnimation(.smooth(duration: 0.32)) {
+                self.displayMode = .active(combo.activeState)
+            }
+        }
+    }
+
+    func finishComboActivity(completionNotification: FloatingNotificationItem? = nil) {
+        comboTask?.cancel()
+        let notification = completionNotification ?? activeCombo?.completionNotification
+        withAnimation(.smooth(duration: 0.28)) {
+            self.displayMode = .idle
+        }
+
+        if let completion = notification {
+            comboTask = Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(180))
+                guard !Task.isCancelled else { return }
+                self.postNotificationItem(completion)
+                self.activeCombo = nil
+            }
+        } else {
+            self.activeCombo = nil
+        }
+    }
 
     func postNotification(
         title: String,
@@ -76,8 +152,7 @@ class BoringViewCoordinator: ObservableObject {
             trailingText: trailingText,
             duration: duration
         )
-        self.activeNotification = item
-        self.isNotificationPresented = true
+        postNotificationItem(item)
     }
 
     func postBatteryNotification(
@@ -97,12 +172,19 @@ class BoringViewCoordinator: ObservableObject {
             isLowBatteryAlert: isLowBatteryAlert,
             timeToFullCharge: timeToFullCharge
         )
-        self.activeNotification = FloatingNotificationItem(battery: payload, duration: duration)
-        self.isNotificationPresented = true
+        postNotificationItem(FloatingNotificationItem(battery: payload, duration: duration))
     }
 
     func dismissNotification() {
         self.isNotificationPresented = false
+    }
+
+    func notificationDidDismiss() {
+        guard case .notification = displayMode else { return }
+        withAnimation(.smooth(duration: 0.24)) {
+            displayMode = stateBeforeNotification
+        }
+        stateBeforeNotification = .idle
     }
 
     @AppStorage("firstLaunch") var firstLaunch: Bool = true
@@ -308,41 +390,6 @@ class BoringViewCoordinator: ObservableObject {
         }
     }
 
-    func toggleExpandingView(
-        status: Bool,
-        type: SneakContentType,
-        value: CGFloat = 0,
-        browser: BrowserType = .chromium
-    ) {
-        Task { @MainActor in
-            withAnimation(.smooth) {
-                self.expandingView.show = status
-                self.expandingView.type = type
-                self.expandingView.value = value
-                self.expandingView.browser = browser
-            }
-        }
-    }
-
-    private var expandingViewTask: Task<Void, Never>?
-
-    @Published var expandingView: ExpandedItem = .init() {
-        didSet {
-            if expandingView.show {
-                expandingViewTask?.cancel()
-                let duration: TimeInterval = (expandingView.type == .download ? 2 : 3)
-                let currentType = expandingView.type
-                expandingViewTask = Task { [weak self] in
-                    try? await Task.sleep(for: .seconds(duration))
-                    guard let self = self, !Task.isCancelled else { return }
-                    self.toggleExpandingView(status: false, type: currentType)
-                }
-            } else {
-                expandingViewTask?.cancel()
-            }
-        }
-    }
-    
     func showEmpty() {
         currentView = .home
     }
