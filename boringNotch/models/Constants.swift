@@ -82,8 +82,6 @@ enum OptionKeyAction: String, CaseIterable, Identifiable, Defaults.Serializable 
 extension Defaults.Keys {
     // MARK: General
     static let menubarIcon = Key<Bool>("menubarIcon", default: true)
-    static let showOnAllDisplays = Key<Bool>("showOnAllDisplays", default: false)
-    static let automaticallySwitchDisplay = Key<Bool>("automaticallySwitchDisplay", default: true)
     static let releaseName = Key<String>("releaseName", default: "Flying Rabbit 🐇🪽")
     
     // MARK: Behavior
@@ -91,16 +89,6 @@ extension Defaults.Keys {
     static let enableHaptics = Key<Bool>("enableHaptics", default: true)
     static let openNotchOnHover = Key<Bool>("openNotchOnHover", default: true)
     static let extendHoverArea = Key<Bool>("extendHoverArea", default: false)
-    static let notchHeightMode = Key<WindowHeightMode>(
-        "notchHeightMode",
-        default: WindowHeightMode.matchRealNotchSize
-    )
-    static let nonNotchHeightMode = Key<WindowHeightMode>(
-        "nonNotchHeightMode",
-        default: WindowHeightMode.matchMenuBar
-    )
-    static let nonNotchHeight = Key<CGFloat>("nonNotchHeight", default: 32)
-    static let notchHeight = Key<CGFloat>("notchHeight", default: 32)
     static let notchOuterPadding = Key<CGFloat>("notchOuterPadding", default: 8)
     //static let openLastTabByDefault = Key<Bool>("openLastTabByDefault", default: false)
     static let showOnLockScreen = Key<Bool>("showOnLockScreen", default: false)

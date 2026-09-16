@@ -3130,6 +3130,7 @@
       }
     },
     "Automatically switch displays" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -3828,6 +3829,9 @@
           }
         }
       }
+    },
+    "Boring Notch now works only on the built-in notched display of a supported MacBook Air, MacBook Pro, or MacBook Neo. External displays, desktop Macs, older MacBooks, and closed-lid mode are not supported." : {
+
     },
     "boring.notch" : {
       "extractionState" : "stale",
@@ -6434,6 +6438,7 @@
       }
     },
     "Custom height" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -6634,6 +6639,7 @@
       }
     },
     "Custom notch size - %.0f" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -11651,6 +11657,9 @@
     "Idle、Active 和 Notification 使用同一状态模型。所有 Active 都严格保持与音乐播放一致的固定长度。" : {
 
     },
+    "If this is a supported MacBook, open the lid and try again." : {
+
+    },
     "In progress" : {
       "localizations" : {
         "ar" : {
@@ -12653,6 +12662,7 @@
       }
     },
     "Match menu bar height" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -12753,6 +12763,7 @@
       }
     },
     "Match menubar height" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -12853,6 +12864,7 @@
       }
     },
     "Match real notch height" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -15254,6 +15266,7 @@
       }
     },
     "Notch height on non-notch displays" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -15354,6 +15367,7 @@
       }
     },
     "Notch height on notch displays" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -15454,6 +15468,7 @@
       }
     },
     "Notch sizing" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -16360,6 +16375,7 @@
       }
     },
     "Preferred display" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -19662,6 +19678,7 @@
       }
     },
     "Show on all displays" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -21266,6 +21283,9 @@
     "The menu bar icon stays visible while automatic notch hiding is enabled, so Settings and Quit remain accessible." : {
 
     },
+    "This Mac isn't supported" : {
+
+    },
     "Time to Full Charge: %lld min" : {
       "localizations" : {
         "ar" : {
@@ -21665,6 +21685,9 @@
           }
         }
       }
+    },
+    "Try Again" : {
+
     },
     "Two-finger swipe up on notch to close, two-finger swipe down on notch to open when **Open notch on hover** option is disabled" : {
       "localizations" : {

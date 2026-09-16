@@ -32,8 +32,6 @@ class BoringViewModel: NSObject, ObservableObject {
     @Published var isHoveringCalendar: Bool = false
     @Published var isBatteryPopoverActive: Bool = false
 
-    @Published var screenUUID: String?
-
     @Published var notchSize: CGSize = getClosedNotchSize()
     @Published var closedNotchSize: CGSize = getClosedNotchSize()
     
@@ -50,14 +48,10 @@ class BoringViewModel: NSObject, ObservableObject {
         cancellables.removeAll()
     }
 
-    init(screenUUID: String? = nil) {
+    override init() {
         animation = animationLibrary.animation
 
         super.init()
-        
-        self.screenUUID = screenUUID
-        notchSize = getClosedNotchSize(screenUUID: screenUUID)
-        closedNotchSize = notchSize
 
         Publishers.CombineLatest3($dropZoneTargeting, $dragDetectorTargeting, $generalDropTargeting)
             .map { shelf, drag, general in
@@ -82,20 +76,17 @@ class BoringViewModel: NSObject, ObservableObject {
             .map { $0 != .never }
             .removeDuplicates()
 
-        // Publisher for the current screen UUID (non-nil, distinct)
-        let screenPublisher = $screenUUID
-            .compactMap { $0 }
-            .removeDuplicates()
-
-        // Publisher for fullscreen status dictionary
-        let fullscreenStatusPublisher = detector.$fullscreenStatus
-            .removeDuplicates()
-
-        // Combine all three: screen UUID, fullscreen status, and enabled setting
-        Publishers.CombineLatest3(screenPublisher, fullscreenStatusPublisher, enabledPublisher)
-            .map { screenUUID, fullscreenStatus, enabled in
-                let isFullscreen = fullscreenStatus[screenUUID] ?? false
-                return enabled && isFullscreen
+        Publishers.CombineLatest(
+            detector.$fullscreenStatus.removeDuplicates(),
+            enabledPublisher
+        )
+            .map { fullscreenStatus, enabled in
+                guard enabled,
+                      let displayUUID = NSScreen.supportedBuiltInDisplay?.displayUUID
+                else {
+                    return false
+                }
+                return fullscreenStatus[displayUUID] ?? false
             }
             .removeDuplicates()
             .receive(on: RunLoop.main)
@@ -109,9 +100,7 @@ class BoringViewModel: NSObject, ObservableObject {
 
     // Computed property for effective notch height
     var effectiveClosedNotchHeight: CGFloat {
-        let currentScreen = screenUUID.flatMap { NSScreen.screen(withUUID: $0) }
-        let noNotchAndFullscreen = hideOnClosed && (currentScreen?.safeAreaInsets.top ?? 0 <= 0 || currentScreen == nil)
-        return noNotchAndFullscreen ? 0 : closedNotchSize.height
+        closedNotchSize.height
     }
 
     var chinHeight: CGFloat {
@@ -119,7 +108,7 @@ class BoringViewModel: NSObject, ObservableObject {
             return 0
         }
 
-        guard let currentScreen = screenUUID.flatMap({ NSScreen.screen(withUUID: $0) }) else {
+        guard let currentScreen = NSScreen.supportedBuiltInDisplay else {
             return 0
         }
 
@@ -182,7 +171,7 @@ class BoringViewModel: NSObject, ObservableObject {
     }
     
     func isMouseHovering(position: NSPoint = NSEvent.mouseLocation) -> Bool {
-        let screenFrame = getScreenFrame(screenUUID)
+        let screenFrame = getScreenFrame()
         if let frame = screenFrame {
             
             let baseY = frame.maxY - notchSize.height
@@ -213,9 +202,8 @@ class BoringViewModel: NSObject, ObservableObject {
         if SharingStateManager.shared.preventNotchClose {
             return
         }
-        self.notchSize = getClosedNotchSize(screenUUID: self.screenUUID)
-        self.closedNotchSize = self.notchSize
         self.notchState = .closed
+        refreshClosedNotchSize()
         self.isBatteryPopoverActive = false
         self.coordinator.sneakPeek.show = false
         self.edgeAutoOpenActive = false
@@ -226,6 +214,14 @@ class BoringViewModel: NSObject, ObservableObject {
             coordinator.currentView = .shelf
         } else if !coordinator.openLastTabByDefault {
             coordinator.currentView = .home
+        }
+    }
+
+    func refreshClosedNotchSize() {
+        let size = getClosedNotchSize()
+        closedNotchSize = size
+        if notchState == .closed {
+            notchSize = size
         }
     }
 

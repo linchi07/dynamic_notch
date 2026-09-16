@@ -22,7 +22,7 @@ struct BoringHeader: View {
 
             if vm.notchState == .open {
                 Rectangle()
-                    .fill(hasPhysicalNotch ? .black : .clear)
+                    .fill(.black)
                     .frame(width: vm.closedNotchSize.width)
                     .mask { NotchShape() }
             }
@@ -34,10 +34,6 @@ struct BoringHeader: View {
         .opacity(vm.notchState == .closed ? 0 : 1)
         .blur(radius: vm.notchState == .closed ? 20 : 0)
         .font(.system(.headline, design: .rounded))
-    }
-
-    private var hasPhysicalNotch: Bool {
-        NSScreen.screen(withUUID: coordinator.selectedScreenUUID)?.safeAreaInsets.top ?? 0 > 0
     }
 
     @ViewBuilder

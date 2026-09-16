@@ -5,7 +5,6 @@
 //  Created by Harsh Vardhan  Goswami  on 05/08/24.
 //
 
-import Defaults
 import Foundation
 import SwiftUI
 
@@ -44,59 +43,22 @@ enum MusicPlayerImageSizes {
     static let size = (opened: CGSize(width: 90, height: 90), closed: CGSize(width: 20, height: 20))
 }
 
-@MainActor func getScreenFrame(_ screenUUID: String? = nil) -> CGRect? {
-    var selectedScreen = NSScreen.main
-
-    if let uuid = screenUUID {
-        selectedScreen = NSScreen.screen(withUUID: uuid)
-    }
-    
-    if let screen = selectedScreen {
-        return screen.frame
-    }
-    
-    return nil
+@MainActor func getScreenFrame() -> CGRect? {
+    NSScreen.supportedBuiltInDisplay?.frame
 }
 
-@MainActor func getClosedNotchSize(screenUUID: String? = nil) -> CGSize {
-    // Default notch size, to avoid using optionals
-    var notchHeight: CGFloat = Defaults[.nonNotchHeight]
+@MainActor func getClosedNotchSize() -> CGSize {
+    guard let screen = NSScreen.supportedBuiltInDisplay else {
+        return .zero
+    }
+
     var notchWidth: CGFloat = 185
 
-    var selectedScreen = NSScreen.main
-
-    if let uuid = screenUUID {
-        selectedScreen = NSScreen.screen(withUUID: uuid)
+    if let leftWidth = screen.auxiliaryTopLeftArea?.width,
+       let rightWidth = screen.auxiliaryTopRightArea?.width
+    {
+        notchWidth = screen.frame.width - leftWidth - rightWidth
     }
 
-    // Check if the screen is available
-    if let screen = selectedScreen {
-        // Calculate and set the exact width of the notch
-        if let topLeftNotchpadding: CGFloat = screen.auxiliaryTopLeftArea?.width,
-           let topRightNotchpadding: CGFloat = screen.auxiliaryTopRightArea?.width
-        {
-            // The auxiliary menu-bar areas terminate at the physical notch edges.
-            // Do not add virtual padding here; active wings own their outer padding.
-            notchWidth = screen.frame.width - topLeftNotchpadding - topRightNotchpadding
-        }
-
-        // Check if the Mac has a notch
-        if screen.safeAreaInsets.top > 0 {
-            // This is a display WITH a notch - use notch height settings
-            notchHeight = Defaults[.notchHeight]
-            if Defaults[.notchHeightMode] == .matchRealNotchSize {
-                notchHeight = screen.safeAreaInsets.top
-            } else if Defaults[.notchHeightMode] == .matchMenuBar {
-                notchHeight = screen.frame.maxY - screen.visibleFrame.maxY
-            }
-        } else {
-            // This is a display WITHOUT a notch - use non-notch height settings
-            notchHeight = Defaults[.nonNotchHeight]
-            if Defaults[.nonNotchHeightMode] == .matchMenuBar {
-                notchHeight = screen.frame.maxY - screen.visibleFrame.maxY
-            }
-        }
-    }
-
-    return .init(width: notchWidth, height: notchHeight)
+    return .init(width: notchWidth, height: screen.safeAreaInsets.top)
 }

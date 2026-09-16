@@ -9,6 +9,7 @@ import SwiftUI
 import AVFoundation
 
 enum OnboardingStep {
+    case unsupported
     case welcome
     case cameraPermission
     case calendarPermission
@@ -28,6 +29,15 @@ struct OnboardingView: View {
     var body: some View {
         ZStack {
             switch step {
+            case .unsupported:
+                UnsupportedDeviceView {
+                    guard NSScreen.supportedBuiltInDisplay != nil else { return }
+                    withAnimation(.easeInOut(duration: 0.4)) {
+                        step = .welcome
+                    }
+                }
+                .transition(.opacity)
+
             case .welcome:
                 WelcomeView {
                     withAnimation(.easeInOut(duration: 0.6)) {
@@ -158,5 +168,49 @@ struct OnboardingView: View {
     
     func requestAccessibilityPermission() async {
         await XPCHelperClient.shared.ensureAccessibilityAuthorization(promptIfNeeded: true)
+    }
+}
+
+private struct UnsupportedDeviceView: View {
+    let onTryAgain: () -> Void
+
+    var body: some View {
+        VStack(spacing: 20) {
+            Spacer()
+
+            Image(systemName: "laptopcomputer.trianglebadge.exclamationmark")
+                .font(.system(size: 64))
+                .foregroundStyle(.secondary)
+
+            Text("This Mac isn't supported")
+                .font(.largeTitle)
+                .fontWeight(.bold)
+
+            Text("Boring Notch now works only on the built-in notched display of a supported MacBook Air, MacBook Pro, or MacBook Neo. External displays, desktop Macs, older MacBooks, and closed-lid mode are not supported.")
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 36)
+
+            Text("If this is a supported MacBook, open the lid and try again.")
+                .font(.callout)
+                .foregroundStyle(.tertiary)
+
+            Spacer()
+
+            Button("Try Again", action: onTryAgain)
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+
+            Button("Quit") {
+                NSApp.terminate(nil)
+            }
+            .controlSize(.large)
+            .padding(.bottom, 24)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(
+            VisualEffectView(material: .underWindowBackground, blendingMode: .behindWindow)
+                .ignoresSafeArea()
+        )
     }
 }
