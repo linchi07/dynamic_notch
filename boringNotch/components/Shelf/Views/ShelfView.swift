@@ -25,6 +25,7 @@ struct ShelfView: View {
                     handleDrop(providers: providers)
                 }
         }
+        .frame(height: NOTCH_PANEL_CONTAINER_HEIGHT)
         // Bind Quick Look to shelf selection
         .onChange(of: selection.selectedIDs) {
             updateQuickLookSelection()
@@ -59,16 +60,16 @@ struct ShelfView: View {
     }
 
     var panel: some View {
-        RoundedRectangle(cornerRadius: 16)
+        RoundedRectangle(cornerRadius: 12, style: .continuous)
             .stroke(
                 vm.dragDetectorTargeting
                     ? Color.accentColor.opacity(0.9)
                     : Color.white.opacity(0.1),
-                style: StrokeStyle(lineWidth: 3, lineCap: .round, dash: [10])
+                style: StrokeStyle(lineWidth: 2, lineCap: .round, dash: [8])
             )
             .overlay {
                 content
-                    .padding()
+                    .padding(8)
             }
             .transaction { transaction in
                 transaction.animation = vm.animation
@@ -80,16 +81,16 @@ struct ShelfView: View {
     var content: some View {
         Group {
             if tvm.isEmpty {
-                VStack(spacing: 10) {
+                VStack(spacing: 4) {
                     Image(systemName: "tray.and.arrow.down")
                         .symbolVariant(.fill)
                         .symbolRenderingMode(.hierarchical)
                         .foregroundStyle(.white, .gray)
-                        .imageScale(.large)
+                        .imageScale(.medium)
                     
                     Text("Drop files here")
                         .foregroundStyle(.gray)
-                        .font(.system(.title3, design: .rounded))
+                        .font(.system(.callout, design: .rounded))
                         .fontWeight(.medium)
                 }
             } else {

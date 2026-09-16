@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		111BEA902ED170010079DD4E /* notch_display_mode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 111BEA912ED170010079DD4E /* notch_display_mode.swift */; };
 		111BEA922ED170020079DD4E /* notch_wings_container.swift in Sources */ = {isa = PBXBuildFile; fileRef = 111BEA932ED170020079DD4E /* notch_wings_container.swift */; };
+		111BEA942ED170020079DD4E /* notch_panel_container.swift in Sources */ = {isa = PBXBuildFile; fileRef = 111BEA952ED170020079DD4E /* notch_panel_container.swift */; };
 		1100290C2E847E2800035A57 /* NSItemProvider+LoadHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1100290B2E847E2800035A57 /* NSItemProvider+LoadHelpers.swift */; };
 		110029272E84FD4C00035A57 /* TemporaryFileStorageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110029262E84FD4C00035A57 /* TemporaryFileStorageService.swift */; };
 		1100292A2E8691B400035A57 /* FileShareView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110029292E8691B400035A57 /* FileShareView.swift */; };
@@ -189,6 +190,7 @@
 /* Begin PBXFileReference section */
 		111BEA912ED170010079DD4E /* notch_display_mode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = notch_display_mode.swift; sourceTree = "<group>"; };
 		111BEA932ED170020079DD4E /* notch_wings_container.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = notch_wings_container.swift; sourceTree = "<group>"; };
+		111BEA952ED170020079DD4E /* notch_panel_container.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = notch_panel_container.swift; sourceTree = "<group>"; };
 		1100290B2E847E2800035A57 /* NSItemProvider+LoadHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSItemProvider+LoadHelpers.swift"; sourceTree = "<group>"; };
 		110029262E84FD4C00035A57 /* TemporaryFileStorageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemporaryFileStorageService.swift; sourceTree = "<group>"; };
 		110029292E8691B400035A57 /* FileShareView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileShareView.swift; sourceTree = "<group>"; };
@@ -723,6 +725,7 @@
 				9AB0C6BB2C73C9CB00F7CD30 /* NotchHomeView.swift */,
 				14D570C52C5F38210011E668 /* BoringHeader.swift */,
 				111BEA932ED170020079DD4E /* notch_wings_container.swift */,
+				111BEA952ED170020079DD4E /* notch_panel_container.swift */,
 				14D570D12C5F6C6A0011E668 /* BoringExtrasMenu.swift */,
 				1471A8582C6281BD0058408D /* BoringNotchWindow.swift */,
 			);
@@ -941,6 +944,7 @@
 				14D570CB2C5F4B2C0011E668 /* BatteryStatusViewModel.swift in Sources */,
 				111BEA902ED170010079DD4E /* notch_display_mode.swift in Sources */,
 				111BEA922ED170020079DD4E /* notch_wings_container.swift in Sources */,
+				111BEA942ED170020079DD4E /* notch_panel_container.swift in Sources */,
 				9A0887322C7A693000C160EA /* TabButton.swift in Sources */,
 				1153BD9C2D98853B00979FB0 /* NowPlayingController.swift in Sources */,
 				1194E9402EACC652009C82D6 /* Color+AccentColor.swift in Sources */,

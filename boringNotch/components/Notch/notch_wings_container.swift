@@ -91,7 +91,7 @@ struct NotchWingsContainer: View {
             Image(nsImage: image)
                 .resizable()
                 .scaledToFill()
-                .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: ALBUM_ART_CORNER_RADIUS_CLOSED, style: .continuous))
 
         case .colorDot(let color):
             Circle()

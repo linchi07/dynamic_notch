@@ -24,9 +24,11 @@ public enum NotchState {
     case open
 }
 
-public enum NotchViews {
-    case home
-    case shelf
+public enum NotchViews: Int, CaseIterable, Identifiable {
+    case home = 0
+    case shelf = 1
+
+    public var id: Int { rawValue }
 }
 
 enum SettingsEnum {

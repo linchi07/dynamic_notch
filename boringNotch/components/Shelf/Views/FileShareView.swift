@@ -57,13 +57,13 @@ struct FileShareView: View {
                 .shadow(color: Color.black.opacity(0.6), radius: 6, x: 0, y: 2)
 
             // Content
-            VStack(spacing: 5) {
+            VStack(spacing: 4) {
                 ZStack {
                     Circle()
                         .fill(Color.white.opacity(
                             vm.dropZoneTargeting ? 0.11 : 0.09
                         ))
-                        .frame(width: 55, height: 55)
+                        .frame(width: 42, height: 42)
                     Image(systemName: "square.and.arrow.up")
                     Group {
                         if let imgData = selectedProvider.imageData, let nsImg = NSImage(data: imgData) {
@@ -74,7 +74,7 @@ struct FileShareView: View {
                             Image(systemName: "square.and.arrow.up")
                         }
                     }
-                    .frame(width: 34, height: 34)
+                    .frame(width: 24, height: 24)
                         .foregroundStyle(
                             vm.dropZoneTargeting ? Color.accentColor : Color.gray
                         )
@@ -85,11 +85,12 @@ struct FileShareView: View {
                 }
 
                 Text(selectedProvider.id)
-                    .font(.system(.headline, design: .rounded))
+                    .font(.system(.subheadline, design: .rounded))
                     .foregroundColor(.white.opacity(0.8))
+                    .lineLimit(1)
 
             }
-            .padding(18)
+            .padding(8)
             
             // Loading overlay
             if isProcessing || quickShare.isPickerOpen {

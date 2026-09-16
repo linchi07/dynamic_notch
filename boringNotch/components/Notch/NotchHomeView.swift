@@ -17,10 +17,12 @@ struct MusicPlayerView: View {
     let albumArtNamespace: Namespace.ID
 
     var body: some View {
-        HStack {
-            AlbumArtView(vm: vm, albumArtNamespace: albumArtNamespace).padding(.all, 5)
+        HStack(spacing: 12) {
+            AlbumArtView(vm: vm, albumArtNamespace: albumArtNamespace)
+                .frame(width: 86, height: 86)
             MusicControlsView().drawingGroup().compositingGroup()
         }
+        .frame(height: NOTCH_PANEL_CONTAINER_HEIGHT)
     }
 }
 
@@ -45,8 +47,10 @@ struct AlbumArtView: View {
             .clipShape(
                 RoundedRectangle(
                     cornerRadius: Defaults[.cornerRadiusScaling]
-                        ? MusicPlayerImageSizes.cornerRadiusInset.opened
-                        : MusicPlayerImageSizes.cornerRadiusInset.closed)
+                        ? ALBUM_ART_CORNER_RADIUS_OPENED
+                        : ALBUM_ART_CORNER_RADIUS_CLOSED,
+                    style: .continuous
+                )
             )
             .aspectRatio(1, contentMode: .fit)
             .scaleEffect(x: 1.3, y: 1.4)
@@ -90,8 +94,10 @@ struct AlbumArtView: View {
             .clipShape(
                 RoundedRectangle(
                     cornerRadius: Defaults[.cornerRadiusScaling]
-                        ? MusicPlayerImageSizes.cornerRadiusInset.opened
-                        : MusicPlayerImageSizes.cornerRadiusInset.closed)
+                        ? ALBUM_ART_CORNER_RADIUS_OPENED
+                        : ALBUM_ART_CORNER_RADIUS_CLOSED,
+                    style: .continuous
+                )
             )
     }
 
@@ -120,21 +126,23 @@ struct MusicControlsView: View {
     @Default(.musicControlSlotLimit) private var slotLimit
 
     var body: some View {
-        VStack(alignment: .leading) {
+        VStack(alignment: .leading, spacing: 2) {
             songInfoAndSlider
+            Spacer(minLength: 0)
             slotToolbar
         }
+        .padding(.top, 2)
         .buttonStyle(PlainButtonStyle())
     }
 
     private var songInfoAndSlider: some View {
         GeometryReader { geo in
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 2) {
                 songInfo(width: geo.size.width)
                 musicSlider
             }
         }
-        .padding(.top, 10)
+        .frame(height: Defaults[.enableLyrics] ? 58 : 52)
         .padding(.leading, 5)
     }
 
@@ -205,8 +213,8 @@ struct MusicControlsView: View {
             ) { newValue in
                 MusicManager.shared.seek(to: newValue)
             }
-            .padding(.top, 5)
-            .frame(height: 36)
+            .padding(.top, 2)
+            .frame(height: 28)
         }
     }
 
@@ -488,7 +496,7 @@ struct MusicSliderView: View {
 
 
     var body: some View {
-        VStack {
+        VStack(spacing: 2) {
             CustomSlider(
                 value: $sliderValue,
                 range: 0...duration,
@@ -499,7 +507,7 @@ struct MusicSliderView: View {
                 lastDragged: $lastDragged,
                 onValueChange: onValueChange
             )
-            .frame(height: 10, alignment: .center)
+            .frame(height: 8, alignment: .center)
 
             HStack {
                 Text(timeString(from: sliderValue))
@@ -511,7 +519,7 @@ struct MusicSliderView: View {
                 Defaults[.playerColorTinting]
                     ? Color(nsColor: color).ensureMinimumBrightness(factor: 0.6) : .gray
             )
-            .font(.caption)
+            .font(.caption2)
         }
         .onChange(of: currentDate) {
            guard !dragging, timestampDate.timeIntervalSince(lastDragged) > -1 else { return }

@@ -413,13 +413,8 @@ struct ContentView: View {
               }
               .zIndex(2)
             if vm.notchState == .open {
-                VStack(spacing: 6) {
-                    switch coordinator.currentView {
-                    case .home:
-                        NotchHomeView(albumArtNamespace: albumArtNamespace)
-                    case .shelf:
-                        ShelfView()
-                    }
+                VStack(spacing: 4) {
+                    NotchPanelContainer(albumArtNamespace: albumArtNamespace)
 
                     if shouldShowBottomNavigation {
                         Spacer(minLength: 0)
