@@ -31,7 +31,7 @@ struct ContentView: View {
 
     @State private var haptics: Bool = false
 
-    @Namespace var albumArtNamespace
+    @Namespace private var notchHeroNamespace
 
     @Default(.useMusicVisualizer) var useMusicVisualizer
     @Default(.notchOuterPadding) private var notchOuterPadding
@@ -72,7 +72,8 @@ struct ContentView: View {
                 id: "music.playback",
                 leading: NotchActivityItem(
                     visual: .customImage(image: musicManager.albumArt),
-                    accessibilityLabel: musicManager.songTitle
+                    accessibilityLabel: musicManager.songTitle,
+                    heroId: NotchHeroIdentifier.MUSIC_ARTWORK.rawValue
                 ),
                 trailing: NotchActivityItem(
                     visual: trailingVisual,
@@ -311,6 +312,7 @@ struct ContentView: View {
         .background(dragDetector)
         .preferredColorScheme(.dark)
         .environmentObject(vm)
+        .environment(\.notchHeroNamespace, notchHeroNamespace)
         .onChange(of: vm.anyDropZoneTargeting) { _, isTargeted in
             anyDropDebounceTask?.cancel()
 
@@ -391,30 +393,17 @@ struct ContentView: View {
                               .padding(.leading, 4)
                               .padding(.trailing, 8)
                           }
-                          // Old sneak peek music
-                          else if coordinator.sneakPeek.type == .music {
-                              if vm.notchState == .closed && !vm.hideOnClosed && Defaults[.sneakPeekStyles] == .standard {
-                                  HStack(alignment: .center) {
-                                      Image(systemName: "music.note")
-                                      GeometryReader { geo in
-                                          MarqueeText(.constant(musicManager.songTitle + " - " + musicManager.artistName),  textColor: Defaults[.playerColorTinting] ? Color(nsColor: musicManager.avgColor).ensureMinimumBrightness(factor: 0.6) : .gray, minDuration: 1, frameWidth: geo.size.width)
-                                      }
-                                  }
-                                  .foregroundStyle(.gray)
-                                  .padding(.bottom, 10)
-                              }
-                          }
                       }
                   }
               }
-              .conditionalModifier((coordinator.sneakPeek.show && (coordinator.sneakPeek.type == .music) && vm.notchState == .closed && !vm.hideOnClosed && Defaults[.sneakPeekStyles] == .standard) || (coordinator.sneakPeek.show && (coordinator.sneakPeek.type != .music) && (vm.notchState == .closed) && (closedNotchHUDStyle == .standard))) { view in
+              .conditionalModifier(coordinator.sneakPeek.show && (coordinator.sneakPeek.type != .music) && (vm.notchState == .closed) && (closedNotchHUDStyle == .standard)) { view in
                   view
                       .fixedSize()
               }
               .zIndex(2)
             if vm.notchState == .open {
                 VStack(spacing: 4) {
-                    NotchPanelContainer(albumArtNamespace: albumArtNamespace)
+                    NotchPanelContainer()
 
                     if shouldShowBottomNavigation {
                         Spacer(minLength: 0)
@@ -424,11 +413,7 @@ struct ContentView: View {
                     }
                 }
                 .frame(maxHeight: .infinity)
-                .transition(
-                    .scale(scale: 0.8, anchor: .top)
-                    .combined(with: .opacity)
-                    .animation(.smooth(duration: 0.35))
-                )
+                .transition(.opacity)
                 .zIndex(1)
                 .allowsHitTesting(vm.notchState == .open)
                 .opacity(gestureProgress != 0 ? 1.0 - min(abs(gestureProgress) * 0.1, 0.3) : 1.0)

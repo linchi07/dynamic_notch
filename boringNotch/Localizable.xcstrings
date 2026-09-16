@@ -19677,6 +19677,9 @@
         }
       }
     },
+    "Show notification on playback changes" : {
+
+    },
     "Show on all displays" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -20179,6 +20182,7 @@
       }
     },
     "Show sneak peek on playback changes" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -20479,6 +20483,7 @@
       }
     },
     "Sneak Peek Style" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {

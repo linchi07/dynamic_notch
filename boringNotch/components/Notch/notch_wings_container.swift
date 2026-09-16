@@ -86,11 +86,13 @@ struct NotchWingsContainer: View {
                 .font(.system(size: min(16, visualSize), weight: .semibold))
                 .foregroundStyle(item.tintColor)
                 .symbolEffect(.pulse, options: .repeating, isActive: item.isPulsing)
+                .notchHeroSource(id: item.heroId)
 
         case .customImage(let image):
             Image(nsImage: image)
                 .resizable()
                 .scaledToFill()
+                .notchHeroSource(id: item.heroId)
                 .clipShape(RoundedRectangle(cornerRadius: ALBUM_ART_CORNER_RADIUS_CLOSED, style: .continuous))
 
         case .colorDot(let color):

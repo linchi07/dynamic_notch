@@ -137,6 +137,7 @@ class BoringViewCoordinator: ObservableObject {
     func postNotification(
         title: String,
         message: String = "",
+        customImage: NSImage? = nil,
         iconName: String = "bell.fill",
         iconColor: Color = .white,
         iconBackground: Color = Color.white.opacity(0.12),
@@ -150,6 +151,7 @@ class BoringViewCoordinator: ObservableObject {
             title: title,
             message: message,
             trailingText: trailingText,
+            customImage: customImage,
             duration: duration
         )
         postNotificationItem(item)

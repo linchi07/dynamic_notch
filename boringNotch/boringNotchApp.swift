@@ -256,22 +256,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         KeyboardShortcuts.onKeyDown(for: .toggleSneakPeek) { [weak self] in
             guard let self else { return }
-            if Defaults[.sneakPeekStyles] == .inline {
-                coordinator.postNotification(
-                    title: MusicManager.shared.songTitle,
-                    message: MusicManager.shared.artistName,
-                    iconName: "music.note",
-                    iconColor: .pink,
-                    iconBackground: Color.pink.opacity(0.18),
-                    duration: 3.0
-                )
-            } else {
-                coordinator.toggleSneakPeek(
-                    status: !coordinator.sneakPeek.show,
-                    type: .music,
-                    duration: 3.0
-                )
-            }
+            coordinator.postNotification(
+                title: MusicManager.shared.songTitle,
+                message: MusicManager.shared.artistName,
+                customImage: MusicManager.shared.albumArt,
+                iconName: "music.note",
+                iconColor: .pink,
+                iconBackground: Color.pink.opacity(0.18),
+                duration: 3.0
+            )
         }
 
         KeyboardShortcuts.onKeyDown(for: .toggleNotchOpen) { [weak self] in

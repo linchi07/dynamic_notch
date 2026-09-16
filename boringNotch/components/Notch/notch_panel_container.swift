@@ -11,7 +11,6 @@ import SwiftUI
 /// 便于快速插拔与扩展替换不同面板组件。
 struct NotchPanelContainer: View {
     @ObservedObject var coordinator = BoringViewCoordinator.shared
-    let albumArtNamespace: Namespace.ID
 
     @State private var slideDirection: SlideDirection = .forward
     @State private var activeView: NotchViews = .home
@@ -51,7 +50,7 @@ struct NotchPanelContainer: View {
     private func panelComponent(for view: NotchViews) -> some View {
         switch view {
         case .home:
-            NotchHomeView(albumArtNamespace: albumArtNamespace)
+            NotchHomeView()
         case .shelf:
             ShelfView()
         }

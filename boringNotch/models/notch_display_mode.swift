@@ -24,17 +24,20 @@ struct NotchActivityItem: Equatable {
     var tintColor: Color
     var accessibilityLabel: String
     var isPulsing: Bool
+    var heroId: String?
 
     init(
         visual: NotchActivityVisual,
         tintColor: Color = .white,
         accessibilityLabel: String = "",
-        isPulsing: Bool = false
+        isPulsing: Bool = false,
+        heroId: String? = nil
     ) {
         self.visual = visual
         self.tintColor = tintColor
         self.accessibilityLabel = accessibilityLabel
         self.isPulsing = isPulsing
+        self.heroId = heroId
     }
 }
 

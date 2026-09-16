@@ -14,11 +14,10 @@ import SwiftUI
 
 struct MusicPlayerView: View {
     @EnvironmentObject var vm: BoringViewModel
-    let albumArtNamespace: Namespace.ID
 
     var body: some View {
         HStack(spacing: 12) {
-            AlbumArtView(vm: vm, albumArtNamespace: albumArtNamespace)
+            AlbumArtView(vm: vm)
                 .frame(width: 86, height: 86)
             MusicControlsView().drawingGroup().compositingGroup()
         }
@@ -29,7 +28,6 @@ struct MusicPlayerView: View {
 struct AlbumArtView: View {
     @ObservedObject var musicManager = MusicManager.shared
     @ObservedObject var vm: BoringViewModel
-    let albumArtNamespace: Namespace.ID
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
@@ -56,7 +54,8 @@ struct AlbumArtView: View {
             .scaleEffect(x: 1.3, y: 1.4)
             .rotationEffect(.degrees(92))
             .blur(radius: 40)
-            .opacity(musicManager.isPlaying ? 0.5 : 0)
+            .opacity((vm.notchState == .open && musicManager.isPlaying) ? 0.5 : 0)
+            .animation(.easeInOut(duration: 0.25), value: vm.notchState)
     }
 
     private var albumArtButton: some View {
@@ -89,7 +88,7 @@ struct AlbumArtView: View {
         Image(nsImage: musicManager.albumArt)
             .resizable()
             .aspectRatio(1, contentMode: .fit)
-            .matchedGeometryEffect(id: "albumArt", in: albumArtNamespace)
+            .notchHeroDestination(id: NotchHeroIdentifier.MUSIC_ARTWORK.rawValue)
             .clipped()
             .clipShape(
                 RoundedRectangle(
@@ -432,7 +431,6 @@ struct NotchHomeView: View {
     @ObservedObject var batteryModel = BatteryStatusViewModel.shared
     @ObservedObject var coordinator = BoringViewCoordinator.shared
     @ObservedObject var musicManager = MusicManager.shared
-    let albumArtNamespace: Namespace.ID
 
     var body: some View {
         Group {
@@ -451,12 +449,12 @@ struct NotchHomeView: View {
     @ViewBuilder
     private var mainContent: some View {
         if musicManager.isPlaying {
-            MusicPlayerView(albumArtNamespace: albumArtNamespace)
+            MusicPlayerView()
                 .frame(maxWidth: .infinity)
                 .transition(.opacity)
         } else {
             HStack(alignment: .top, spacing: (shouldShowCamera && Defaults[.showCalendar]) ? 10 : 15) {
-                MusicPlayerView(albumArtNamespace: albumArtNamespace)
+                MusicPlayerView()
 
                 if Defaults[.showCalendar] {
                     CalendarView()

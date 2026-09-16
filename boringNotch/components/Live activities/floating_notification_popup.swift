@@ -35,6 +35,7 @@ struct BatteryNotificationPayload: Equatable {
 }
 
 /// Notification payload variants
+/// Notification payload variants
 enum FloatingNotificationPayload: Equatable {
     case standard(
         title: String,
@@ -42,7 +43,8 @@ enum FloatingNotificationPayload: Equatable {
         trailingText: String?,
         iconName: String,
         iconColor: Color,
-        iconBackground: Color
+        iconBackground: Color,
+        customImage: NSImage? = nil
     )
     case battery(BatteryNotificationPayload)
 }
@@ -61,6 +63,7 @@ struct FloatingNotificationItem: Identifiable, Equatable {
         title: String,
         message: String = "",
         trailingText: String? = nil,
+        customImage: NSImage? = nil,
         duration: TimeInterval = 2.0
     ) {
         self.payload = .standard(
@@ -69,7 +72,8 @@ struct FloatingNotificationItem: Identifiable, Equatable {
             trailingText: trailingText,
             iconName: iconName,
             iconColor: iconColor,
-            iconBackground: iconBackground
+            iconBackground: iconBackground,
+            customImage: customImage
         )
         self.duration = duration
     }
@@ -83,7 +87,7 @@ struct FloatingNotificationItem: Identifiable, Equatable {
     // Helper accessors for standard payload
     var title: String {
         switch payload {
-        case .standard(let title, _, _, _, _, _):
+        case .standard(let title, _, _, _, _, _, _):
             return title
         case .battery(let battery):
             if battery.isLowBatteryAlert && !battery.isInLowPowerMode {
@@ -102,7 +106,7 @@ struct FloatingNotificationItem: Identifiable, Equatable {
 
     var message: String {
         switch payload {
-        case .standard(_, let message, _, _, _, _):
+        case .standard(_, let message, _, _, _, _, _):
             return message
         case .battery(let battery):
             return "\(Int(battery.level))%"
@@ -111,7 +115,7 @@ struct FloatingNotificationItem: Identifiable, Equatable {
 
     var iconName: String {
         switch payload {
-        case .standard(_, _, _, let iconName, _, _):
+        case .standard(_, _, _, let iconName, _, _, _):
             return iconName
         case .battery:
             return "bolt.fill"
@@ -120,7 +124,7 @@ struct FloatingNotificationItem: Identifiable, Equatable {
 
     var iconColor: Color {
         switch payload {
-        case .standard(_, _, _, _, let iconColor, _):
+        case .standard(_, _, _, _, let iconColor, _, _):
             return iconColor
         case .battery(let battery):
             switch battery.theme {
@@ -133,7 +137,7 @@ struct FloatingNotificationItem: Identifiable, Equatable {
 
     var iconBackground: Color {
         switch payload {
-        case .standard(_, _, _, _, _, let iconBackground):
+        case .standard(_, _, _, _, _, let iconBackground, _):
             return iconBackground
         case .battery(let battery):
             switch battery.theme {
@@ -146,8 +150,17 @@ struct FloatingNotificationItem: Identifiable, Equatable {
 
     var trailingText: String? {
         switch payload {
-        case .standard(_, _, let trailingText, _, _, _):
+        case .standard(_, _, let trailingText, _, _, _, _):
             return trailingText
+        case .battery:
+            return nil
+        }
+    }
+
+    var customImage: NSImage? {
+        switch payload {
+        case .standard(_, _, _, _, _, _, let customImage):
+            return customImage
         case .battery:
             return nil
         }
@@ -165,15 +178,23 @@ struct FloatingNotificationPopup: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            // Leading Icon Badge (20x20)
-            ZStack {
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .fill(item.iconBackground)
+            // Leading Icon Badge or Custom Image (20x20)
+            if let customImage = item.customImage {
+                Image(nsImage: customImage)
+                    .resizable()
+                    .scaledToFill()
                     .frame(width: 20, height: 20)
+                    .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
+            } else {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        .fill(item.iconBackground)
+                        .frame(width: 20, height: 20)
 
-                Image(systemName: item.iconName)
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(item.iconColor)
+                    Image(systemName: item.iconName)
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(item.iconColor)
+                }
             }
 
             // Single-line notification text

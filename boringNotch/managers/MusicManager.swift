@@ -584,18 +584,15 @@ class MusicManager: ObservableObject {
 
     private func updateSneakPeek(title: String, artist: String) {
         if isPlaying && Defaults[.enableSneakPeek] {
-            if Defaults[.sneakPeekStyles] == .standard {
-                coordinator.toggleSneakPeek(status: true, type: .music)
-            } else {
-                coordinator.postNotification(
-                    title: title,
-                    message: artist,
-                    iconName: "music.note",
-                    iconColor: .pink,
-                    iconBackground: Color.pink.opacity(0.18),
-                    duration: 3.0
-                )
-            }
+            coordinator.postNotification(
+                title: title,
+                message: artist,
+                customImage: self.albumArt,
+                iconName: "music.note",
+                iconColor: .pink,
+                iconBackground: Color.pink.opacity(0.18),
+                duration: 3.0
+            )
         }
     }
 
