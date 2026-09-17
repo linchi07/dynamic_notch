@@ -11,6 +11,9 @@ import IOKit
 import CoreGraphics
 
 class BoringNotchXPCHelper: NSObject, BoringNotchXPCHelperProtocol {
+    private let windowQueue = DispatchQueue(label: "theboringteam.boringnotch.window-snap")
+    private var capturedWindow: AXUIElement?
+    private var capturedWindowInitialPosition: CGPoint?
     
     @objc func isAccessibilityAuthorized(with reply: @escaping (Bool) -> Void) {
         reply(AXIsProcessTrusted())
@@ -34,6 +37,194 @@ class BoringNotchXPCHelper: NSObject, BoringNotchXPCHelperProtocol {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             reply(AXIsProcessTrusted())
         }
+    }
+
+    // MARK: - Window snapping
+
+    @objc func beginWindowDrag(
+        _ processIdentifier: Int32,
+        windowX: Double,
+        windowY: Double,
+        windowWidth: Double,
+        windowHeight: Double,
+        with reply: @escaping (Bool) -> Void
+    ) {
+        windowQueue.async { [weak self] in
+            guard let self else {
+                reply(false)
+                return
+            }
+            self.capturedWindow = nil
+            self.capturedWindowInitialPosition = nil
+
+            let expectedFrame = CGRect(
+                x: windowX,
+                y: windowY,
+                width: windowWidth,
+                height: windowHeight
+            )
+            let matchedWindow = processIdentifier > 0
+                ? self.window(for: pid_t(processIdentifier), matching: expectedFrame)
+                : nil
+
+            guard AXIsProcessTrusted(), let window = matchedWindow ?? self.focusedWindow() else {
+                reply(false)
+                return
+            }
+
+            var positionSettable = DarwinBoolean(false)
+            var sizeSettable = DarwinBoolean(false)
+            guard AXUIElementIsAttributeSettable(window, kAXPositionAttribute as CFString, &positionSettable) == .success,
+                  AXUIElementIsAttributeSettable(window, kAXSizeAttribute as CFString, &sizeSettable) == .success,
+                  positionSettable.boolValue,
+                  sizeSettable.boolValue,
+                  let position = self.pointAttribute(kAXPositionAttribute as CFString, from: window)
+            else {
+                reply(false)
+                return
+            }
+
+            self.capturedWindow = window
+            self.capturedWindowInitialPosition = position
+            reply(true)
+        }
+    }
+
+    @objc func capturedWindowHasMoved(with reply: @escaping (Bool) -> Void) {
+        windowQueue.async { [weak self] in
+            guard let self,
+                  let window = self.capturedWindow,
+                  let initialPosition = self.capturedWindowInitialPosition,
+                  let currentPosition = self.pointAttribute(kAXPositionAttribute as CFString, from: window)
+            else {
+                reply(false)
+                return
+            }
+            reply(hypot(currentPosition.x - initialPosition.x, currentPosition.y - initialPosition.y) >= 3)
+        }
+    }
+
+    @objc func setCapturedWindowFrame(
+        _ x: Double,
+        y: Double,
+        width: Double,
+        height: Double,
+        with reply: @escaping (Bool) -> Void
+    ) {
+        windowQueue.async { [weak self] in
+            guard let self, let window = self.capturedWindow else {
+                reply(false)
+                return
+            }
+            defer {
+                self.capturedWindow = nil
+                self.capturedWindowInitialPosition = nil
+            }
+
+            var size = CGSize(width: width, height: height)
+            var position = CGPoint(x: x, y: y)
+            guard let sizeValue = AXValueCreate(.cgSize, &size),
+                  let positionValue = AXValueCreate(.cgPoint, &position)
+            else {
+                reply(false)
+                return
+            }
+
+            // Most apps behave more predictably when size is applied before position.
+            let sizeResult = AXUIElementSetAttributeValue(window, kAXSizeAttribute as CFString, sizeValue)
+            let positionResult = AXUIElementSetAttributeValue(window, kAXPositionAttribute as CFString, positionValue)
+            reply(sizeResult == .success && positionResult == .success)
+        }
+    }
+
+    @objc func cancelWindowDrag() {
+        windowQueue.async { [weak self] in
+            self?.capturedWindow = nil
+            self?.capturedWindowInitialPosition = nil
+        }
+    }
+
+    private func focusedWindow() -> AXUIElement? {
+        let systemWide = AXUIElementCreateSystemWide()
+        var applicationValue: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(
+            systemWide,
+            kAXFocusedApplicationAttribute as CFString,
+            &applicationValue
+        ) == .success,
+        let applicationValue,
+        CFGetTypeID(applicationValue) == AXUIElementGetTypeID()
+        else { return nil }
+
+        let application = unsafeDowncast(applicationValue, to: AXUIElement.self)
+        var windowValue: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(
+            application,
+            kAXFocusedWindowAttribute as CFString,
+            &windowValue
+        ) == .success,
+        let windowValue,
+        CFGetTypeID(windowValue) == AXUIElementGetTypeID()
+        else { return nil }
+
+        return unsafeDowncast(windowValue, to: AXUIElement.self)
+    }
+
+    private func window(for processIdentifier: pid_t, matching expectedFrame: CGRect) -> AXUIElement? {
+        let application = AXUIElementCreateApplication(processIdentifier)
+        var windowsValue: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(
+            application,
+            kAXWindowsAttribute as CFString,
+            &windowsValue
+        ) == .success,
+        let windows = windowsValue as? [AXUIElement]
+        else { return nil }
+
+        return windows.min { lhs, rhs in
+            frameDistance(from: lhs, to: expectedFrame) < frameDistance(from: rhs, to: expectedFrame)
+        }.flatMap { candidate in
+            frameDistance(from: candidate, to: expectedFrame) <= 48 ? candidate : nil
+        }
+    }
+
+    private func frameDistance(from window: AXUIElement, to expectedFrame: CGRect) -> CGFloat {
+        guard let position = pointAttribute(kAXPositionAttribute as CFString, from: window),
+              let size = sizeAttribute(kAXSizeAttribute as CFString, from: window)
+        else { return .greatestFiniteMagnitude }
+
+        return abs(position.x - expectedFrame.minX)
+            + abs(position.y - expectedFrame.minY)
+            + abs(size.width - expectedFrame.width)
+            + abs(size.height - expectedFrame.height)
+    }
+
+    private func pointAttribute(_ attribute: CFString, from element: AXUIElement) -> CGPoint? {
+        var value: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(element, attribute, &value) == .success,
+              let value,
+              CFGetTypeID(value) == AXValueGetTypeID()
+        else { return nil }
+
+        var point = CGPoint.zero
+        guard AXValueGetValue(unsafeDowncast(value, to: AXValue.self), .cgPoint, &point) else {
+            return nil
+        }
+        return point
+    }
+
+    private func sizeAttribute(_ attribute: CFString, from element: AXUIElement) -> CGSize? {
+        var value: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(element, attribute, &value) == .success,
+              let value,
+              CFGetTypeID(value) == AXValueGetTypeID()
+        else { return nil }
+
+        var size = CGSize.zero
+        guard AXValueGetValue(unsafeDowncast(value, to: AXValue.self), .cgSize, &size) else {
+            return nil
+        }
+        return size
     }
     
     private class KeyboardBrightnessClient {

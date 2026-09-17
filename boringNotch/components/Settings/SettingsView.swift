@@ -156,6 +156,9 @@ struct GeneralSettings: View {
                 .tint(.effectiveAccent)
                 .disabled(hideNotchOption != .never)
                 LaunchAtLogin.Toggle("Launch at login")
+                Defaults.Toggle(key: .enableWindowSnapping) {
+                    Text("Show window layouts when dragging to the top")
+                }
             } header: {
                 Text("System features")
             } footer: {

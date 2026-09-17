@@ -303,6 +303,84 @@ final class XPCHelperClient: NSObject, @unchecked Sendable {
             return false
         }
     }
+
+    // MARK: - Window snapping
+
+    nonisolated func beginWindowDrag(
+        processIdentifier: Int32,
+        initialFrame: CGRect?
+    ) async -> Bool {
+        do {
+            let service = await MainActor.run { ensureRemoteService() }
+            let result: Bool = try await service.withContinuation { service, continuation in
+                service.beginWindowDrag(
+                    processIdentifier,
+                    windowX: Double(initialFrame?.minX ?? 0),
+                    windowY: Double(initialFrame?.minY ?? 0),
+                    windowWidth: Double(initialFrame?.width ?? 0),
+                    windowHeight: Double(initialFrame?.height ?? 0)
+                ) { captured in
+                    continuation.resume(returning: captured)
+                }
+            }
+            await MainActor.run { markConnectionHealthy() }
+            return result
+        } catch {
+            await markConnectionUnhealthy()
+            return false
+        }
+    }
+
+    nonisolated func capturedWindowHasMoved() async -> Bool {
+        do {
+            let service = await MainActor.run { ensureRemoteService() }
+            let result: Bool = try await service.withContinuation { service, continuation in
+                service.capturedWindowHasMoved { moved in
+                    continuation.resume(returning: moved)
+                }
+            }
+            await MainActor.run { markConnectionHealthy() }
+            return result
+        } catch {
+            await markConnectionUnhealthy()
+            return false
+        }
+    }
+
+    nonisolated func setCapturedWindowFrame(_ frame: CGRect) async -> Bool {
+        do {
+            let service = await MainActor.run { ensureRemoteService() }
+            let result: Bool = try await service.withContinuation { service, continuation in
+                service.setCapturedWindowFrame(
+                    frame.origin.x,
+                    y: frame.origin.y,
+                    width: frame.width,
+                    height: frame.height
+                ) { success in
+                    continuation.resume(returning: success)
+                }
+            }
+            await MainActor.run { markConnectionHealthy() }
+            return result
+        } catch {
+            await markConnectionUnhealthy()
+            return false
+        }
+    }
+
+    nonisolated func cancelWindowDrag() {
+        Task {
+            let service = await MainActor.run { ensureRemoteService() }
+            do {
+                try await service.withService { service in
+                    service.cancelWindowDrag()
+                }
+                await MainActor.run { markConnectionHealthy() }
+            } catch {
+                await markConnectionUnhealthy()
+            }
+        }
+    }
     
     // MARK: - Keyboard Brightness
     

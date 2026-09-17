@@ -116,8 +116,8 @@ struct OnboardingView: View {
                 PermissionRequestView(
                     icon: Image(systemName: "hand.raised.fill"),
                     title: "Enable Accessibility Access",
-                    description: "Accessibility access is required to replace system notifications with the Boring Notch HUD. This allows the app to intercept media and brightness events to display custom HUD overlays.",
-                    privacyNote: "Accessibility access is used only to improve media and brightness notifications. No data is collected or shared.",
+                    description: "Accessibility access powers custom HUD controls and window layouts. It lets Boring Notch detect the window you are dragging and resize it after you choose a layout.",
+                    privacyNote: "Accessibility access is used only for system controls and window arrangement. No window content is collected or shared.",
                     onAllow: {
                         Task {
                             await requestAccessibilityPermission()
@@ -167,7 +167,7 @@ struct OnboardingView: View {
     }
     
     func requestAccessibilityPermission() async {
-        await XPCHelperClient.shared.ensureAccessibilityAuthorization(promptIfNeeded: true)
+        _ = await XPCHelperClient.shared.ensureAccessibilityAuthorization(promptIfNeeded: true)
     }
 }
 

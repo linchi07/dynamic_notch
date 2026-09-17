@@ -49,7 +49,7 @@ struct ContentView: View {
     // Unified interactive spring for movement/resizing to keep hero and notch layout strictly in sync
     private let NOTCH_OPEN_SPRING = Animation.interactiveSpring(response: 0.40, dampingFraction: 0.82, blendDuration: 0)
     private let NOTCH_CLOSE_SPRING = Animation.interactiveSpring(response: 0.38, dampingFraction: 0.85, blendDuration: 0)
-    private let NOTIFICATION_CONTENT_SLIDE_SPRING = Animation.spring(response: 0.32, dampingFraction: 0.86)
+    private let NOTIFICATION_CONTENT_SLIDE_SPRING = Animation.spring(response: 0.36, dampingFraction: 0.88)
 
     private let extendedHoverPadding: CGFloat = 30
     private let zeroHeightHoverPadding: CGFloat = 10
@@ -188,6 +188,9 @@ struct ContentView: View {
             }
 
             if let notification = coordinator.activeNotification {
+                let contentWidth: CGFloat = notification.isBattery ? 246 : 224
+                let contentHeight: CGFloat = 30
+
                 FloatingNotificationContainer(
                     isPresented: $coordinator.isNotificationPresented,
                     autoDismissAfter: notification.duration,
@@ -197,36 +200,38 @@ struct ContentView: View {
                     }
                 ) { isContentVisible in
                     ZStack {
-                        switch notification.payload {
-                        case .standard:
-                            FloatingNotificationPopup(
-                                item: notification,
-                                isContentVisible: isContentVisible
-                            ) {
-                                coordinator.dismissNotification()
-                            }
-                        case .battery(let batteryData):
-                            BatteryNotificationPopup(
-                                payload: batteryData,
-                                isContentVisible: isContentVisible,
-                                onEnableLowPowerMode: {
-                                    BatteryStatusViewModel.shared.enableLowPowerMode()
-                                },
-                                onClose: {
+                        Group {
+                            switch notification.payload {
+                            case .standard:
+                                FloatingNotificationPopup(
+                                    item: notification,
+                                    isContentVisible: isContentVisible
+                                ) {
                                     coordinator.dismissNotification()
                                 }
-                            )
+                            case .battery(let batteryData):
+                                BatteryNotificationPopup(
+                                    payload: batteryData,
+                                    isContentVisible: isContentVisible,
+                                    onEnableLowPowerMode: {
+                                        BatteryStatusViewModel.shared.enableLowPowerMode()
+                                    },
+                                    onClose: {
+                                        coordinator.dismissNotification()
+                                    }
+                                )
+                            }
                         }
-                    }
-                    .frame(width: notification.isBattery ? 246 : 224, height: 30)
-                    .clipped()
-                    .id(notification.id)
-                    .transition(
-                        .asymmetric(
-                            insertion: .offset(x: 36).combined(with: .opacity),
-                            removal: .offset(x: -36).combined(with: .opacity)
+                        .id(notification.id)
+                        .transition(
+                            .asymmetric(
+                                insertion: .offset(x: contentWidth),
+                                removal: .offset(x: -contentWidth)
+                            )
                         )
-                    )
+                    }
+                    .frame(width: contentWidth, height: contentHeight)
+                    .clipShape(Capsule())
                     .animation(NOTIFICATION_CONTENT_SLIDE_SPRING, value: notification.id)
                 }
                 .padding(.top, vm.effectiveClosedNotchHeight + 8)

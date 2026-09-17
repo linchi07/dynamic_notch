@@ -20282,6 +20282,9 @@
         }
       }
     },
+    "Show window layouts when dragging to the top" : {
+
+    },
     "Slider color" : {
       "localizations" : {
         "ar" : {

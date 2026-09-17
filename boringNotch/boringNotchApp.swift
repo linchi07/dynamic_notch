@@ -65,6 +65,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var screenUnlockedObserver: Any?
     private var isScreenLocked = false
     private var dragDetector: DragDetector?
+    private let windowSnapController = WindowSnapController()
     private var screenConfigurationTask: Task<Void, Never>?
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
@@ -83,6 +84,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         MusicManager.shared.destroy()
+        windowSnapController.cancel()
         stopDragDetector()
         cleanupWindow()
         XPCHelperClient.shared.shutdown()
@@ -116,6 +118,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func stopDragDetector() {
+        windowSnapController.cancel()
         dragDetector?.stopMonitoring()
         dragDetector = nil
     }
@@ -123,8 +126,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     @MainActor
     private func setupDragDetector(on screen: NSScreen) {
         stopDragDetector()
-        guard Defaults[.expandedDragDetection] else { return }
-
         let notchRegion = CGRect(
             x: screen.frame.midX - openNotchSize.width / 2,
             y: screen.frame.maxY - openNotchSize.height,
@@ -134,9 +135,38 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let detector = DragDetector(notchRegion: notchRegion)
         detector.onDragEntersNotchRegion = { [weak self] in
             Task { @MainActor in
-                guard let self, self.window?.isVisible == true else { return }
+                guard Defaults[.expandedDragDetection],
+                      let self,
+                      self.window?.isVisible == true
+                else { return }
                 self.vm.open()
                 self.coordinator.currentView = .shelf
+            }
+        }
+        detector.onMouseDown = { [weak self] point in
+            Task { @MainActor in
+                guard Defaults[.enableWindowSnapping] else { return }
+                self?.windowSnapController.beginDrag(at: point)
+            }
+        }
+        detector.onMouseDragged = { [weak self] point in
+            Task { @MainActor in
+                guard Defaults[.enableWindowSnapping] else { return }
+                self?.windowSnapController.updateDrag(at: point)
+            }
+        }
+        detector.onMouseUp = { [weak self] point in
+            Task { @MainActor in
+                guard Defaults[.enableWindowSnapping] else {
+                    self?.windowSnapController.cancel()
+                    return
+                }
+                self?.windowSnapController.endDrag(at: point)
+            }
+        }
+        detector.onContentDragStarted = { [weak self] in
+            Task { @MainActor in
+                self?.windowSnapController.cancel()
             }
         }
         dragDetector = detector
