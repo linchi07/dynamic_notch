@@ -27,6 +27,7 @@ private enum FloatingNotificationMetrics {
 struct FloatingNotificationContainer<Content: View>: View {
     @Binding var isPresented: Bool
     var autoDismissAfter: TimeInterval? = 2.0
+    var updateTrigger: AnyHashable? = nil
     var onFullExpand: (() -> Void)? = nil
     var onDismiss: (() -> Void)? = nil
     let content: (Bool) -> Content
@@ -40,12 +41,14 @@ struct FloatingNotificationContainer<Content: View>: View {
     init(
         isPresented: Binding<Bool>,
         autoDismissAfter: TimeInterval? = 2.0,
+        updateTrigger: AnyHashable? = nil,
         onFullExpand: (() -> Void)? = nil,
         onDismiss: (() -> Void)? = nil,
         @ViewBuilder content: @escaping (Bool) -> Content
     ) {
         self._isPresented = isPresented
         self.autoDismissAfter = autoDismissAfter
+        self.updateTrigger = updateTrigger
         self.onFullExpand = onFullExpand
         self.onDismiss = onDismiss
         self.content = content
@@ -101,22 +104,34 @@ struct FloatingNotificationContainer<Content: View>: View {
     }
 
     var body: some View {
-        content(isContentVisible)
-            .background(
-                ZStack {
+        ZStack {
+            Capsule()
+                .fill(Color(white: 0.08).opacity(0.96))
+                .background(
                     VisualEffectView(material: .hudWindow, blendingMode: .withinWindow)
                         .opacity(0.35)
-                    Color(white: 0.08)
-                        .opacity(0.96)
-                }
+                        .clipShape(Capsule())
+                )
+
+            content(isContentVisible)
+                .clipShape(Capsule())
+        }
+        .fixedSize()
+        .clipShape(Capsule())
+        // Pure spatial depth shadows for clean layering without colored halo glow
+        .shadow(color: Color.black.opacity(0.42), radius: 10, x: 0, y: 5)
+        .shadow(color: Color.black.opacity(0.20), radius: 2, x: 0, y: 1)
+        .scaleEffect(x: phaseScaleX, y: phaseScaleY, anchor: .top)
+        .offset(y: phaseOffsetY)
+        .opacity(phaseOpacity)
+            .gesture(
+                DragGesture(minimumDistance: 8)
+                    .onEnded { value in
+                        if value.translation.height < -8 {
+                            self.isPresented = false
+                        }
+                    }
             )
-            .clipShape(Capsule())
-            // Pure spatial depth shadows for clean layering without colored halo glow
-            .shadow(color: Color.black.opacity(0.42), radius: 10, x: 0, y: 5)
-            .shadow(color: Color.black.opacity(0.20), radius: 2, x: 0, y: 1)
-            .scaleEffect(x: phaseScaleX, y: phaseScaleY, anchor: .top)
-            .offset(y: phaseOffsetY)
-            .opacity(phaseOpacity)
             .onAppear {
                 if isPresented {
                     startTwoStageEjection()
@@ -127,6 +142,14 @@ struct FloatingNotificationContainer<Content: View>: View {
                     startTwoStageEjection()
                 } else if phase == .fullyExpanded || phase == .ejectedStage1 {
                     startRetractionSequence()
+                }
+            }
+            .onChange(of: updateTrigger) { oldVal, newVal in
+                guard oldVal != nil, oldVal != newVal else { return }
+                if isPresented && (phase == .fullyExpanded || phase == .ejectedStage1) {
+                    if let duration = autoDismissAfter {
+                        scheduleAutoDismiss(after: duration)
+                    }
                 }
             }
     }

@@ -46,8 +46,10 @@ struct ContentView: View {
         closedNotchHUDStyle == .floatingBar
     }
 
-    // Shared interactive spring for movement/resizing to avoid conflicting animations
-    private let animationSpring = Animation.interactiveSpring(response: 0.38, dampingFraction: 0.8, blendDuration: 0)
+    // Unified interactive spring for movement/resizing to keep hero and notch layout strictly in sync
+    private let NOTCH_OPEN_SPRING = Animation.interactiveSpring(response: 0.40, dampingFraction: 0.82, blendDuration: 0)
+    private let NOTCH_CLOSE_SPRING = Animation.interactiveSpring(response: 0.38, dampingFraction: 0.85, blendDuration: 0)
+    private let NOTIFICATION_CONTENT_SLIDE_SPRING = Animation.spring(response: 0.32, dampingFraction: 0.86)
 
     private let extendedHoverPadding: CGFloat = 30
     private let zeroHeightHoverPadding: CGFloat = 10
@@ -84,12 +86,46 @@ struct ContentView: View {
         )
     }
 
+    /// 获取当前生效的常驻持续活动状态（用于通知打断检测）
+    private var activeStateForInterruptionCheck: NotchActiveState? {
+        if case .active(let state) = coordinator.displayMode {
+            return state
+        }
+        if case .active(let priorState) = coordinator.stateBeforeNotification {
+            return priorState
+        }
+        if shouldShowMusicActivity {
+            return musicActiveState
+        }
+        return nil
+    }
+
     private var effectiveDisplayMode: NotchDisplayMode {
         switch coordinator.displayMode {
-        case .idle where shouldShowMusicActivity:
-            return .active(musicActiveState)
-        default:
-            return coordinator.displayMode
+        case .idle:
+            if let active = activeStateForInterruptionCheck {
+                return .active(active)
+            }
+            return .idle
+
+        case .active(let state):
+            return .active(state)
+
+        case .notification(let item):
+            if let active = activeStateForInterruptionCheck {
+                // 仅当通知为持续活动自身的更新事件（如切歌）且匹配当前活动 ID 时，才打断当前活动收起翅膀
+                let isCurrentActivityUpdate = item.category == .activityUpdate
+                    && item.activityId != nil
+                    && active.activities.contains(where: { $0.id == item.activityId })
+
+                if isCurrentActivityUpdate {
+                    return .notification(item)
+                } else {
+                    // 系统事件（如电池警告）或非当前活动的通知，不打断持续活动，刘海翅膀保持显示
+                    return .active(active)
+                }
+            }
+            return .notification(item)
         }
     }
 
@@ -155,32 +191,44 @@ struct ContentView: View {
                 FloatingNotificationContainer(
                     isPresented: $coordinator.isNotificationPresented,
                     autoDismissAfter: notification.duration,
+                    updateTrigger: notification.id,
                     onDismiss: {
                         coordinator.notificationDidDismiss()
                     }
                 ) { isContentVisible in
-                    switch notification.payload {
-                    case .standard:
-                        FloatingNotificationPopup(
-                            item: notification,
-                            isContentVisible: isContentVisible
-                        ) {
-                            coordinator.dismissNotification()
-                        }
-                    case .battery(let batteryData):
-                        BatteryNotificationPopup(
-                            payload: batteryData,
-                            isContentVisible: isContentVisible,
-                            onEnableLowPowerMode: {
-                                BatteryStatusViewModel.shared.enableLowPowerMode()
-                            },
-                            onClose: {
+                    ZStack {
+                        switch notification.payload {
+                        case .standard:
+                            FloatingNotificationPopup(
+                                item: notification,
+                                isContentVisible: isContentVisible
+                            ) {
                                 coordinator.dismissNotification()
                             }
-                        )
+                        case .battery(let batteryData):
+                            BatteryNotificationPopup(
+                                payload: batteryData,
+                                isContentVisible: isContentVisible,
+                                onEnableLowPowerMode: {
+                                    BatteryStatusViewModel.shared.enableLowPowerMode()
+                                },
+                                onClose: {
+                                    coordinator.dismissNotification()
+                                }
+                            )
+                        }
                     }
+                    .frame(width: notification.isBattery ? 246 : 224, height: 30)
+                    .clipped()
+                    .id(notification.id)
+                    .transition(
+                        .asymmetric(
+                            insertion: .offset(x: 36).combined(with: .opacity),
+                            removal: .offset(x: -36).combined(with: .opacity)
+                        )
+                    )
+                    .animation(NOTIFICATION_CONTENT_SLIDE_SPRING, value: notification.id)
                 }
-                .id(notification.id)
                 .padding(.top, vm.effectiveClosedNotchHeight + 8)
                 .zIndex(0.5)
             }
@@ -215,14 +263,7 @@ struct ContentView: View {
                 
                 mainLayout
                     .frame(height: vm.notchState == .open ? vm.notchSize.height : nil)
-                    .conditionalModifier(true) { view in
-                        let openAnimation = Animation.spring(response: 0.42, dampingFraction: 0.8, blendDuration: 0)
-                        let closeAnimation = Animation.spring(response: 0.45, dampingFraction: 1.0, blendDuration: 0)
-                        
-                        return view
-                            .animation(vm.notchState == .open ? openAnimation : closeAnimation, value: vm.notchState)
-                            .animation(.smooth, value: gestureProgress)
-                    }
+                    .animation(.smooth, value: gestureProgress)
                     .contentShape(Rectangle())
                     .onHover { hovering in
                         handleHover(hovering)
@@ -250,7 +291,7 @@ struct ContentView: View {
                                 guard !Task.isCancelled else { return }
                                 await MainActor.run {
                                     if self.vm.notchState == .open && !self.isHovering && !self.vm.isBatteryPopoverActive && !SharingStateManager.shared.preventNotchClose {
-                                        self.vm.close()
+                                        self.doClose()
                                     }
                                 }
                             }
@@ -271,7 +312,7 @@ struct ContentView: View {
                                 guard !Task.isCancelled else { return }
                                 await MainActor.run {
                                     if !self.vm.isBatteryPopoverActive && !self.isHovering && self.vm.notchState == .open && !SharingStateManager.shared.preventNotchClose {
-                                        self.vm.close()
+                                        self.doClose()
                                     }
                                 }
                             }
@@ -335,7 +376,7 @@ struct ContentView: View {
 
                 vm.dropEvent = false
                 if !SharingStateManager.shared.preventNotchClose {
-                    vm.close()
+                    doClose()
                 }
             }
         }
@@ -460,8 +501,17 @@ struct ContentView: View {
     }
 
     private func doOpen() {
-        withAnimation(animationSpring) {
+        if coordinator.isNotificationPresented {
+            coordinator.dismissNotification()
+        }
+        withAnimation(NOTCH_OPEN_SPRING) {
             vm.open()
+        }
+    }
+
+    private func doClose() {
+        withAnimation(NOTCH_CLOSE_SPRING) {
+            vm.close()
         }
     }
 
@@ -472,7 +522,7 @@ struct ContentView: View {
         hoverTask?.cancel()
         
         if hovering {
-            withAnimation(animationSpring) {
+            withAnimation(NOTCH_OPEN_SPRING) {
                 isHovering = true
             }
             
@@ -502,12 +552,12 @@ struct ContentView: View {
                 guard !Task.isCancelled else { return }
                 
                 await MainActor.run {
-                    withAnimation(animationSpring) {
+                    withAnimation(NOTCH_CLOSE_SPRING) {
                         self.isHovering = false
                     }
                     
                     if self.vm.notchState == .open && !self.vm.isBatteryPopoverActive && !SharingStateManager.shared.preventNotchClose {
-                        self.vm.close()
+                        self.doClose()
                     }
                 }
             }
@@ -520,11 +570,11 @@ struct ContentView: View {
         guard vm.notchState == .closed else { return }
 
         if phase == .ended {
-            withAnimation(animationSpring) { gestureProgress = .zero }
+            withAnimation(NOTCH_CLOSE_SPRING) { gestureProgress = .zero }
             return
         }
 
-        withAnimation(animationSpring) {
+        withAnimation(NOTCH_OPEN_SPRING) {
             gestureProgress = (translation / Defaults[.gestureSensitivity]) * 20
         }
 
@@ -532,7 +582,7 @@ struct ContentView: View {
             if Defaults[.enableHaptics] {
                 haptics.toggle()
             }
-            withAnimation(animationSpring) {
+            withAnimation(NOTCH_OPEN_SPRING) {
                 gestureProgress = .zero
             }
             doOpen()
@@ -542,23 +592,23 @@ struct ContentView: View {
     private func handleUpGesture(translation: CGFloat, phase: NSEvent.Phase) {
         guard vm.notchState == .open && !vm.isHoveringCalendar else { return }
 
-        withAnimation(animationSpring) {
+        withAnimation(NOTCH_CLOSE_SPRING) {
             gestureProgress = (translation / Defaults[.gestureSensitivity]) * -20
         }
 
         if phase == .ended {
-            withAnimation(animationSpring) {
+            withAnimation(NOTCH_CLOSE_SPRING) {
                 gestureProgress = .zero
             }
         }
 
         if translation > Defaults[.gestureSensitivity] {
-            withAnimation(animationSpring) {
+            withAnimation(NOTCH_CLOSE_SPRING) {
                 isHovering = false
             }
             if !SharingStateManager.shared.preventNotchClose { 
                 gestureProgress = .zero
-                vm.close()
+                doClose()
             }
 
             if Defaults[.enableHaptics] {

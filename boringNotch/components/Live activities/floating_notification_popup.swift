@@ -35,6 +35,12 @@ struct BatteryNotificationPayload: Equatable {
 }
 
 /// Notification payload variants
+/// Notification category defining whether the notification is an independent system alert or an activity state update
+enum NotificationCategory: Equatable {
+    case systemAlert    // 独立系统事件（如电池、充电等）
+    case activityUpdate // 持续活动的状态变动（如切歌）
+}
+
 /// Notification payload variants
 enum FloatingNotificationPayload: Equatable {
     case standard(
@@ -54,6 +60,8 @@ struct FloatingNotificationItem: Identifiable, Equatable {
     let id: UUID = UUID()
     var payload: FloatingNotificationPayload
     var duration: TimeInterval = 2.0
+    var category: NotificationCategory = .systemAlert
+    var activityId: String? = nil
 
     // Convenience initializer for standard notification
     init(
@@ -64,6 +72,8 @@ struct FloatingNotificationItem: Identifiable, Equatable {
         message: String = "",
         trailingText: String? = nil,
         customImage: NSImage? = nil,
+        category: NotificationCategory = .systemAlert,
+        activityId: String? = nil,
         duration: TimeInterval = 2.0
     ) {
         self.payload = .standard(
@@ -75,13 +85,31 @@ struct FloatingNotificationItem: Identifiable, Equatable {
             iconBackground: iconBackground,
             customImage: customImage
         )
+        self.category = category
+        self.activityId = activityId
         self.duration = duration
     }
 
     // Convenience initializer for battery notification
     init(battery: BatteryNotificationPayload, duration: TimeInterval = 2.0) {
         self.payload = .battery(battery)
+        self.category = .systemAlert
+        self.activityId = nil
         self.duration = duration
+    }
+
+    mutating func updateImage(_ image: NSImage) {
+        if case .standard(let title, let message, let trailing, let iconName, let iconColor, let iconBg, _) = payload {
+            self.payload = .standard(
+                title: title,
+                message: message,
+                trailingText: trailing,
+                iconName: iconName,
+                iconColor: iconColor,
+                iconBackground: iconBg,
+                customImage: image
+            )
+        }
     }
 
     // Helper accessors for standard payload
@@ -164,6 +192,11 @@ struct FloatingNotificationItem: Identifiable, Equatable {
         case .battery:
             return nil
         }
+    }
+
+    var isBattery: Bool {
+        if case .battery = payload { return true }
+        return false
     }
 }
 

@@ -43,7 +43,7 @@ class BoringViewCoordinator: ObservableObject {
     @Published var isNotificationPresented: Bool = false
     @Published var displayMode: NotchDisplayMode = .idle
     @Published var activeCombo: NotchComboActivity? = nil
-    private var stateBeforeNotification: NotchDisplayMode = .idle
+    private(set) var stateBeforeNotification: NotchDisplayMode = .idle
     private var comboTask: Task<Void, Never>?
     private var sneakPeekDispatch: DispatchWorkItem?
     private var hudEnableTask: Task<Void, Never>?
@@ -80,17 +80,24 @@ class BoringViewCoordinator: ObservableObject {
     }
 
     func postNotificationItem(_ item: FloatingNotificationItem) {
+        let isAlreadyShowingNotification: Bool
         switch displayMode {
         case .notification:
-            break // Preserve the state from before the first notification.
+            isAlreadyShowingNotification = true
         case .active:
             stateBeforeNotification = displayMode
+            isAlreadyShowingNotification = false
         case .idle:
             stateBeforeNotification = .idle
+            isAlreadyShowingNotification = false
         }
 
-        withAnimation(.smooth(duration: 0.24)) {
+        if isAlreadyShowingNotification {
             displayMode = .notification(item)
+        } else {
+            withAnimation(.smooth(duration: 0.24)) {
+                displayMode = .notification(item)
+            }
         }
         self.isNotificationPresented = true
     }
@@ -142,6 +149,8 @@ class BoringViewCoordinator: ObservableObject {
         iconColor: Color = .white,
         iconBackground: Color = Color.white.opacity(0.12),
         trailingText: String? = nil,
+        category: NotificationCategory = .systemAlert,
+        activityId: String? = nil,
         duration: TimeInterval = 2.0
     ) {
         let item = FloatingNotificationItem(
@@ -152,9 +161,18 @@ class BoringViewCoordinator: ObservableObject {
             message: message,
             trailingText: trailingText,
             customImage: customImage,
+            category: category,
+            activityId: activityId,
             duration: duration
         )
         postNotificationItem(item)
+    }
+
+    /// 热更新当前活跃通知中的图片（用于切歌时封面异步加载完成后的即时同步）
+    func updateActiveNotificationImage(_ image: NSImage) {
+        guard case .notification(var item) = displayMode else { return }
+        item.updateImage(image)
+        self.displayMode = .notification(item)
     }
 
     func postBatteryNotification(

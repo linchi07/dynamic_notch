@@ -263,6 +263,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 iconName: "music.note",
                 iconColor: .pink,
                 iconBackground: Color.pink.opacity(0.18),
+                category: .activityUpdate,
+                activityId: "music.playback",
                 duration: 3.0
             )
         }

@@ -208,12 +208,21 @@ class MusicManager: ObservableObject {
         if hasContentChange {
             self.triggerFlipAnimation()
 
+            var latestArtworkImage: NSImage? = nil
+
             if artworkChanged, let artwork = state.artwork {
-                self.updateArtwork(artwork)
+                if let decoded = NSImage(data: artwork) {
+                    self.usingAppIconForArtwork = false
+                    latestArtworkImage = decoded
+                    self.updateAlbumArt(newAlbumArt: decoded)
+                } else {
+                    self.updateArtwork(artwork)
+                }
             } else if state.artwork == nil {
                 // Try to use app icon if no artwork but track changed
                 if let appIconImage = AppIconAsNSImage(for: state.bundleIdentifier) {
                     self.usingAppIconForArtwork = true
+                    latestArtworkImage = appIconImage
                     self.updateAlbumArt(newAlbumArt: appIconImage)
                 }
             }
@@ -229,7 +238,7 @@ class MusicManager: ObservableObject {
 
             // Only update sneak peek if there's actual content and something changed
             if !state.title.isEmpty && !state.artist.isEmpty && state.isPlaying {
-                self.updateSneakPeek(title: state.title, artist: state.artist)
+                self.updateSneakPeek(title: state.title, artist: state.artist, customImage: latestArtworkImage)
             }
 
             // Fetch lyrics on content change
@@ -561,6 +570,7 @@ class MusicManager: ObservableObject {
                 self.calculateAverageColor()
             }
         }
+        coordinator.updateActiveNotificationImage(newAlbumArt)
     }
 
     // MARK: - Playback Position Estimation
@@ -582,15 +592,20 @@ class MusicManager: ObservableObject {
         }
     }
 
-    private func updateSneakPeek(title: String, artist: String) {
+    private static let MUSIC_ACTIVITY_ID = "music.playback"
+
+    private func updateSneakPeek(title: String, artist: String, customImage: NSImage? = nil) {
         if isPlaying && Defaults[.enableSneakPeek] {
+            let image = customImage ?? (usingAppIconForArtwork ? nil : self.albumArt)
             coordinator.postNotification(
                 title: title,
                 message: artist,
-                customImage: self.albumArt,
+                customImage: image,
                 iconName: "music.note",
                 iconColor: .pink,
                 iconBackground: Color.pink.opacity(0.18),
+                category: .activityUpdate,
+                activityId: Self.MUSIC_ACTIVITY_ID,
                 duration: 3.0
             )
         }
