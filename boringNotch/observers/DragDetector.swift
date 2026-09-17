@@ -224,61 +224,81 @@ private struct WindowSnapLayout: Identifiable {
 @MainActor
 private final class WindowSnapOverlayModel: ObservableObject {
     @Published var selectedSlotID: String?
+    @Published var isPresented = false
+    @Published var isContentVisible = false
 }
 
 private struct WindowSnapOverlayView: View {
     @ObservedObject var model: WindowSnapOverlayModel
 
     var body: some View {
-        HStack(spacing: 10) {
-            ForEach(WindowSnapLayout.presets) { layout in
-                GeometryReader { proxy in
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .fill(Color.white.opacity(0.055))
-
-                        ForEach(layout.slots) { slot in
-                            let frame = slot.unitFrame
-                            let inset: CGFloat = 6
-                            let availableWidth = proxy.size.width - inset * 2
-                            let availableHeight = proxy.size.height - inset * 2
-                            RoundedRectangle(cornerRadius: 5, style: .continuous)
-                                .fill(
-                                    model.selectedSlotID == slot.id
-                                        ? Color.accentColor.opacity(0.95)
-                                        : Color.white.opacity(0.20)
-                                )
-                                .overlay {
-                                    RoundedRectangle(cornerRadius: 5, style: .continuous)
-                                        .stroke(Color.white.opacity(0.16), lineWidth: 0.5)
-                                }
-                                .frame(
-                                    width: max(1, availableWidth * frame.width - 3),
-                                    height: max(1, availableHeight * frame.height - 3)
-                                )
-                                .position(
-                                    x: inset + availableWidth * frame.midX,
-                                    y: inset + availableHeight * frame.midY
-                                )
-                                .animation(.easeOut(duration: 0.12), value: model.selectedSlotID)
-                        }
-                    }
-                }
-                .frame(width: 104, height: 72)
-            }
-        }
-        .padding(14)
-        .background {
+        ZStack {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(Color(nsColor: .windowBackgroundColor).opacity(0.94))
-                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .fill(Color.black)
                 .overlay {
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .stroke(Color.white.opacity(0.15), lineWidth: 0.7)
+                        .stroke(Color.white.opacity(0.10), lineWidth: 0.7)
                 }
-                .shadow(color: .black.opacity(0.32), radius: 18, y: 8)
+                .shadow(color: .black.opacity(0.48), radius: 16, y: 7)
+
+            HStack(spacing: 10) {
+                ForEach(WindowSnapLayout.presets) { layout in
+                    GeometryReader { proxy in
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .fill(Color.white.opacity(0.075))
+
+                            ForEach(layout.slots) { slot in
+                                let frame = slot.unitFrame
+                                let inset: CGFloat = 6
+                                let availableWidth = proxy.size.width - inset * 2
+                                let availableHeight = proxy.size.height - inset * 2
+                                RoundedRectangle(cornerRadius: 5, style: .continuous)
+                                    .fill(
+                                        model.selectedSlotID == slot.id
+                                            ? Color.white.opacity(0.92)
+                                            : Color.white.opacity(0.22)
+                                    )
+                                    .overlay {
+                                        RoundedRectangle(cornerRadius: 5, style: .continuous)
+                                            .stroke(Color.white.opacity(0.18), lineWidth: 0.5)
+                                    }
+                                    .shadow(
+                                        color: model.selectedSlotID == slot.id
+                                            ? Color.white.opacity(0.16)
+                                            : .clear,
+                                        radius: 5
+                                    )
+                                    .frame(
+                                        width: max(1, availableWidth * frame.width - 3),
+                                        height: max(1, availableHeight * frame.height - 3)
+                                    )
+                                    .position(
+                                        x: inset + availableWidth * frame.midX,
+                                        y: inset + availableHeight * frame.midY
+                                    )
+                                    .animation(.easeOut(duration: 0.12), value: model.selectedSlotID)
+                            }
+                        }
+                    }
+                    .frame(width: 104, height: 72)
+                }
+            }
+            .padding(14)
+            .opacity(model.isContentVisible ? 1 : 0)
+            .scaleEffect(model.isContentVisible ? 1 : 0.92)
         }
-        .padding(20)
+        .scaleEffect(
+            x: model.isPresented ? 1 : 0.40,
+            y: model.isPresented ? 1 : 0.22,
+            anchor: .top
+        )
+        .offset(y: model.isPresented ? 0 : -38)
+        .animation(
+            .interactiveSpring(response: 0.28, dampingFraction: 0.80, blendDuration: 0),
+            value: model.isPresented
+        )
+        .animation(.easeOut(duration: 0.13), value: model.isContentVisible)
     }
 }
 
@@ -293,7 +313,7 @@ final class WindowSnapController {
         let initialBounds: CGRect
     }
 
-    private let panelSize = CGSize(width: 514, height: 140)
+    private let panelSize = CGSize(width: 474, height: 100)
     /// Window title bars stop at `visibleFrame.maxY`; the menu bar above it is
     /// not a reachable window destination while a native window is being moved.
     private let topTriggerDepth: CGFloat = 44
@@ -308,6 +328,7 @@ final class WindowSnapController {
     private var dragStartPoint: CGPoint?
     private var activeScreen: NSScreen?
     private var isOverlayVisible = false
+    private var overlayAnimationTask: Task<Void, Never>?
 
     func beginDrag(at point: CGPoint) {
         cancel(resetHelper: false)
@@ -438,21 +459,45 @@ final class WindowSnapController {
     }
 
     private func showOverlay(on screen: NSScreen) {
+        overlayAnimationTask?.cancel()
         activeScreen = screen
+        let notchHeight = max(getClosedNotchSize().height, 32)
         let origin = CGPoint(
-            x: screen.visibleFrame.midX - panelSize.width / 2,
-            y: screen.visibleFrame.maxY - panelSize.height - 8
+            x: screen.frame.midX - panelSize.width / 2,
+            y: screen.frame.maxY - notchHeight - panelSize.height - 4
         )
         panel.setFrameOrigin(origin)
+        model.isPresented = false
+        model.isContentVisible = false
         panel.orderFrontRegardless()
         isOverlayVisible = true
+
+        // Match the notification ejection language: emerge vertically from
+        // behind the notch first, then reveal the layout glyphs as it expands.
+        DispatchQueue.main.async { [weak self] in
+            guard let self, self.isOverlayVisible else { return }
+            self.model.isPresented = true
+            self.overlayAnimationTask = Task { @MainActor [weak self] in
+                try? await Task.sleep(for: .milliseconds(105))
+                guard let self, !Task.isCancelled, self.isOverlayVisible else { return }
+                self.model.isContentVisible = true
+            }
+        }
     }
 
     private func hideOverlay() {
-        panel.orderOut(nil)
+        overlayAnimationTask?.cancel()
         model.selectedSlotID = nil
+        model.isContentVisible = false
+        model.isPresented = false
         activeScreen = nil
         isOverlayVisible = false
+
+        overlayAnimationTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .milliseconds(190))
+            guard let self, !Task.isCancelled, !self.isOverlayVisible else { return }
+            self.panel.orderOut(nil)
+        }
     }
 
     private func updateSelection(at point: CGPoint) {
@@ -460,7 +505,7 @@ final class WindowSnapController {
     }
 
     private func slot(at point: CGPoint) -> WindowSnapSlot? {
-        let contentOrigin = CGPoint(x: panel.frame.minX + 34, y: panel.frame.minY + 34)
+        let contentOrigin = CGPoint(x: panel.frame.minX + 14, y: panel.frame.minY + 14)
         let cardSize = CGSize(width: 104, height: 72)
         let cardSpacing: CGFloat = 10
         let slotInset: CGFloat = 6
