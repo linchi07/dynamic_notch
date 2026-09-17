@@ -30,7 +30,7 @@ private final class GlobalDragEventMonitor {
         guard monitor == nil else { return }
 
         monitor = NSEvent.addGlobalMonitorForEvents(
-            matching: [.leftMouseDown, .leftMouseDragged, .leftMouseUp]
+            matching: [.leftMouseDown, .leftMouseDragged, .leftMouseUp, .flagsChanged]
         ) { [weak self] event in
             // Global monitor callbacks bridge CGEvent data into several autoreleased
             // AppKit objects. Drain those objects for every high-frequency callback.
@@ -72,13 +72,16 @@ final class DragDetector {
 
     typealias VoidCallback = () -> Void
     typealias PositionCallback = (_ globalPoint: CGPoint) -> Void
+    typealias DragCallback = (_ globalPoint: CGPoint, _ modifiers: NSEvent.ModifierFlags) -> Void
+    typealias DragEndCallback = (_ globalPoint: CGPoint, _ modifiers: NSEvent.ModifierFlags) -> Void
 
     var onDragEntersNotchRegion: VoidCallback?
     var onDragExitsNotchRegion: VoidCallback?
     var onDragMove: PositionCallback?
-    var onMouseDown: PositionCallback?
-    var onMouseDragged: PositionCallback?
-    var onMouseUp: PositionCallback?
+    var onMouseDown: DragCallback?
+    var onMouseDragged: DragCallback?
+    var onModifierFlagsChanged: ((NSEvent.ModifierFlags) -> Void)?
+    var onMouseUp: DragEndCallback?
     var onContentDragStarted: VoidCallback?
 
 
@@ -123,7 +126,10 @@ final class DragDetector {
             isDragging = true
             isContentDragging = false
             hasEnteredNotchRegion = false
-            onMouseDown?(mouseLocation)
+            onMouseDown?(
+                mouseLocation,
+                event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+            )
 
         case .leftMouseDragged:
             guard isDragging else { return }
@@ -136,7 +142,10 @@ final class DragDetector {
             }
 
             guard isContentDragging else {
-                onMouseDragged?(mouseLocation)
+                onMouseDragged?(
+                    mouseLocation,
+                    event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+                )
                 return
             }
 
@@ -153,9 +162,15 @@ final class DragDetector {
 
         case .leftMouseUp:
             if isDragging {
-                onMouseUp?(mouseLocation)
+                onMouseUp?(mouseLocation, event.modifierFlags.intersection(.deviceIndependentFlagsMask))
             }
             resetDragState()
+
+        case .flagsChanged:
+            guard isDragging, !isContentDragging else { return }
+            onModifierFlagsChanged?(
+                event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+            )
 
         default:
             break
@@ -196,23 +211,18 @@ private struct WindowSnapLayout: Identifiable {
 
     static let presets: [WindowSnapLayout] = [
         WindowSnapLayout(id: "halves", slots: [
-            WindowSnapSlot(id: "half-left", unitFrame: CGRect(x: 0, y: 0, width: 0.5, height: 1)),
-            WindowSnapSlot(id: "half-right", unitFrame: CGRect(x: 0.5, y: 0, width: 0.5, height: 1)),
+            WindowSnapSlot(id: "native-left", unitFrame: CGRect(x: 0, y: 0, width: 0.5, height: 1)),
+            WindowSnapSlot(id: "native-right", unitFrame: CGRect(x: 0.5, y: 0, width: 0.5, height: 1)),
         ]),
-        WindowSnapLayout(id: "wide-left", slots: [
-            WindowSnapSlot(id: "two-thirds-left", unitFrame: CGRect(x: 0, y: 0, width: 2.0 / 3.0, height: 1)),
-            WindowSnapSlot(id: "third-right", unitFrame: CGRect(x: 2.0 / 3.0, y: 0, width: 1.0 / 3.0, height: 1)),
-        ]),
-        WindowSnapLayout(id: "thirds", slots: [
-            WindowSnapSlot(id: "third-left", unitFrame: CGRect(x: 0, y: 0, width: 1.0 / 3.0, height: 1)),
-            WindowSnapSlot(id: "third-center", unitFrame: CGRect(x: 1.0 / 3.0, y: 0, width: 1.0 / 3.0, height: 1)),
-            WindowSnapSlot(id: "third-right-balanced", unitFrame: CGRect(x: 2.0 / 3.0, y: 0, width: 1.0 / 3.0, height: 1)),
+        WindowSnapLayout(id: "vertical-halves", slots: [
+            WindowSnapSlot(id: "native-top", unitFrame: CGRect(x: 0, y: 0, width: 1, height: 0.5)),
+            WindowSnapSlot(id: "native-bottom", unitFrame: CGRect(x: 0, y: 0.5, width: 1, height: 0.5)),
         ]),
         WindowSnapLayout(id: "quarters", slots: [
-            WindowSnapSlot(id: "quarter-top-left", unitFrame: CGRect(x: 0, y: 0, width: 0.5, height: 0.5)),
-            WindowSnapSlot(id: "quarter-top-right", unitFrame: CGRect(x: 0.5, y: 0, width: 0.5, height: 0.5)),
-            WindowSnapSlot(id: "quarter-bottom-left", unitFrame: CGRect(x: 0, y: 0.5, width: 0.5, height: 0.5)),
-            WindowSnapSlot(id: "quarter-bottom-right", unitFrame: CGRect(x: 0.5, y: 0.5, width: 0.5, height: 0.5)),
+            WindowSnapSlot(id: "native-top-left", unitFrame: CGRect(x: 0, y: 0, width: 0.5, height: 0.5)),
+            WindowSnapSlot(id: "native-top-right", unitFrame: CGRect(x: 0.5, y: 0, width: 0.5, height: 0.5)),
+            WindowSnapSlot(id: "native-bottom-left", unitFrame: CGRect(x: 0, y: 0.5, width: 0.5, height: 0.5)),
+            WindowSnapSlot(id: "native-bottom-right", unitFrame: CGRect(x: 0.5, y: 0.5, width: 0.5, height: 0.5)),
         ]),
     ]
 
@@ -224,6 +234,7 @@ private struct WindowSnapLayout: Identifiable {
 @MainActor
 private final class WindowSnapOverlayModel: ObservableObject {
     @Published var selectedSlotID: String?
+    @Published var arrangesAllWindows = false
     @Published var isPresented = false
     @Published var isContentVisible = false
 }
@@ -241,50 +252,83 @@ private struct WindowSnapOverlayView: View {
                 }
                 .shadow(color: .black.opacity(0.48), radius: 16, y: 7)
 
-            HStack(spacing: 10) {
-                ForEach(WindowSnapLayout.presets) { layout in
-                    GeometryReader { proxy in
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .fill(Color.white.opacity(0.075))
+            VStack(spacing: 8) {
+                HStack(spacing: 6) {
+                    Image(systemName: model.arrangesAllWindows ? "rectangle.3.group.fill" : "macwindow")
+                    Text(
+                        model.arrangesAllWindows
+                            ? String(localized: "All windows")
+                            : String(localized: "Current window")
+                    )
+                    Spacer(minLength: 8)
+                    Text(
+                        model.arrangesAllWindows
+                            ? String(localized: "Shift held")
+                            : String(localized: "Hold Shift for all")
+                    )
+                        .foregroundStyle(model.arrangesAllWindows ? Color.black : Color.white.opacity(0.58))
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 3)
+                        .background(
+                            model.arrangesAllWindows
+                                ? Color.white
+                                : Color.white.opacity(0.10),
+                            in: Capsule()
+                        )
+                }
+                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                .foregroundStyle(Color.white.opacity(0.88))
 
-                            ForEach(layout.slots) { slot in
-                                let frame = slot.unitFrame
-                                let inset: CGFloat = 6
-                                let availableWidth = proxy.size.width - inset * 2
-                                let availableHeight = proxy.size.height - inset * 2
-                                RoundedRectangle(cornerRadius: 5, style: .continuous)
-                                    .fill(
-                                        model.selectedSlotID == slot.id
-                                            ? Color.white.opacity(0.92)
-                                            : Color.white.opacity(0.22)
-                                    )
-                                    .overlay {
-                                        RoundedRectangle(cornerRadius: 5, style: .continuous)
-                                            .stroke(Color.white.opacity(0.18), lineWidth: 0.5)
-                                    }
-                                    .shadow(
-                                        color: model.selectedSlotID == slot.id
-                                            ? Color.white.opacity(0.16)
-                                            : .clear,
-                                        radius: 5
-                                    )
-                                    .frame(
-                                        width: max(1, availableWidth * frame.width - 3),
-                                        height: max(1, availableHeight * frame.height - 3)
-                                    )
-                                    .position(
-                                        x: inset + availableWidth * frame.midX,
-                                        y: inset + availableHeight * frame.midY
-                                    )
-                                    .animation(.easeOut(duration: 0.12), value: model.selectedSlotID)
+                HStack(spacing: 10) {
+                    ForEach(WindowSnapLayout.presets) { layout in
+                        GeometryReader { proxy in
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .fill(Color.white.opacity(0.075))
+
+                                ForEach(layout.slots) { slot in
+                                    let frame = slot.unitFrame
+                                    let inset: CGFloat = 6
+                                    let availableWidth = proxy.size.width - inset * 2
+                                    let availableHeight = proxy.size.height - inset * 2
+                                    let isSelected = model.selectedSlotID == slot.id
+                                        || (model.arrangesAllWindows
+                                            && layout.id == "quarters"
+                                            && layout.slots.contains { $0.id == model.selectedSlotID })
+                                    RoundedRectangle(cornerRadius: 5, style: .continuous)
+                                        .fill(
+                                            isSelected
+                                                ? Color.white.opacity(0.92)
+                                                : Color.white.opacity(0.22)
+                                        )
+                                        .overlay {
+                                            RoundedRectangle(cornerRadius: 5, style: .continuous)
+                                                .stroke(Color.white.opacity(0.18), lineWidth: 0.5)
+                                        }
+                                        .shadow(
+                                            color: isSelected
+                                                ? Color.white.opacity(0.16)
+                                                : .clear,
+                                            radius: 5
+                                        )
+                                        .frame(
+                                            width: max(1, availableWidth * frame.width - 3),
+                                            height: max(1, availableHeight * frame.height - 3)
+                                        )
+                                        .position(
+                                            x: inset + availableWidth * frame.midX,
+                                            y: inset + availableHeight * frame.midY
+                                        )
+                                        .animation(.easeOut(duration: 0.12), value: model.selectedSlotID)
+                                }
                             }
                         }
+                        .frame(width: 104, height: 72)
                     }
-                    .frame(width: 104, height: 72)
                 }
             }
-            .padding(14)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
             .opacity(model.isContentVisible ? 1 : 0)
             .scaleEffect(model.isContentVisible ? 1 : 0.92)
         }
@@ -299,6 +343,7 @@ private struct WindowSnapOverlayView: View {
             value: model.isPresented
         )
         .animation(.easeOut(duration: 0.13), value: model.isContentVisible)
+        .animation(.easeOut(duration: 0.14), value: model.arrangesAllWindows)
     }
 }
 
@@ -307,13 +352,34 @@ private struct WindowSnapOverlayView: View {
 /// window drags still share a single process-wide event monitor.
 @MainActor
 final class WindowSnapController {
+    private enum NativeWindowLayoutCommand: Int {
+        case left = 0
+        case right = 1
+        case top = 2
+        case bottom = 3
+        case topLeft = 4
+        case topRight = 5
+        case bottomLeft = 6
+        case bottomRight = 7
+        case leftAndRight = 8
+        case rightAndLeft = 9
+        case topAndBottom = 10
+        case bottomAndTop = 11
+        case quarters = 12
+        case leftAndQuarters = 13
+        case rightAndQuarters = 14
+        case topAndQuarters = 15
+        case bottomAndQuarters = 16
+    }
+
     private struct TrackedWindow {
         let id: CGWindowID
         let processIdentifier: Int32
         let initialBounds: CGRect
     }
 
-    private let panelSize = CGSize(width: 474, height: 100)
+    private let panelSize = CGSize(width: 360, height: 120)
+    private let usesDirectAccessibilityFrameFallback = false
     /// Window title bars stop at `visibleFrame.maxY`; the menu bar above it is
     /// not a reachable window destination while a native window is being moved.
     private let topTriggerDepth: CGFloat = 44
@@ -330,8 +396,9 @@ final class WindowSnapController {
     private var isOverlayVisible = false
     private var overlayAnimationTask: Task<Void, Never>?
 
-    func beginDrag(at point: CGPoint) {
+    func beginDrag(at point: CGPoint, modifiers: NSEvent.ModifierFlags) {
         cancel(resetHelper: false)
+        updateModifiers(modifiers)
         trackedWindow = windowCandidate(at: point)
         dragStartPoint = point
         dragGeneration = UUID()
@@ -346,12 +413,16 @@ final class WindowSnapController {
             guard generation == dragGeneration else { return }
             capturedWindow = captured
             if captured {
-                updateDrag(at: NSEvent.mouseLocation)
+                updateDrag(
+                    at: NSEvent.mouseLocation,
+                    modifiers: NSEvent.modifierFlags.intersection(.deviceIndependentFlagsMask)
+                )
             }
         }
     }
 
-    func updateDrag(at point: CGPoint) {
+    func updateDrag(at point: CGPoint, modifiers: NSEvent.ModifierFlags) {
+        updateModifiers(modifiers)
         guard let screen = screenContaining(point) else { return }
 
         if !confirmedWindowMovement, trackedWindowHasMoved() {
@@ -392,7 +463,7 @@ final class WindowSnapController {
         }
     }
 
-    func endDrag(at point: CGPoint) {
+    func endDrag(at point: CGPoint, modifiers: NSEvent.ModifierFlags) {
         if isOverlayVisible {
             updateSelection(at: point)
         }
@@ -414,12 +485,28 @@ final class WindowSnapController {
             return
         }
 
-        let destination = destinationFrame(for: selectedSlot, on: screen)
-        let axFrame = appKitToAccessibility(destination)
         Task {
             guard generation == dragGeneration else { return }
-            _ = await XPCHelperClient.shared.setCapturedWindowFrame(axFrame)
+            if let nativeCommand = nativeCommand(for: selectedSlot, modifiers: modifiers),
+               await XPCHelperClient.shared.performNativeWindowLayout(nativeCommand.rawValue) {
+                return
+            }
+            // Experiment mode intentionally stops here. The previous direct AX
+            // frame path remains implemented in XPCHelperClient and the helper,
+            // but is disabled while native shortcut behavior is evaluated.
+            if usesDirectAccessibilityFrameFallback {
+                let destination = destinationFrame(for: selectedSlot, on: screen)
+                _ = await XPCHelperClient.shared.setCapturedWindowFrame(
+                    appKitToAccessibility(destination)
+                )
+                return
+            }
+            NSLog("No configured native window shortcut for slot %@", selectedSlot.id)
         }
+    }
+
+    func updateModifiers(_ modifiers: NSEvent.ModifierFlags) {
+        model.arrangesAllWindows = modifiers.contains(.shift)
     }
 
     func cancel() {
@@ -488,6 +575,7 @@ final class WindowSnapController {
     private func hideOverlay() {
         overlayAnimationTask?.cancel()
         model.selectedSlotID = nil
+        model.arrangesAllWindows = false
         model.isContentVisible = false
         model.isPresented = false
         activeScreen = nil
@@ -544,6 +632,33 @@ final class WindowSnapController {
             width: unit.width * visible.width,
             height: unit.height * visible.height
         ).insetBy(dx: 4, dy: 4)
+    }
+
+    private func nativeCommand(
+        for slot: WindowSnapSlot,
+        modifiers: NSEvent.ModifierFlags
+    ) -> NativeWindowLayoutCommand? {
+        let requestsDesktopArrangement = modifiers.contains(.shift)
+        switch slot.id {
+        case "native-left":
+            return requestsDesktopArrangement ? .leftAndRight : .left
+        case "native-right":
+            return requestsDesktopArrangement ? .rightAndLeft : .right
+        case "native-top":
+            return requestsDesktopArrangement ? .topAndBottom : .top
+        case "native-bottom":
+            return requestsDesktopArrangement ? .bottomAndTop : .bottom
+        case "native-top-left":
+            return requestsDesktopArrangement ? .quarters : .topLeft
+        case "native-top-right":
+            return requestsDesktopArrangement ? .quarters : .topRight
+        case "native-bottom-left":
+            return requestsDesktopArrangement ? .quarters : .bottomLeft
+        case "native-bottom-right":
+            return requestsDesktopArrangement ? .quarters : .bottomRight
+        default:
+            return nil
+        }
     }
 
     private func appKitToAccessibility(_ frame: CGRect) -> CGRect {

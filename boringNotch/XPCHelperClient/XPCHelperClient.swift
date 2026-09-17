@@ -368,6 +368,36 @@ final class XPCHelperClient: NSObject, @unchecked Sendable {
         }
     }
 
+    nonisolated func performNativeWindowLayout(_ command: Int) async -> Bool {
+        do {
+            let service = await MainActor.run { ensureRemoteService() }
+            let result: Bool = try await service.withContinuation { service, continuation in
+                service.performNativeWindowLayout(command) { success in
+                    continuation.resume(returning: success)
+                }
+            }
+            await MainActor.run { markConnectionHealthy() }
+            return result
+        } catch {
+            await markConnectionUnhealthy()
+            return false
+        }
+    }
+
+    nonisolated func primeNativeWindowLayoutShortcuts() async {
+        do {
+            let service = await MainActor.run { ensureRemoteService() }
+            let _: Void = try await service.withContinuation { service, continuation in
+                service.primeNativeWindowLayoutShortcuts {
+                    continuation.resume(returning: ())
+                }
+            }
+            await MainActor.run { markConnectionHealthy() }
+        } catch {
+            await markConnectionUnhealthy()
+        }
+    }
+
     nonisolated func cancelWindowDrag() {
         Task {
             let service = await MainActor.run { ensureRemoteService() }

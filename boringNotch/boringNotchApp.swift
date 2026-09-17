@@ -143,25 +143,31 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 self.coordinator.currentView = .shelf
             }
         }
-        detector.onMouseDown = { [weak self] point in
+        detector.onMouseDown = { [weak self] point, modifiers in
             Task { @MainActor in
                 guard Defaults[.enableWindowSnapping] else { return }
-                self?.windowSnapController.beginDrag(at: point)
+                self?.windowSnapController.beginDrag(at: point, modifiers: modifiers)
             }
         }
-        detector.onMouseDragged = { [weak self] point in
+        detector.onMouseDragged = { [weak self] point, modifiers in
             Task { @MainActor in
                 guard Defaults[.enableWindowSnapping] else { return }
-                self?.windowSnapController.updateDrag(at: point)
+                self?.windowSnapController.updateDrag(at: point, modifiers: modifiers)
             }
         }
-        detector.onMouseUp = { [weak self] point in
+        detector.onModifierFlagsChanged = { [weak self] modifiers in
+            Task { @MainActor in
+                guard Defaults[.enableWindowSnapping] else { return }
+                self?.windowSnapController.updateModifiers(modifiers)
+            }
+        }
+        detector.onMouseUp = { [weak self] point, modifiers in
             Task { @MainActor in
                 guard Defaults[.enableWindowSnapping] else {
                     self?.windowSnapController.cancel()
                     return
                 }
-                self?.windowSnapController.endDrag(at: point)
+                self?.windowSnapController.endDrag(at: point, modifiers: modifiers)
             }
         }
         detector.onContentDragStarted = { [weak self] in
@@ -247,6 +253,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        Task {
+            await XPCHelperClient.shared.primeNativeWindowLayoutShortcuts()
+        }
+
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(screenConfigurationDidChange),
