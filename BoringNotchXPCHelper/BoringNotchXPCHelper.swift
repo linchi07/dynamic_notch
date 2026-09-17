@@ -11,44 +11,20 @@ import IOKit
 import CoreGraphics
 
 class BoringNotchXPCHelper: NSObject, BoringNotchXPCHelperProtocol {
-    private struct MenuShortcut {
-        let virtualKey: CGKeyCode
-        let flags: CGEventFlags
-        let rawModifiers: UInt64
-        let character: String?
-    }
-
-    private struct ShortcutPreferenceLookup {
-        let wasFound: Bool
-        let shortcut: MenuShortcut?
-    }
-
-    private static let symbolicHotKeyIDByCommand: [Int: Int] = [
-        0: 240, // Left
-        1: 241, // Right
-        2: 242, // Top
-        3: 243, // Bottom
-        4: 244, // Top Left
-        5: 245, // Top Right
-        6: 246, // Bottom Left
-        7: 247, // Bottom Right
-        8: 248, // Left & Right
-        9: 249, // Right & Left
-        10: 250, // Top & Bottom
-        11: 251, // Bottom & Top
-        12: 256, // Quarters
+    private static let MOVE_AND_RESIZE_TITLES: [String] = [
+        "Move & Resize",
+        "移动与调整大小",
+        "移動與調整大小",
+        "移動とサイズ変更",
+        "Bewegen und skalieren",
+        "Déplacer et redimensionner",
+        "Mover y redimensionar",
     ]
 
-    private static let symbolicHotKeyDomain = "com.apple.symbolichotkeys" as CFString
-    private static let symbolicHotKeyPreference = "AppleSymbolicHotKeys" as CFString
-
     private let windowQueue = DispatchQueue(label: "theboringteam.boringnotch.window-snap")
-    private let usesAccessibilityMenuPress = false
     private var capturedWindow: AXUIElement?
     private var capturedWindowInitialPosition: CGPoint?
     private var capturedProcessIdentifier: pid_t?
-    private var cachedLayoutShortcuts: [Int: MenuShortcut] = [:]
-    private var inspectedLayoutCommands: Set<Int> = []
     
     @objc func isAccessibilityAuthorized(with reply: @escaping (Bool) -> Void) {
         reply(AXIsProcessTrusted())
@@ -160,127 +136,126 @@ class BoringNotchXPCHelper: NSObject, BoringNotchXPCHelperProtocol {
                 return
             }
             defer {
-                self.capturedWindow = nil
-                self.capturedWindowInitialPosition = nil
-                self.capturedProcessIdentifier = nil
+                self.clearCapturedWindow()
             }
 
-            var size = CGSize(width: width, height: height)
-            var position = CGPoint(x: x, y: y)
-            guard let sizeValue = AXValueCreate(.cgSize, &size),
-                  let positionValue = AXValueCreate(.cgPoint, &position)
-            else {
-                reply(false)
-                return
-            }
+            let targetSize = CGSize(width: width, height: height)
+            let targetPosition = CGPoint(x: x, y: y)
 
-            // Most apps behave more predictably when size is applied before position.
-            let sizeResult = AXUIElementSetAttributeValue(window, kAXSizeAttribute as CFString, sizeValue)
-            let positionResult = AXUIElementSetAttributeValue(window, kAXPositionAttribute as CFString, positionValue)
-            reply(sizeResult == .success && positionResult == .success)
+            let currentPosition = self.pointAttribute(kAXPositionAttribute as CFString, from: window)
+            let currentSize = self.sizeAttribute(kAXSizeAttribute as CFString, from: window)
+
+            // Smooth interpolation animation for direct frame updates
+            if let currentPos = currentPosition, let currentSz = currentSize {
+                let frameCount = 6
+                for step in 1...frameCount {
+                    let progress = Double(step) / Double(frameCount)
+                    let ease = 1.0 - pow(1.0 - progress, 3.0)
+
+                    let intermediateWidth = currentSz.width + (targetSize.width - currentSz.width) * ease
+                    let intermediateHeight = currentSz.height + (targetSize.height - currentSz.height) * ease
+                    let intermediateX = currentPos.x + (targetPosition.x - currentPos.x) * ease
+                    let intermediateY = currentPos.y + (targetPosition.y - currentPos.y) * ease
+
+                    var stepSize = CGSize(width: intermediateWidth, height: intermediateHeight)
+                    var stepPos = CGPoint(x: intermediateX, y: intermediateY)
+
+                    if let sizeVal = AXValueCreate(.cgSize, &stepSize) {
+                        AXUIElementSetAttributeValue(window, kAXSizeAttribute as CFString, sizeVal)
+                    }
+                    if let posVal = AXValueCreate(.cgPoint, &stepPos) {
+                        AXUIElementSetAttributeValue(window, kAXPositionAttribute as CFString, posVal)
+                    }
+
+                    if step < frameCount {
+                        usleep(16000)
+                    }
+                }
+                reply(true)
+            } else {
+                var size = targetSize
+                var position = targetPosition
+                guard let sizeValue = AXValueCreate(.cgSize, &size),
+                      let positionValue = AXValueCreate(.cgPoint, &position)
+                else {
+                    reply(false)
+                    return
+                }
+
+                let sizeResult = AXUIElementSetAttributeValue(window, kAXSizeAttribute as CFString, sizeValue)
+                let positionResult = AXUIElementSetAttributeValue(window, kAXPositionAttribute as CFString, positionValue)
+                reply(sizeResult == .success && positionResult == .success)
+            }
         }
     }
 
-    /// Immediately posts the cached shortcut, then refreshes it from macOS's
-    /// symbolic hotkey preferences. A changed shortcut is cached and posted once more.
+    /// Triggers macOS 15 native window tiling via the application's Move & Resize menu item.
+    /// This plays the system native spring/tiling animation without injecting keyboard shortcuts.
     @objc func performNativeWindowLayout(_ command: Int, with reply: @escaping (Bool) -> Void) {
         windowQueue.async { [weak self] in
             guard let self,
                   ProcessInfo.processInfo.operatingSystemVersion.majorVersion >= 15,
                   let processIdentifier = self.capturedProcessIdentifier
             else {
-                self?.clearCapturedWindow()
                 reply(false)
                 return
             }
 
-            let cachedShortcut = self.optimisticShortcut(for: command)
-            var posted = false
-            if let cachedShortcut {
-                self.logShortcut(cachedShortcut, title: "cached command \(command)")
-                posted = self.postShortcut(cachedShortcut, to: processIdentifier)
+            // Bring the captured window to the front if needed
+            if let window = self.capturedWindow {
+                AXUIElementPerformAction(window, kAXRaiseAction as CFString)
             }
 
-            let preferenceLookup = self.symbolicShortcutPreference(for: command)
-            var menuItem: AXUIElement?
-            var refreshedShortcut: MenuShortcut?
-
-            if preferenceLookup.wasFound {
-                self.inspectedLayoutCommands.insert(command)
-                refreshedShortcut = preferenceLookup.shortcut
-                if let refreshedShortcut {
-                    self.cachedLayoutShortcuts[command] = refreshedShortcut
-                } else {
-                    self.cachedLayoutShortcuts.removeValue(forKey: command)
-                }
-            } else {
-                // Keep the AX menu reader only as a compatibility fallback for
-                // commands that are absent from AppleSymbolicHotKeys.
-                menuItem = self.nativeWindowLayoutMenuItem(
-                    for: command,
-                    processIdentifier: processIdentifier
-                )
-                if let menuItem {
-                    self.inspectedLayoutCommands.insert(command)
-                    refreshedShortcut = self.menuShortcut(for: menuItem, command: command)
-                    if let refreshedShortcut {
-                        self.cachedLayoutShortcuts[command] = refreshedShortcut
-                    } else {
-                        self.cachedLayoutShortcuts.removeValue(forKey: command)
-                    }
-                }
+            guard let menuItem = self.nativeWindowLayoutMenuItem(
+                for: command,
+                processIdentifier: processIdentifier
+            ) else {
+                NSLog("nativeWindowLayoutMenuItem not found for command %d in pid %d", command, processIdentifier)
+                reply(false)
+                return
             }
 
-            // Retained as an experiment switch, but deliberately disabled: AXPress
-            // can trigger a different/global relayout path in some applications.
-            if self.usesAccessibilityMenuPress, menuItem == nil {
-                menuItem = self.nativeWindowLayoutMenuItem(
-                    for: command,
-                    processIdentifier: processIdentifier
-                )
+            let result = AXUIElementPerformAction(menuItem, kAXPressAction as CFString)
+            let isSuccessful = (result == .success || result == .cannotComplete)
+            if isSuccessful {
+                self.clearCapturedWindow()
             }
-            if self.usesAccessibilityMenuPress, let menuItem {
-                let result = AXUIElementPerformAction(menuItem, kAXPressAction as CFString)
-                if result == .success || result == .cannotComplete {
-                    self.clearCapturedWindow()
-                    reply(true)
-                    return
-                }
+            reply(isSuccessful)
+        }
+    }
+
+    /// Triggers macOS 15 native window tiling on a specific process. Used for multi-window arrangement (e.g. 1+2).
+    @objc func performWindowLayoutForProcess(_ processIdentifier: Int32, command: Int, with reply: @escaping (Bool) -> Void) {
+        windowQueue.async { [weak self] in
+            guard let self,
+                  ProcessInfo.processInfo.operatingSystemVersion.majorVersion >= 15,
+                  processIdentifier > 0
+            else {
+                reply(false)
+                return
             }
 
-            if let refreshedShortcut,
-               !self.shortcutsMatch(refreshedShortcut, cachedShortcut) {
-                let title = menuItem.flatMap {
-                    self.stringAttribute(kAXTitleAttribute as CFString, from: $0)
-                } ?? "symbolic command \(command)"
-                self.logShortcut(refreshedShortcut, title: title)
-                posted = self.postShortcut(refreshedShortcut, to: processIdentifier) || posted
+            let application = AXUIElementCreateApplication(pid_t(processIdentifier))
+            if let window = self.topmostWindow(for: application) {
+                AXUIElementPerformAction(window, kAXRaiseAction as CFString)
             }
 
-            self.clearCapturedWindow()
-            reply(posted)
+            guard let menuItem = self.nativeWindowLayoutMenuItem(
+                for: command,
+                processIdentifier: pid_t(processIdentifier)
+            ) else {
+                NSLog("performWindowLayoutForProcess: menuItem not found for command %d in pid %d", command, processIdentifier)
+                reply(false)
+                return
+            }
+
+            let result = AXUIElementPerformAction(menuItem, kAXPressAction as CFString)
+            reply(result == .success || result == .cannotComplete)
         }
     }
 
     @objc func primeNativeWindowLayoutShortcuts(with reply: @escaping () -> Void) {
-        windowQueue.async { [weak self] in
-            guard let self,
-                  ProcessInfo.processInfo.operatingSystemVersion.majorVersion >= 15
-            else {
-                reply()
-                return
-            }
-
-            for command in Self.symbolicHotKeyIDByCommand.keys {
-                let lookup = self.symbolicShortcutPreference(for: command)
-                guard lookup.wasFound else { continue }
-                self.inspectedLayoutCommands.insert(command)
-                if let shortcut = lookup.shortcut {
-                    self.cachedLayoutShortcuts[command] = shortcut
-                } else {
-                    self.cachedLayoutShortcuts.removeValue(forKey: command)
-                }
-            }
+        windowQueue.async {
             reply()
         }
     }
@@ -297,6 +272,74 @@ class BoringNotchXPCHelper: NSObject, BoringNotchXPCHelperProtocol {
         capturedProcessIdentifier = nil
     }
 
+    private func topmostWindow(for application: AXUIElement) -> AXUIElement? {
+        var focusedWindowValue: CFTypeRef?
+        if AXUIElementCopyAttributeValue(application, kAXFocusedWindowAttribute as CFString, &focusedWindowValue) == .success,
+           let focusedWindowValue,
+           CFGetTypeID(focusedWindowValue) == AXUIElementGetTypeID() {
+            return unsafeDowncast(focusedWindowValue, to: AXUIElement.self)
+        }
+        var windowsValue: CFTypeRef?
+        if AXUIElementCopyAttributeValue(application, kAXWindowsAttribute as CFString, &windowsValue) == .success,
+           let windows = windowsValue as? [AXUIElement],
+           let first = windows.first {
+            return first
+        }
+        return nil
+    }
+
+    private func isActionableMenuItem(_ element: AXUIElement) -> Bool {
+        var roleValue: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(element, kAXRoleAttribute as CFString, &roleValue) == .success,
+              let role = roleValue as? String,
+              role == (kAXMenuItemRole as String)
+        else { return false }
+
+        var subroleValue: CFTypeRef?
+        if AXUIElementCopyAttributeValue(element, kAXSubroleAttribute as CFString, &subroleValue) == .success,
+           let subrole = subroleValue as? String,
+           subrole == "AXSectionHeader" {
+            return false
+        }
+
+        // Section headers are disabled (enabled == false). Real action items are enabled.
+        var enabledValue: CFTypeRef?
+        if AXUIElementCopyAttributeValue(element, kAXEnabledAttribute as CFString, &enabledValue) == .success,
+           let enabled = enabledValue as? NSNumber,
+           !enabled.boolValue {
+            return false
+        }
+
+        var actionsValue: CFArray?
+        guard AXUIElementCopyActionNames(element, &actionsValue) == .success,
+              let actions = actionsValue as? [String],
+              actions.contains(kAXPressAction as String)
+        else { return false }
+
+        return true
+    }
+
+    private func moveAndResizeActionItems(in menuBar: AXUIElement) -> [AXUIElement] {
+        guard let moveAndResize = findElement(
+            in: menuBar,
+            matchingAnyTitle: Self.MOVE_AND_RESIZE_TITLES,
+            maximumDepth: 4
+        ) else { return [] }
+
+        var candidateContainers: [AXUIElement] = [moveAndResize]
+        for child in children(of: moveAndResize) {
+            candidateContainers.append(child)
+        }
+
+        for container in candidateContainers {
+            let actionable = children(of: container).filter { isActionableMenuItem($0) }
+            if actionable.count >= 8 {
+                return actionable
+            }
+        }
+        return []
+    }
+
     private func nativeWindowLayoutMenuItem(
         for command: Int,
         processIdentifier: pid_t? = nil
@@ -309,94 +352,117 @@ class BoringNotchXPCHelper: NSObject, BoringNotchXPCHelperProtocol {
             return nil
         }
 
-        let moveAndResizeTitles = [
-            "Move & Resize",
-            "移动与调整大小",
-            "移動與調整大小",
-        ]
-        let commandTitles: [String]
+        let actionItems = moveAndResizeActionItems(in: menuBar)
+        let titles = commandTitles(for: command)
+
+        // 1. Primary path: Match by localized title within actionable items.
+        // In the filtered actionable list, titles like "四等分", "左侧", "左上" are globally UNIQUE
+        // because the section header with the duplicate name was disabled and filtered out!
+        if !titles.isEmpty {
+            if let matched = actionItems.first(where: { item in
+                guard let itemTitle = stringAttribute(kAXTitleAttribute as CFString, from: item) else { return false }
+                return titles.contains(itemTitle)
+            }) {
+                return matched
+            }
+        }
+
+        // 2. Secondary path: Index-based mapping in standard system template (0: Left ... 12: Quarters)
+        if command >= 0 && command < actionItems.count {
+            return actionItems[command]
+        }
+        if command == 12, let last = actionItems.last {
+            return last
+        }
+
+        // 3. Fallback: Recursive search in menu bar
+        if !titles.isEmpty {
+            if let moveAndResize = findElement(
+                in: menuBar,
+                matchingAnyTitle: Self.MOVE_AND_RESIZE_TITLES,
+                maximumDepth: 4
+            ),
+            let commandItem = findActionableElement(
+                in: moveAndResize,
+                matchingAnyTitle: titles,
+                maximumDepth: 3
+            ) {
+                return commandItem
+            }
+
+            return findActionableElement(
+                in: menuBar,
+                matchingAnyTitle: titles,
+                maximumDepth: 6
+            )
+        }
+
+        return nil
+    }
+
+    private func findActionableElement(
+        in root: AXUIElement,
+        matchingAnyTitle titles: [String],
+        maximumDepth: Int
+    ) -> AXUIElement? {
+        if let title = stringAttribute(kAXTitleAttribute as CFString, from: root),
+           titles.contains(title),
+           isActionableMenuItem(root) {
+            return root
+        }
+        guard maximumDepth > 0 else { return nil }
+
+        for child in children(of: root) {
+            if let match = findActionableElement(
+                in: child,
+                matchingAnyTitle: titles,
+                maximumDepth: maximumDepth - 1
+            ) {
+                return match
+            }
+        }
+        return nil
+    }
+
+    private func commandTitles(for command: Int) -> [String] {
         switch command {
         case 0:
-            commandTitles = ["Left", "左侧", "左側"]
+            return ["Left", "左侧", "左側", "左", "Links", "Gauche", "Izquierda"]
         case 1:
-            commandTitles = ["Right", "右侧", "右側"]
+            return ["Right", "右侧", "右側", "右", "Rechts", "Droite", "Derecha"]
         case 2:
-            commandTitles = ["Top", "顶部", "頂部", "上方"]
+            return ["Top", "顶部", "頂部", "上方", "Oben", "Haut", "Arriba"]
         case 3:
-            commandTitles = ["Bottom", "底部", "下方"]
+            return ["Bottom", "底部", "下方", "Unten", "Bas", "Abajo"]
         case 4:
-            commandTitles = ["Top Left", "左上", "左上方", "左上角"]
+            return ["Top Left", "左上", "左上方", "左上角", "Oben links", "Haut gauche", "Superior izquierda"]
         case 5:
-            commandTitles = ["Top Right", "右上", "右上方", "右上角"]
+            return ["Top Right", "右上", "右上方", "右上角", "Oben rechts", "Haut droite", "Superior derecha"]
         case 6:
-            commandTitles = ["Bottom Left", "左下", "左下方", "左下角"]
+            return ["Bottom Left", "左下", "左下方", "左下角", "Unten links", "Bas gauche", "Inferior izquierda"]
         case 7:
-            commandTitles = ["Bottom Right", "右下", "右下方", "右下角"]
+            return ["Bottom Right", "右下", "右下方", "右下角", "Unten rechts", "Bas droite", "Inferior derecha"]
         case 8:
-            commandTitles = ["Left & Right", "左侧与右侧", "左側與右側"]
+            return ["Left & Right", "左侧与右侧", "左側與右側"]
         case 9:
-            commandTitles = ["Right & Left", "右侧与左侧", "右側與左側"]
+            return ["Right & Left", "右侧与左侧", "右側與左側"]
         case 10:
-            commandTitles = ["Top & Bottom", "顶部与底部", "頂部與底部", "上方與下方"]
+            return ["Top & Bottom", "顶部与底部", "頂部與底部", "上方與下方"]
         case 11:
-            commandTitles = ["Bottom & Top", "底部与顶部", "底部與頂部", "下方與上方"]
+            return ["Bottom & Top", "底部与顶部", "底部與頂部", "下方與上方"]
         case 12:
-            commandTitles = ["Quarters", "四等分", "四等份"]
+            return ["Quarters", "四等分", "四等份", "Viertel"]
         case 13:
-            commandTitles = [
-                "Left & Quarters",
-                "左侧与四等分",
-                "左側與四等分",
-                "左侧与四等份",
-                "左側與四等份",
-            ]
+            return ["Left & Quarters", "左侧与四等分", "左側與四等分", "左侧与四等份", "左側與四等份"]
         case 14:
-            commandTitles = [
-                "Right & Quarters",
-                "右侧与四等分",
-                "右側與四等分",
-                "右侧与四等份",
-                "右側與四等份",
-            ]
+            return ["Right & Quarters", "右侧与四等分", "右側與四等分", "右侧与四等份", "右側與四等份"]
         case 15:
-            commandTitles = [
-                "Top & Quarters",
-                "顶部与四等分",
-                "頂部與四等分",
-                "上方與四等份",
-            ]
+            return ["Top & Quarters", "顶部与四等分", "頂部與四等分", "上方與四等份"]
         case 16:
-            commandTitles = [
-                "Bottom & Quarters",
-                "底部与四等分",
-                "底部與四等分",
-                "下方與四等份",
-            ]
+            return ["Bottom & Quarters", "底部与四等分", "底部與四等分", "下方与四等份", "下方與四等份"]
         default:
-            return nil
+            return []
         }
-
-        if let moveAndResize = findElement(
-            in: menuBar,
-            matchingAnyTitle: moveAndResizeTitles,
-            maximumDepth: 4
-        ),
-        let commandItem = findElement(
-            in: moveAndResize,
-            matchingAnyTitle: commandTitles,
-            maximumDepth: 3
-        ) {
-            return commandItem
-        }
-
-        // Compound layout titles are specific enough to safely locate globally
-        // if an app flattens or lazily exposes the Window submenu.
-        guard command >= 8 else { return nil }
-        return findElement(
-            in: menuBar,
-            matchingAnyTitle: commandTitles,
-            maximumDepth: 7
-        )
     }
 
     private func findElement(
@@ -449,195 +515,6 @@ class BoringNotchXPCHelper: NSObject, BoringNotchXPCHelperProtocol {
             return nil
         }
         return value as? String
-    }
-
-    private func symbolicShortcutPreference(for command: Int) -> ShortcutPreferenceLookup {
-        guard let symbolicHotKeyID = Self.symbolicHotKeyIDByCommand[command] else {
-            return ShortcutPreferenceLookup(wasFound: false, shortcut: nil)
-        }
-
-        CFPreferencesAppSynchronize(Self.symbolicHotKeyDomain)
-        guard let hotKeys = CFPreferencesCopyAppValue(
-            Self.symbolicHotKeyPreference,
-            Self.symbolicHotKeyDomain
-        ) as? [String: Any],
-        let entry = hotKeys[String(symbolicHotKeyID)] as? [String: Any]
-        else {
-            return ShortcutPreferenceLookup(wasFound: false, shortcut: nil)
-        }
-
-        let enabled = (entry["enabled"] as? NSNumber)?.boolValue ?? false
-        guard enabled,
-              let value = entry["value"] as? [String: Any],
-              let parameters = value["parameters"] as? [NSNumber],
-              parameters.count >= 3
-        else {
-            return ShortcutPreferenceLookup(wasFound: true, shortcut: nil)
-        }
-
-        let characterCode = parameters[0].uint32Value
-        let virtualKey = CGKeyCode(truncating: parameters[1])
-        let storedFlags = CGEventFlags(rawValue: parameters[2].uint64Value)
-        var logicalFlags = storedFlags
-
-        // Fn is a physical key-layer transformation, not part of the logical
-        // shortcut. The symbolic-hotkey plist includes it (and NumericPad for
-        // some arrow entries) as event metadata, but posting those flags would
-        // transform the already-resolved 123...126 arrow key codes again.
-        logicalFlags.remove(.maskSecondaryFn)
-        if (123...126).contains(Int(virtualKey)) {
-            logicalFlags.remove(.maskNumericPad)
-        }
-
-        let character: String?
-        if characterCode == UInt32(UInt16.max) {
-            character = nil
-        } else if let scalar = UnicodeScalar(characterCode) {
-            character = String(scalar)
-        } else {
-            character = nil
-        }
-
-        let shortcut = MenuShortcut(
-            virtualKey: virtualKey,
-            flags: logicalFlags,
-            rawModifiers: logicalFlags.rawValue,
-            character: character
-        )
-        NSLog(
-            "Loaded window symbolic hotkey %d for command %d: key=%d storedFlags=%llu logicalFlags=%llu",
-            symbolicHotKeyID,
-            command,
-            virtualKey,
-            storedFlags.rawValue,
-            logicalFlags.rawValue
-        )
-        return ShortcutPreferenceLookup(wasFound: true, shortcut: shortcut)
-    }
-
-    private func menuShortcut(for menuItem: AXUIElement, command: Int) -> MenuShortcut? {
-        var virtualKeyValue: CFTypeRef?
-        var modifierValue: CFTypeRef?
-        var characterValue: CFTypeRef?
-        guard AXUIElementCopyAttributeValue(
-            menuItem,
-            kAXMenuItemCmdVirtualKeyAttribute as CFString,
-            &virtualKeyValue
-        ) == .success,
-        let virtualKeyNumber = virtualKeyValue as? NSNumber,
-        AXUIElementCopyAttributeValue(
-            menuItem,
-            kAXMenuItemCmdModifiersAttribute as CFString,
-            &modifierValue
-        ) == .success,
-        let modifierNumber = modifierValue as? NSNumber
-        else { return nil }
-
-        _ = AXUIElementCopyAttributeValue(
-            menuItem,
-            kAXMenuItemCmdCharAttribute as CFString,
-            &characterValue
-        )
-
-        let rawModifiers = modifierNumber.uint32Value
-        var flags: CGEventFlags = []
-        if rawModifiers & (1 << 0) != 0 { flags.insert(.maskShift) }
-        if rawModifiers & (1 << 1) != 0 { flags.insert(.maskAlternate) }
-        if rawModifiers & (1 << 2) != 0 { flags.insert(.maskControl) }
-        if rawModifiers & (1 << 3) == 0 { flags.insert(.maskCommand) }
-
-        let virtualKey = CGKeyCode(truncating: virtualKeyNumber)
-        return MenuShortcut(
-            virtualKey: virtualKey,
-            flags: flags,
-            rawModifiers: UInt64(rawModifiers),
-            character: characterValue as? String
-        )
-    }
-
-    private func optimisticShortcut(for command: Int) -> MenuShortcut? {
-        if let cached = cachedLayoutShortcuts[command] {
-            return cached
-        }
-        guard !inspectedLayoutCommands.contains(command) else { return nil }
-        return defaultShortcut(for: command)
-    }
-
-    private func defaultShortcut(for command: Int) -> MenuShortcut? {
-        let virtualKey: CGKeyCode
-        switch command {
-        case 0, 8, 13:
-            virtualKey = 123 // Left Arrow
-        case 1, 9, 14:
-            virtualKey = 124 // Right Arrow
-        case 3, 11, 16:
-            virtualKey = 125 // Down Arrow
-        case 2, 10, 15:
-            virtualKey = 126 // Up Arrow
-        default:
-            return nil
-        }
-
-        var flags: CGEventFlags = [.maskControl]
-        switch command {
-        case 0...3:
-            break
-        case 8...11:
-            flags.insert(.maskShift)
-        case 13...16:
-            flags.insert(.maskShift)
-            flags.insert(.maskAlternate)
-        default:
-            return nil
-        }
-
-        return MenuShortcut(
-            virtualKey: virtualKey,
-            flags: flags,
-            rawModifiers: flags.rawValue,
-            character: nil
-        )
-    }
-
-    private func shortcutsMatch(_ lhs: MenuShortcut?, _ rhs: MenuShortcut?) -> Bool {
-        switch (lhs, rhs) {
-        case (nil, nil):
-            return true
-        case let (lhs?, rhs?):
-            return lhs.virtualKey == rhs.virtualKey
-                && lhs.flags.rawValue == rhs.flags.rawValue
-        default:
-            return false
-        }
-    }
-
-    private func postShortcut(_ shortcut: MenuShortcut, to processIdentifier: pid_t) -> Bool {
-        guard let keyDown = CGEvent(
-            keyboardEventSource: nil,
-            virtualKey: shortcut.virtualKey,
-            keyDown: true
-        ),
-        let keyUp = CGEvent(
-            keyboardEventSource: nil,
-            virtualKey: shortcut.virtualKey,
-            keyDown: false
-        ) else { return false }
-
-        keyDown.flags = shortcut.flags
-        keyUp.flags = shortcut.flags
-        keyDown.postToPid(processIdentifier)
-        keyUp.postToPid(processIdentifier)
-        return true
-    }
-
-    private func logShortcut(_ shortcut: MenuShortcut, title: String) {
-        NSLog(
-            "Window layout menu item '%@': key=%@ modifiers=%@ character=%@",
-            title,
-            String(shortcut.virtualKey),
-            String(shortcut.rawModifiers),
-            shortcut.character ?? "none"
-        )
     }
 
     private func focusedApplicationProcessIdentifier() -> pid_t? {

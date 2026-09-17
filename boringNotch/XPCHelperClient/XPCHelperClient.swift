@@ -384,6 +384,22 @@ final class XPCHelperClient: NSObject, @unchecked Sendable {
         }
     }
 
+    nonisolated func performWindowLayoutForProcess(_ processIdentifier: Int32, command: Int) async -> Bool {
+        do {
+            let service = await MainActor.run { ensureRemoteService() }
+            let result: Bool = try await service.withContinuation { service, continuation in
+                service.performWindowLayoutForProcess(processIdentifier, command: command) { success in
+                    continuation.resume(returning: success)
+                }
+            }
+            await MainActor.run { markConnectionHealthy() }
+            return result
+        } catch {
+            await markConnectionUnhealthy()
+            return false
+        }
+    }
+
     nonisolated func primeNativeWindowLayoutShortcuts() async {
         do {
             let service = await MainActor.run { ensureRemoteService() }

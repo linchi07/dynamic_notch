@@ -17,6 +17,7 @@ import Foundation
     func setCapturedWindowFrame(_ x: Double, y: Double, width: Double, height: Double, with reply: @escaping (Bool) -> Void)
     func primeNativeWindowLayoutShortcuts(with reply: @escaping () -> Void)
     func performNativeWindowLayout(_ command: Int, with reply: @escaping (Bool) -> Void)
+    func performWindowLayoutForProcess(_ processIdentifier: Int32, command: Int, with reply: @escaping (Bool) -> Void)
     func cancelWindowDrag()
     // Keyboard backlight / CoreBrightness access (performed by the helper)
     func isKeyboardBrightnessAvailable(with reply: @escaping (Bool) -> Void)

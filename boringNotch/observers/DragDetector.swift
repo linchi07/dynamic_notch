@@ -214,9 +214,15 @@ private struct WindowSnapLayout: Identifiable {
             WindowSnapSlot(id: "native-left", unitFrame: CGRect(x: 0, y: 0, width: 0.5, height: 1)),
             WindowSnapSlot(id: "native-right", unitFrame: CGRect(x: 0.5, y: 0, width: 0.5, height: 1)),
         ]),
-        WindowSnapLayout(id: "vertical-halves", slots: [
-            WindowSnapSlot(id: "native-top", unitFrame: CGRect(x: 0, y: 0, width: 1, height: 0.5)),
-            WindowSnapSlot(id: "native-bottom", unitFrame: CGRect(x: 0, y: 0.5, width: 1, height: 0.5)),
+        WindowSnapLayout(id: "one-two", slots: [
+            WindowSnapSlot(id: "native-one-two-left", unitFrame: CGRect(x: 0, y: 0, width: 0.5, height: 1)),
+            WindowSnapSlot(id: "native-one-two-top-right", unitFrame: CGRect(x: 0.5, y: 0, width: 0.5, height: 0.5)),
+            WindowSnapSlot(id: "native-one-two-bottom-right", unitFrame: CGRect(x: 0.5, y: 0.5, width: 0.5, height: 0.5)),
+        ]),
+        WindowSnapLayout(id: "two-one", slots: [
+            WindowSnapSlot(id: "native-two-one-top-left", unitFrame: CGRect(x: 0, y: 0, width: 0.5, height: 0.5)),
+            WindowSnapSlot(id: "native-two-one-bottom-left", unitFrame: CGRect(x: 0, y: 0.5, width: 0.5, height: 0.5)),
+            WindowSnapSlot(id: "native-two-one-right", unitFrame: CGRect(x: 0.5, y: 0, width: 0.5, height: 1)),
         ]),
         WindowSnapLayout(id: "quarters", slots: [
             WindowSnapSlot(id: "native-top-left", unitFrame: CGRect(x: 0, y: 0, width: 0.5, height: 0.5)),
@@ -279,30 +285,29 @@ private struct WindowSnapOverlayView: View {
                 .font(.system(size: 11, weight: .semibold, design: .rounded))
                 .foregroundStyle(Color.white.opacity(0.88))
 
-                HStack(spacing: 10) {
+                HStack(spacing: 8) {
                     ForEach(WindowSnapLayout.presets) { layout in
                         GeometryReader { proxy in
                             ZStack {
-                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                RoundedRectangle(cornerRadius: 9, style: .continuous)
                                     .fill(Color.white.opacity(0.075))
 
                                 ForEach(layout.slots) { slot in
                                     let frame = slot.unitFrame
-                                    let inset: CGFloat = 6
+                                    let inset: CGFloat = 5
                                     let availableWidth = proxy.size.width - inset * 2
                                     let availableHeight = proxy.size.height - inset * 2
                                     let isSelected = model.selectedSlotID == slot.id
                                         || (model.arrangesAllWindows
-                                            && layout.id == "quarters"
                                             && layout.slots.contains { $0.id == model.selectedSlotID })
-                                    RoundedRectangle(cornerRadius: 5, style: .continuous)
+                                    RoundedRectangle(cornerRadius: 4, style: .continuous)
                                         .fill(
                                             isSelected
                                                 ? Color.white.opacity(0.92)
                                                 : Color.white.opacity(0.22)
                                         )
                                         .overlay {
-                                            RoundedRectangle(cornerRadius: 5, style: .continuous)
+                                            RoundedRectangle(cornerRadius: 4, style: .continuous)
                                                 .stroke(Color.white.opacity(0.18), lineWidth: 0.5)
                                         }
                                         .shadow(
@@ -312,8 +317,8 @@ private struct WindowSnapOverlayView: View {
                                             radius: 5
                                         )
                                         .frame(
-                                            width: max(1, availableWidth * frame.width - 3),
-                                            height: max(1, availableHeight * frame.height - 3)
+                                            width: max(1, availableWidth * frame.width - 2),
+                                            height: max(1, availableHeight * frame.height - 2)
                                         )
                                         .position(
                                             x: inset + availableWidth * frame.midX,
@@ -323,7 +328,7 @@ private struct WindowSnapOverlayView: View {
                                 }
                             }
                         }
-                        .frame(width: 104, height: 72)
+                        .frame(width: 86, height: 64)
                     }
                 }
             }
@@ -378,8 +383,8 @@ final class WindowSnapController {
         let initialBounds: CGRect
     }
 
-    private let panelSize = CGSize(width: 360, height: 120)
-    private let usesDirectAccessibilityFrameFallback = false
+    private let panelSize = CGSize(width: 396, height: 112)
+    private let usesDirectAccessibilityFrameFallback = true
     /// Window title bars stop at `visibleFrame.maxY`; the menu bar above it is
     /// not a reachable window destination while a native window is being moved.
     private let topTriggerDepth: CGFloat = 44
@@ -472,6 +477,7 @@ final class WindowSnapController {
         }
         let screen = activeScreen
         let generation = dragGeneration
+        let candidate = trackedWindow
 
         hideOverlay()
         capturedWindow = false
@@ -487,13 +493,86 @@ final class WindowSnapController {
 
         Task {
             guard generation == dragGeneration else { return }
+
+            // 1. Shift + 1+2 / 2+1: Multi-window arrangement dispatching 3 native commands
+            if modifiers.contains(.shift),
+               let layout = WindowSnapLayout.presets.first(where: { $0.slots.contains(selectedSlot) }),
+               layout.id == "one-two" || layout.id == "two-one" {
+
+                let currentWindowID = candidate?.id ?? 0
+                let otherWindows = self.otherVisibleWindowCandidates(
+                    on: screen,
+                    excludingWindowID: currentWindowID,
+                    limit: 2
+                )
+
+                var currentCmd: Int = 0
+                var secondCmd: Int = 0
+                var thirdCmd: Int = 0
+
+                if layout.id == "one-two" {
+                    switch selectedSlot.id {
+                    case "native-one-two-top-right":
+                        currentCmd = 5 // Top Right
+                        secondCmd = 0  // Left
+                        thirdCmd = 7   // Bottom Right
+                    case "native-one-two-bottom-right":
+                        currentCmd = 7 // Bottom Right
+                        secondCmd = 0  // Left
+                        thirdCmd = 5   // Top Right
+                    default: // "native-one-two-left"
+                        currentCmd = 0 // Left
+                        secondCmd = 5  // Top Right
+                        thirdCmd = 7   // Bottom Right
+                    }
+                } else { // "two-one"
+                    switch selectedSlot.id {
+                    case "native-two-one-top-left":
+                        currentCmd = 4 // Top Left
+                        secondCmd = 1  // Right
+                        thirdCmd = 6   // Bottom Left
+                    case "native-two-one-bottom-left":
+                        currentCmd = 6 // Bottom Left
+                        secondCmd = 1  // Right
+                        thirdCmd = 4   // Top Left
+                    default: // "native-two-one-right"
+                        currentCmd = 1 // Right
+                        secondCmd = 4  // Top Left
+                        thirdCmd = 6   // Bottom Left
+                    }
+                }
+
+                _ = await XPCHelperClient.shared.performNativeWindowLayout(currentCmd)
+                if otherWindows.count >= 1 {
+                    try? await Task.sleep(for: .milliseconds(80))
+                    _ = await XPCHelperClient.shared.performWindowLayoutForProcess(
+                        otherWindows[0].processIdentifier,
+                        command: secondCmd
+                    )
+                }
+                if otherWindows.count >= 2 {
+                    try? await Task.sleep(for: .milliseconds(80))
+                    _ = await XPCHelperClient.shared.performWindowLayoutForProcess(
+                        otherWindows[1].processIdentifier,
+                        command: thirdCmd
+                    )
+                }
+
+                if let candidate {
+                    try? await Task.sleep(for: .milliseconds(50))
+                    let application = NSRunningApplication(processIdentifier: candidate.processIdentifier)
+                    application?.activate(options: .activateIgnoringOtherApps)
+                }
+                return
+            }
+
+            // 2. Standard single or native dual/quarters window tiling
             if let nativeCommand = nativeCommand(for: selectedSlot, modifiers: modifiers),
                await XPCHelperClient.shared.performNativeWindowLayout(nativeCommand.rawValue) {
                 return
             }
-            // Experiment mode intentionally stops here. The previous direct AX
-            // frame path remains implemented in XPCHelperClient and the helper,
-            // but is disabled while native shortcut behavior is evaluated.
+
+            // 3. Fallback: direct accessibility frame
             if usesDirectAccessibilityFrameFallback {
                 let destination = destinationFrame(for: selectedSlot, on: screen)
                 _ = await XPCHelperClient.shared.setCapturedWindowFrame(
@@ -528,20 +607,19 @@ final class WindowSnapController {
 
     private func makePanel() -> NSPanel {
         let panel = NSPanel(
-            contentRect: CGRect(origin: .zero, size: panelSize),
+            contentRect: NSRect(origin: .zero, size: panelSize),
             styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
             defer: false
         )
-        panel.contentView = NSHostingView(rootView: WindowSnapOverlayView(model: model))
         panel.isOpaque = false
         panel.backgroundColor = .clear
         panel.hasShadow = false
-        panel.level = .statusBar + 2
+        panel.level = .floating
         panel.ignoresMouseEvents = true
-        panel.hidesOnDeactivate = false
-        panel.isReleasedWhenClosed = false
-        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .ignoresCycle]
+        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .transient]
+        let hostingView = NSHostingView(rootView: WindowSnapOverlayView(model: model))
+        panel.contentView = hostingView
         return panel
     }
 
@@ -559,8 +637,6 @@ final class WindowSnapController {
         panel.orderFrontRegardless()
         isOverlayVisible = true
 
-        // Match the notification ejection language: emerge vertically from
-        // behind the notch first, then reveal the layout glyphs as it expands.
         DispatchQueue.main.async { [weak self] in
             guard let self, self.isOverlayVisible else { return }
             self.model.isPresented = true
@@ -593,31 +669,43 @@ final class WindowSnapController {
     }
 
     private func slot(at point: CGPoint) -> WindowSnapSlot? {
-        let contentOrigin = CGPoint(x: panel.frame.minX + 14, y: panel.frame.minY + 14)
-        let cardSize = CGSize(width: 104, height: 72)
-        let cardSpacing: CGFloat = 10
-        let slotInset: CGFloat = 6
+        let contentOrigin = CGPoint(x: panel.frame.minX + 14, y: panel.frame.minY + 10)
+        let cardSize = CGSize(width: 86, height: 64)
+        let cardSpacing: CGFloat = 8
+        let slotInset: CGFloat = 5
         let slotArea = CGSize(
             width: cardSize.width - slotInset * 2,
             height: cardSize.height - slotInset * 2
         )
 
+        let cardYMin = contentOrigin.y
+        let cardYMax = contentOrigin.y + cardSize.height
+        guard point.y >= cardYMin - 6 && point.y <= cardYMax + 6 else {
+            return nil
+        }
+
         for (layoutIndex, layout) in WindowSnapLayout.presets.enumerated() {
-            let cardOrigin = CGPoint(
-                x: contentOrigin.x + CGFloat(layoutIndex) * (cardSize.width + cardSpacing),
-                y: contentOrigin.y
-            )
+            let cardOriginX = contentOrigin.x + CGFloat(layoutIndex) * (cardSize.width + cardSpacing)
+            guard point.x >= cardOriginX - 2 && point.x <= cardOriginX + cardSize.width + 2 else {
+                continue
+            }
+
+            let localX = point.x - (cardOriginX + slotInset)
+            let localY = point.y - (cardYMin + slotInset)
+            let unitX = max(0, min(1, localX / slotArea.width))
+            let unitY = max(0, min(1, 1.0 - (localY / slotArea.height)))
+            let unitPoint = CGPoint(x: unitX, y: unitY)
+
             for slot in layout.slots {
-                let unit = slot.unitFrame
-                let hitFrame = CGRect(
-                    x: cardOrigin.x + slotInset + unit.minX * slotArea.width,
-                    y: cardOrigin.y + slotInset + (1 - unit.maxY) * slotArea.height,
-                    width: unit.width * slotArea.width,
-                    height: unit.height * slotArea.height
-                ).insetBy(dx: 1.5, dy: 1.5)
-                if hitFrame.contains(point) {
+                if slot.unitFrame.contains(unitPoint) {
                     return slot
                 }
+            }
+
+            return layout.slots.min { a, b in
+                let distA = hypot(a.unitFrame.midX - unitX, a.unitFrame.midY - unitY)
+                let distB = hypot(b.unitFrame.midX - unitX, b.unitFrame.midY - unitY)
+                return distA < distB
             }
         }
         return nil
@@ -644,10 +732,24 @@ final class WindowSnapController {
             return requestsDesktopArrangement ? .leftAndRight : .left
         case "native-right":
             return requestsDesktopArrangement ? .rightAndLeft : .right
-        case "native-top":
-            return requestsDesktopArrangement ? .topAndBottom : .top
-        case "native-bottom":
-            return requestsDesktopArrangement ? .bottomAndTop : .bottom
+
+        // 1+2 单窗口槽位
+        case "native-one-two-left":
+            return .left
+        case "native-one-two-top-right":
+            return .topRight
+        case "native-one-two-bottom-right":
+            return .bottomRight
+
+        // 2+1 单窗口槽位
+        case "native-two-one-top-left":
+            return .topLeft
+        case "native-two-one-bottom-left":
+            return .bottomLeft
+        case "native-two-one-right":
+            return .right
+
+        // 四等分布局槽位
         case "native-top-left":
             return requestsDesktopArrangement ? .quarters : .topLeft
         case "native-top-right":
@@ -659,6 +761,46 @@ final class WindowSnapController {
         default:
             return nil
         }
+    }
+
+    private func otherVisibleWindowCandidates(
+        on screen: NSScreen,
+        excludingWindowID: CGWindowID,
+        limit: Int
+    ) -> [TrackedWindow] {
+        guard let windowInfo = CGWindowListCopyWindowInfo(
+            [.optionOnScreenOnly, .excludeDesktopElements],
+            kCGNullWindowID
+        ) as? [[CFString: Any]] else { return [] }
+
+        let ownProcessID = getpid()
+        var results: [TrackedWindow] = []
+        var seenPids = Set<Int32>()
+
+        for info in windowInfo {
+            guard (info[kCGWindowLayer] as? NSNumber)?.intValue == 0,
+                  let pid = (info[kCGWindowOwnerPID] as? NSNumber)?.int32Value,
+                  pid != ownProcessID,
+                  let windowNumber = (info[kCGWindowNumber] as? NSNumber)?.uint32Value,
+                  windowNumber != excludingWindowID,
+                  !seenPids.contains(pid),
+                  let boundsDictionary = info[kCGWindowBounds] as? NSDictionary,
+                  let bounds = CGRect(dictionaryRepresentation: boundsDictionary),
+                  bounds.width >= 120,
+                  bounds.height >= 80
+            else { continue }
+
+            seenPids.insert(pid)
+            results.append(TrackedWindow(
+                id: windowNumber,
+                processIdentifier: pid,
+                initialBounds: bounds
+            ))
+            if results.count >= limit {
+                break
+            }
+        }
+        return results
     }
 
     private func appKitToAccessibility(_ frame: CGRect) -> CGRect {
