@@ -6,6 +6,7 @@
 //
 
 import Cocoa
+import Defaults
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -211,24 +212,28 @@ private struct WindowSnapLayout: Identifiable {
 
     static let presets: [WindowSnapLayout] = [
         WindowSnapLayout(id: "halves", slots: [
-            WindowSnapSlot(id: "native-left", unitFrame: CGRect(x: 0, y: 0, width: 0.5, height: 1)),
-            WindowSnapSlot(id: "native-right", unitFrame: CGRect(x: 0.5, y: 0, width: 0.5, height: 1)),
+            WindowSnapSlot(id: "half-left", unitFrame: CGRect(x: 0, y: 0, width: 0.5, height: 1)),
+            WindowSnapSlot(id: "half-right", unitFrame: CGRect(x: 0.5, y: 0, width: 0.5, height: 1)),
+        ]),
+        WindowSnapLayout(id: "wide-left", slots: [
+            WindowSnapSlot(id: "two-thirds-left", unitFrame: CGRect(x: 0, y: 0, width: 2.0 / 3.0, height: 1)),
+            WindowSnapSlot(id: "third-right", unitFrame: CGRect(x: 2.0 / 3.0, y: 0, width: 1.0 / 3.0, height: 1)),
+        ]),
+        WindowSnapLayout(id: "thirds", slots: [
+            WindowSnapSlot(id: "third-left", unitFrame: CGRect(x: 0, y: 0, width: 1.0 / 3.0, height: 1)),
+            WindowSnapSlot(id: "third-center", unitFrame: CGRect(x: 1.0 / 3.0, y: 0, width: 1.0 / 3.0, height: 1)),
+            WindowSnapSlot(id: "third-right-balanced", unitFrame: CGRect(x: 2.0 / 3.0, y: 0, width: 1.0 / 3.0, height: 1)),
         ]),
         WindowSnapLayout(id: "one-two", slots: [
-            WindowSnapSlot(id: "native-one-two-left", unitFrame: CGRect(x: 0, y: 0, width: 0.5, height: 1)),
-            WindowSnapSlot(id: "native-one-two-top-right", unitFrame: CGRect(x: 0.5, y: 0, width: 0.5, height: 0.5)),
-            WindowSnapSlot(id: "native-one-two-bottom-right", unitFrame: CGRect(x: 0.5, y: 0.5, width: 0.5, height: 0.5)),
-        ]),
-        WindowSnapLayout(id: "two-one", slots: [
-            WindowSnapSlot(id: "native-two-one-top-left", unitFrame: CGRect(x: 0, y: 0, width: 0.5, height: 0.5)),
-            WindowSnapSlot(id: "native-two-one-bottom-left", unitFrame: CGRect(x: 0, y: 0.5, width: 0.5, height: 0.5)),
-            WindowSnapSlot(id: "native-two-one-right", unitFrame: CGRect(x: 0.5, y: 0, width: 0.5, height: 1)),
+            WindowSnapSlot(id: "one-two-left", unitFrame: CGRect(x: 0, y: 0, width: 0.5, height: 1)),
+            WindowSnapSlot(id: "one-two-top-right", unitFrame: CGRect(x: 0.5, y: 0, width: 0.5, height: 0.5)),
+            WindowSnapSlot(id: "one-two-bottom-right", unitFrame: CGRect(x: 0.5, y: 0.5, width: 0.5, height: 0.5)),
         ]),
         WindowSnapLayout(id: "quarters", slots: [
-            WindowSnapSlot(id: "native-top-left", unitFrame: CGRect(x: 0, y: 0, width: 0.5, height: 0.5)),
-            WindowSnapSlot(id: "native-top-right", unitFrame: CGRect(x: 0.5, y: 0, width: 0.5, height: 0.5)),
-            WindowSnapSlot(id: "native-bottom-left", unitFrame: CGRect(x: 0, y: 0.5, width: 0.5, height: 0.5)),
-            WindowSnapSlot(id: "native-bottom-right", unitFrame: CGRect(x: 0.5, y: 0.5, width: 0.5, height: 0.5)),
+            WindowSnapSlot(id: "quarter-top-left", unitFrame: CGRect(x: 0, y: 0, width: 0.5, height: 0.5)),
+            WindowSnapSlot(id: "quarter-top-right", unitFrame: CGRect(x: 0.5, y: 0, width: 0.5, height: 0.5)),
+            WindowSnapSlot(id: "quarter-bottom-left", unitFrame: CGRect(x: 0, y: 0.5, width: 0.5, height: 0.5)),
+            WindowSnapSlot(id: "quarter-bottom-right", unitFrame: CGRect(x: 0.5, y: 0.5, width: 0.5, height: 0.5)),
         ]),
     ]
 
@@ -383,8 +388,7 @@ final class WindowSnapController {
         let initialBounds: CGRect
     }
 
-    private let panelSize = CGSize(width: 396, height: 112)
-    private let usesDirectAccessibilityFrameFallback = true
+    private let panelSize = CGSize(width: 490, height: 112)
     /// Window title bars stop at `visibleFrame.maxY`; the menu bar above it is
     /// not a reachable window destination while a native window is being moved.
     private let topTriggerDepth: CGFloat = 44
@@ -478,6 +482,10 @@ final class WindowSnapController {
         let screen = activeScreen
         let generation = dragGeneration
         let candidate = trackedWindow
+        let animationMode = Defaults[.windowSnapAnimationMode]
+        let layout = selectedSlot.flatMap { selected in
+            WindowSnapLayout.presets.first { $0.slots.contains(selected) }
+        }
 
         hideOverlay()
         capturedWindow = false
@@ -486,101 +494,28 @@ final class WindowSnapController {
         trackedWindow = nil
         dragStartPoint = nil
 
-        guard let selectedSlot, let screen else {
+        guard let selectedSlot, let layout, let screen else {
             XPCHelperClient.shared.cancelWindowDrag()
             return
         }
 
         Task {
             guard generation == dragGeneration else { return }
-
-            // 1. Shift + 1+2 / 2+1: Multi-window arrangement dispatching 3 native commands
-            if modifiers.contains(.shift),
-               let layout = WindowSnapLayout.presets.first(where: { $0.slots.contains(selectedSlot) }),
-               layout.id == "one-two" || layout.id == "two-one" {
-
-                let currentWindowID = candidate?.id ?? 0
-                let otherWindows = self.otherVisibleWindowCandidates(
+            if modifiers.contains(.shift), let candidate {
+                await arrangeAllWindows(
+                    layout: layout,
+                    selectedSlot: selectedSlot,
+                    capturedWindow: candidate,
                     on: screen,
-                    excludingWindowID: currentWindowID,
-                    limit: 2
+                    animationMode: animationMode
                 )
-
-                var currentCmd: Int = 0
-                var secondCmd: Int = 0
-                var thirdCmd: Int = 0
-
-                if layout.id == "one-two" {
-                    switch selectedSlot.id {
-                    case "native-one-two-top-right":
-                        currentCmd = 5 // Top Right
-                        secondCmd = 0  // Left
-                        thirdCmd = 7   // Bottom Right
-                    case "native-one-two-bottom-right":
-                        currentCmd = 7 // Bottom Right
-                        secondCmd = 0  // Left
-                        thirdCmd = 5   // Top Right
-                    default: // "native-one-two-left"
-                        currentCmd = 0 // Left
-                        secondCmd = 5  // Top Right
-                        thirdCmd = 7   // Bottom Right
-                    }
-                } else { // "two-one"
-                    switch selectedSlot.id {
-                    case "native-two-one-top-left":
-                        currentCmd = 4 // Top Left
-                        secondCmd = 1  // Right
-                        thirdCmd = 6   // Bottom Left
-                    case "native-two-one-bottom-left":
-                        currentCmd = 6 // Bottom Left
-                        secondCmd = 1  // Right
-                        thirdCmd = 4   // Top Left
-                    default: // "native-two-one-right"
-                        currentCmd = 1 // Right
-                        secondCmd = 4  // Top Left
-                        thirdCmd = 6   // Bottom Left
-                    }
-                }
-
-                _ = await XPCHelperClient.shared.performNativeWindowLayout(currentCmd)
-                if otherWindows.count >= 1 {
-                    try? await Task.sleep(for: .milliseconds(80))
-                    _ = await XPCHelperClient.shared.performWindowLayoutForProcess(
-                        otherWindows[0].processIdentifier,
-                        command: secondCmd
-                    )
-                }
-                if otherWindows.count >= 2 {
-                    try? await Task.sleep(for: .milliseconds(80))
-                    _ = await XPCHelperClient.shared.performWindowLayoutForProcess(
-                        otherWindows[1].processIdentifier,
-                        command: thirdCmd
-                    )
-                }
-
-                if let candidate {
-                    try? await Task.sleep(for: .milliseconds(50))
-                    let application = NSRunningApplication(processIdentifier: candidate.processIdentifier)
-                    application?.activate(options: .activateIgnoringOtherApps)
-                }
-                return
-            }
-
-            // 2. Standard single or native dual/quarters window tiling
-            if let nativeCommand = nativeCommand(for: selectedSlot, modifiers: modifiers),
-               await XPCHelperClient.shared.performNativeWindowLayout(nativeCommand.rawValue) {
-                return
-            }
-
-            // 3. Fallback: direct accessibility frame
-            if usesDirectAccessibilityFrameFallback {
-                let destination = destinationFrame(for: selectedSlot, on: screen)
-                _ = await XPCHelperClient.shared.setCapturedWindowFrame(
-                    appKitToAccessibility(destination)
+            } else {
+                await arrangeCurrentWindow(
+                    in: selectedSlot,
+                    on: screen,
+                    animationMode: animationMode
                 )
-                return
             }
-            NSLog("No configured native window shortcut for slot %@", selectedSlot.id)
         }
     }
 
@@ -722,42 +657,178 @@ final class WindowSnapController {
         ).insetBy(dx: 4, dy: 4)
     }
 
-    private func nativeCommand(
-        for slot: WindowSnapSlot,
-        modifiers: NSEvent.ModifierFlags
-    ) -> NativeWindowLayoutCommand? {
-        let requestsDesktopArrangement = modifiers.contains(.shift)
+    private func arrangeCurrentWindow(
+        in slot: WindowSnapSlot,
+        on screen: NSScreen,
+        animationMode: WindowSnapAnimationMode
+    ) async {
+        if animationMode != .none,
+           let nativeCommand = nativeCommand(for: slot),
+           await XPCHelperClient.shared.performNativeWindowLayout(nativeCommand.rawValue) {
+            return
+        }
+
+        // Let the target application finish its mouse-up drag transaction before
+        // AX writes begin. Otherwise AppKit can replay the old size over our result.
+        try? await Task.sleep(for: .milliseconds(60))
+        let destination = appKitToAccessibility(destinationFrame(for: slot, on: screen))
+        let succeeded = await XPCHelperClient.shared.setCapturedWindowFrame(
+            destination,
+            animated: animationMode == .full
+        )
+        if !succeeded {
+            NSLog("Unable to place captured window in slot %@", slot.id)
+        }
+    }
+
+    private func arrangeAllWindows(
+        layout: WindowSnapLayout,
+        selectedSlot: WindowSnapSlot,
+        capturedWindow: TrackedWindow,
+        on screen: NSScreen,
+        animationMode: WindowSnapAnimationMode
+    ) async {
+        let remainingSlots = layout.slots.filter { $0 != selectedSlot }
+        let otherWindows = otherVisibleWindowCandidates(
+            on: screen,
+            excludingWindowID: capturedWindow.id,
+            limit: remainingSlots.count
+        )
+
+        if animationMode != .none,
+           otherWindows.count == remainingSlots.count,
+           let nativeCommand = nativeDesktopCommand(
+               for: layout,
+               selectedSlot: selectedSlot
+           ),
+           await XPCHelperClient.shared.performNativeWindowLayout(nativeCommand.rawValue) {
+            return
+        }
+
+        if animationMode != .none,
+           otherWindows.count == remainingSlots.count,
+           remainingSlots.allSatisfy({ nativeCommand(for: $0) != nil }),
+           nativeCommand(for: selectedSlot) != nil,
+           await arrangeAllWindowsWithNativeCommands(
+               capturedWindow: capturedWindow,
+               selectedSlot: selectedSlot,
+               otherWindows: otherWindows,
+               remainingSlots: remainingSlots
+           ) {
+            return
+        }
+
+        try? await Task.sleep(for: .milliseconds(60))
+        let shouldAnimate = animationMode == .full
+        let selectedDestination = appKitToAccessibility(
+            destinationFrame(for: selectedSlot, on: screen)
+        )
+        let assignments = Array(zip(otherWindows, remainingSlots)).map { window, slot in
+            (
+                window,
+                appKitToAccessibility(destinationFrame(for: slot, on: screen))
+            )
+        }
+
+        await withTaskGroup(of: Bool.self) { group in
+            group.addTask {
+                await XPCHelperClient.shared.setCapturedWindowFrame(
+                    selectedDestination,
+                    animated: shouldAnimate
+                )
+            }
+            for (window, destination) in assignments {
+                group.addTask {
+                    await XPCHelperClient.shared.setWindowFrame(
+                        processIdentifier: window.processIdentifier,
+                        initialFrame: window.initialBounds,
+                        targetFrame: destination,
+                        animated: shouldAnimate
+                    )
+                }
+            }
+
+            for await succeeded in group where !succeeded {
+                NSLog("Unable to place one of the windows in layout %@", layout.id)
+            }
+        }
+
+        let application = NSRunningApplication(
+            processIdentifier: capturedWindow.processIdentifier
+        )
+        application?.activate(options: .activateIgnoringOtherApps)
+    }
+
+    private func arrangeAllWindowsWithNativeCommands(
+        capturedWindow: TrackedWindow,
+        selectedSlot: WindowSnapSlot,
+        otherWindows: [TrackedWindow],
+        remainingSlots: [WindowSnapSlot]
+    ) async -> Bool {
+        guard let selectedCommand = nativeCommand(for: selectedSlot),
+              await XPCHelperClient.shared.performNativeWindowLayout(
+                  selectedCommand.rawValue
+              )
+        else { return false }
+
+        var allSucceeded = true
+        for (window, slot) in zip(otherWindows, remainingSlots) {
+            guard let command = nativeCommand(for: slot) else {
+                allSucceeded = false
+                continue
+            }
+            try? await Task.sleep(for: .milliseconds(80))
+            let succeeded = await XPCHelperClient.shared.performNativeWindowLayoutForWindow(
+                processIdentifier: window.processIdentifier,
+                initialFrame: window.initialBounds,
+                command: command.rawValue
+            )
+            allSucceeded = allSucceeded && succeeded
+        }
+
+        if !allSucceeded {
+            NSLog("One or more native window layout commands were rejected")
+        }
+        let application = NSRunningApplication(
+            processIdentifier: capturedWindow.processIdentifier
+        )
+        application?.activate(options: .activateIgnoringOtherApps)
+        // Once the captured window's native command succeeds, its AX reference is
+        // intentionally released. Treat the arrangement as handled even if a
+        // secondary app rejects its own menu command.
+        return true
+    }
+
+    private func nativeCommand(for slot: WindowSnapSlot) -> NativeWindowLayoutCommand? {
         switch slot.id {
-        case "native-left":
-            return requestsDesktopArrangement ? .leftAndRight : .left
-        case "native-right":
-            return requestsDesktopArrangement ? .rightAndLeft : .right
-
-        // 1+2 单窗口槽位
-        case "native-one-two-left":
+        case "half-left", "one-two-left":
             return .left
-        case "native-one-two-top-right":
-            return .topRight
-        case "native-one-two-bottom-right":
-            return .bottomRight
-
-        // 2+1 单窗口槽位
-        case "native-two-one-top-left":
-            return .topLeft
-        case "native-two-one-bottom-left":
-            return .bottomLeft
-        case "native-two-one-right":
+        case "half-right":
             return .right
+        case "one-two-top-right", "quarter-top-right":
+            return .topRight
+        case "one-two-bottom-right", "quarter-bottom-right":
+            return .bottomRight
+        case "quarter-top-left":
+            return .topLeft
+        case "quarter-bottom-left":
+            return .bottomLeft
+        default:
+            return nil
+        }
+    }
 
-        // 四等分布局槽位
-        case "native-top-left":
-            return requestsDesktopArrangement ? .quarters : .topLeft
-        case "native-top-right":
-            return requestsDesktopArrangement ? .quarters : .topRight
-        case "native-bottom-left":
-            return requestsDesktopArrangement ? .quarters : .bottomLeft
-        case "native-bottom-right":
-            return requestsDesktopArrangement ? .quarters : .bottomRight
+    private func nativeDesktopCommand(
+        for layout: WindowSnapLayout,
+        selectedSlot: WindowSnapSlot
+    ) -> NativeWindowLayoutCommand? {
+        switch layout.id {
+        case "halves":
+            return selectedSlot.id == "half-left" ? .leftAndRight : .rightAndLeft
+        case "quarters":
+            return .quarters
+        case "one-two" where selectedSlot.id == "one-two-left":
+            return .leftAndQuarters
         default:
             return nil
         }
@@ -774,8 +845,8 @@ final class WindowSnapController {
         ) as? [[CFString: Any]] else { return [] }
 
         let ownProcessID = getpid()
+        let accessibilityScreenFrame = appKitToAccessibility(screen.visibleFrame)
         var results: [TrackedWindow] = []
-        var seenPids = Set<Int32>()
 
         for info in windowInfo {
             guard (info[kCGWindowLayer] as? NSNumber)?.intValue == 0,
@@ -783,14 +854,13 @@ final class WindowSnapController {
                   pid != ownProcessID,
                   let windowNumber = (info[kCGWindowNumber] as? NSNumber)?.uint32Value,
                   windowNumber != excludingWindowID,
-                  !seenPids.contains(pid),
                   let boundsDictionary = info[kCGWindowBounds] as? NSDictionary,
                   let bounds = CGRect(dictionaryRepresentation: boundsDictionary),
                   bounds.width >= 120,
-                  bounds.height >= 80
+                  bounds.height >= 80,
+                  bounds.intersects(accessibilityScreenFrame)
             else { continue }
 
-            seenPids.insert(pid)
             results.append(TrackedWindow(
                 id: windowNumber,
                 processIdentifier: pid,

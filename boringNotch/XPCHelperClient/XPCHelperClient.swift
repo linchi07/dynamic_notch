@@ -347,7 +347,7 @@ final class XPCHelperClient: NSObject, @unchecked Sendable {
         }
     }
 
-    nonisolated func setCapturedWindowFrame(_ frame: CGRect) async -> Bool {
+    nonisolated func setCapturedWindowFrame(_ frame: CGRect, animated: Bool) async -> Bool {
         do {
             let service = await MainActor.run { ensureRemoteService() }
             let result: Bool = try await service.withContinuation { service, continuation in
@@ -355,7 +355,40 @@ final class XPCHelperClient: NSObject, @unchecked Sendable {
                     frame.origin.x,
                     y: frame.origin.y,
                     width: frame.width,
-                    height: frame.height
+                    height: frame.height,
+                    animated: animated
+                ) { success in
+                    continuation.resume(returning: success)
+                }
+            }
+            await MainActor.run { markConnectionHealthy() }
+            return result
+        } catch {
+            await markConnectionUnhealthy()
+            return false
+        }
+    }
+
+    nonisolated func setWindowFrame(
+        processIdentifier: Int32,
+        initialFrame: CGRect,
+        targetFrame: CGRect,
+        animated: Bool
+    ) async -> Bool {
+        do {
+            let service = await MainActor.run { ensureRemoteService() }
+            let result: Bool = try await service.withContinuation { service, continuation in
+                service.setWindowFrame(
+                    processIdentifier,
+                    windowX: initialFrame.minX,
+                    windowY: initialFrame.minY,
+                    windowWidth: initialFrame.width,
+                    windowHeight: initialFrame.height,
+                    targetX: targetFrame.minX,
+                    targetY: targetFrame.minY,
+                    targetWidth: targetFrame.width,
+                    targetHeight: targetFrame.height,
+                    animated: animated
                 ) { success in
                     continuation.resume(returning: success)
                 }
@@ -389,6 +422,33 @@ final class XPCHelperClient: NSObject, @unchecked Sendable {
             let service = await MainActor.run { ensureRemoteService() }
             let result: Bool = try await service.withContinuation { service, continuation in
                 service.performWindowLayoutForProcess(processIdentifier, command: command) { success in
+                    continuation.resume(returning: success)
+                }
+            }
+            await MainActor.run { markConnectionHealthy() }
+            return result
+        } catch {
+            await markConnectionUnhealthy()
+            return false
+        }
+    }
+
+    nonisolated func performNativeWindowLayoutForWindow(
+        processIdentifier: Int32,
+        initialFrame: CGRect,
+        command: Int
+    ) async -> Bool {
+        do {
+            let service = await MainActor.run { ensureRemoteService() }
+            let result: Bool = try await service.withContinuation { service, continuation in
+                service.performNativeWindowLayoutForWindow(
+                    processIdentifier,
+                    windowX: initialFrame.minX,
+                    windowY: initialFrame.minY,
+                    windowWidth: initialFrame.width,
+                    windowHeight: initialFrame.height,
+                    command: command
+                ) { success in
                     continuation.resume(returning: success)
                 }
             }

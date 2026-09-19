@@ -72,6 +72,14 @@ enum OptionKeyAction: String, CaseIterable, Identifiable, Defaults.Serializable 
     var id: String { self.rawValue }
 }
 
+enum WindowSnapAnimationMode: String, CaseIterable, Identifiable, Defaults.Serializable {
+    case none
+    case system
+    case full
+
+    var id: String { rawValue }
+}
+
 extension Defaults.Keys {
     // MARK: General
     static let menubarIcon = Key<Bool>("menubarIcon", default: true)
@@ -162,6 +170,10 @@ extension Defaults.Keys {
     static let autoRemoveShelfItems = Key<Bool>("autoRemoveShelfItems", default: false)
     static let expandedDragDetection = Key<Bool>("expandedDragDetection", default: true)
     static let enableWindowSnapping = Key<Bool>("enableWindowSnapping", default: true)
+    static let windowSnapAnimationMode = Key<WindowSnapAnimationMode>(
+        "windowSnapAnimationMode",
+        default: .system
+    )
     
     // MARK: Calendar
     static let calendarSelectionState = Key<CalendarSelectionState>("calendarSelectionState", default: .all)

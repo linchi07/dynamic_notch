@@ -142,6 +142,8 @@ struct GeneralSettings: View {
     @Default(.enableGestures) var enableGestures
     @Default(.openNotchOnHover) var openNotchOnHover
     @Default(.hideNotchOption) var hideNotchOption
+    @Default(.enableWindowSnapping) var enableWindowSnapping
+    @Default(.windowSnapAnimationMode) var windowSnapAnimationMode
     
 
     var body: some View {
@@ -159,6 +161,12 @@ struct GeneralSettings: View {
                 Defaults.Toggle(key: .enableWindowSnapping) {
                     Text("Show window layouts when dragging to the top")
                 }
+                Picker("Window arrangement animation", selection: $windowSnapAnimationMode) {
+                    Text("None").tag(WindowSnapAnimationMode.none)
+                    Text("System when available").tag(WindowSnapAnimationMode.system)
+                    Text("Always animate").tag(WindowSnapAnimationMode.full)
+                }
+                .disabled(!enableWindowSnapping)
             } header: {
                 Text("System features")
             } footer: {

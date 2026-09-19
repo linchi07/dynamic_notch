@@ -22,6 +22,11 @@ class BoringNotchXPCHelper: NSObject, BoringNotchXPCHelperProtocol {
     ]
 
     private let windowQueue = DispatchQueue(label: "theboringteam.boringnotch.window-snap")
+    private let animationQueue = DispatchQueue(
+        label: "theboringteam.boringnotch.window-snap-animation",
+        qos: .userInteractive,
+        attributes: .concurrent
+    )
     private var capturedWindow: AXUIElement?
     private var capturedWindowInitialPosition: CGPoint?
     private var capturedProcessIdentifier: pid_t?
@@ -128,6 +133,7 @@ class BoringNotchXPCHelper: NSObject, BoringNotchXPCHelperProtocol {
         y: Double,
         width: Double,
         height: Double,
+        animated: Bool,
         with reply: @escaping (Bool) -> Void
     ) {
         windowQueue.async { [weak self] in
@@ -135,56 +141,53 @@ class BoringNotchXPCHelper: NSObject, BoringNotchXPCHelperProtocol {
                 reply(false)
                 return
             }
-            defer {
-                self.clearCapturedWindow()
+            self.clearCapturedWindow()
+            let target = CGRect(x: x, y: y, width: width, height: height)
+            self.animationQueue.async {
+                reply(self.applyFrame(target, to: window, animated: animated))
             }
+        }
+    }
 
-            let targetSize = CGSize(width: width, height: height)
-            let targetPosition = CGPoint(x: x, y: y)
-
-            let currentPosition = self.pointAttribute(kAXPositionAttribute as CFString, from: window)
-            let currentSize = self.sizeAttribute(kAXSizeAttribute as CFString, from: window)
-
-            // Smooth interpolation animation for direct frame updates
-            if let currentPos = currentPosition, let currentSz = currentSize {
-                let frameCount = 6
-                for step in 1...frameCount {
-                    let progress = Double(step) / Double(frameCount)
-                    let ease = 1.0 - pow(1.0 - progress, 3.0)
-
-                    let intermediateWidth = currentSz.width + (targetSize.width - currentSz.width) * ease
-                    let intermediateHeight = currentSz.height + (targetSize.height - currentSz.height) * ease
-                    let intermediateX = currentPos.x + (targetPosition.x - currentPos.x) * ease
-                    let intermediateY = currentPos.y + (targetPosition.y - currentPos.y) * ease
-
-                    var stepSize = CGSize(width: intermediateWidth, height: intermediateHeight)
-                    var stepPos = CGPoint(x: intermediateX, y: intermediateY)
-
-                    if let sizeVal = AXValueCreate(.cgSize, &stepSize) {
-                        AXUIElementSetAttributeValue(window, kAXSizeAttribute as CFString, sizeVal)
-                    }
-                    if let posVal = AXValueCreate(.cgPoint, &stepPos) {
-                        AXUIElementSetAttributeValue(window, kAXPositionAttribute as CFString, posVal)
-                    }
-
-                    if step < frameCount {
-                        usleep(16000)
-                    }
-                }
-                reply(true)
-            } else {
-                var size = targetSize
-                var position = targetPosition
-                guard let sizeValue = AXValueCreate(.cgSize, &size),
-                      let positionValue = AXValueCreate(.cgPoint, &position)
-                else {
-                    reply(false)
-                    return
-                }
-
-                let sizeResult = AXUIElementSetAttributeValue(window, kAXSizeAttribute as CFString, sizeValue)
-                let positionResult = AXUIElementSetAttributeValue(window, kAXPositionAttribute as CFString, positionValue)
-                reply(sizeResult == .success && positionResult == .success)
+    @objc func setWindowFrame(
+        _ processIdentifier: Int32,
+        windowX: Double,
+        windowY: Double,
+        windowWidth: Double,
+        windowHeight: Double,
+        targetX: Double,
+        targetY: Double,
+        targetWidth: Double,
+        targetHeight: Double,
+        animated: Bool,
+        with reply: @escaping (Bool) -> Void
+    ) {
+        windowQueue.async { [weak self] in
+            guard let self, processIdentifier > 0 else {
+                reply(false)
+                return
+            }
+            let initialFrame = CGRect(
+                x: windowX,
+                y: windowY,
+                width: windowWidth,
+                height: windowHeight
+            )
+            guard let window = self.window(
+                for: pid_t(processIdentifier),
+                matching: initialFrame
+            ) else {
+                reply(false)
+                return
+            }
+            let target = CGRect(
+                x: targetX,
+                y: targetY,
+                width: targetWidth,
+                height: targetHeight
+            )
+            self.animationQueue.async {
+                reply(self.applyFrame(target, to: window, animated: animated))
             }
         }
     }
@@ -254,6 +257,50 @@ class BoringNotchXPCHelper: NSObject, BoringNotchXPCHelperProtocol {
         }
     }
 
+    @objc func performNativeWindowLayoutForWindow(
+        _ processIdentifier: Int32,
+        windowX: Double,
+        windowY: Double,
+        windowWidth: Double,
+        windowHeight: Double,
+        command: Int,
+        with reply: @escaping (Bool) -> Void
+    ) {
+        windowQueue.async { [weak self] in
+            guard let self,
+                  ProcessInfo.processInfo.operatingSystemVersion.majorVersion >= 15,
+                  processIdentifier > 0
+            else {
+                reply(false)
+                return
+            }
+
+            let expectedFrame = CGRect(
+                x: windowX,
+                y: windowY,
+                width: windowWidth,
+                height: windowHeight
+            )
+            guard let window = self.window(
+                for: pid_t(processIdentifier),
+                matching: expectedFrame
+            ) else {
+                reply(false)
+                return
+            }
+            _ = AXUIElementPerformAction(window, kAXRaiseAction as CFString)
+            guard let menuItem = self.nativeWindowLayoutMenuItem(
+                for: command,
+                processIdentifier: pid_t(processIdentifier)
+            ) else {
+                reply(false)
+                return
+            }
+            let result = AXUIElementPerformAction(menuItem, kAXPressAction as CFString)
+            reply(result == .success || result == .cannotComplete)
+        }
+    }
+
     @objc func primeNativeWindowLayoutShortcuts(with reply: @escaping () -> Void) {
         windowQueue.async {
             reply()
@@ -270,6 +317,91 @@ class BoringNotchXPCHelper: NSObject, BoringNotchXPCHelperProtocol {
         capturedWindow = nil
         capturedWindowInitialPosition = nil
         capturedProcessIdentifier = nil
+    }
+
+    private func applyFrame(_ target: CGRect, to window: AXUIElement, animated: Bool) -> Bool {
+        guard target.origin.x.isFinite,
+              target.origin.y.isFinite,
+              target.width.isFinite,
+              target.height.isFinite,
+              target.width > 0,
+              target.height > 0
+        else { return false }
+
+        _ = AXUIElementSetMessagingTimeout(window, 0.05)
+        defer { _ = AXUIElementSetMessagingTimeout(window, 0) }
+
+        if animated,
+           let position = pointAttribute(kAXPositionAttribute as CFString, from: window),
+           let size = sizeAttribute(kAXSizeAttribute as CFString, from: window) {
+            let origin = CGRect(origin: position, size: size)
+            let frameCount = 16
+            for step in 1...frameCount {
+                let progress = CGFloat(step) / CGFloat(frameCount)
+                let eased = progress * (3 + progress * (progress - 3))
+                let frame = CGRect(
+                    x: origin.minX + (target.minX - origin.minX) * eased,
+                    y: origin.minY + (target.minY - origin.minY) * eased,
+                    width: origin.width + (target.width - origin.width) * eased,
+                    height: origin.height + (target.height - origin.height) * eased
+                )
+                guard writeFrame(frame, to: window, repeatSize: false) else {
+                    return false
+                }
+                if step < frameCount {
+                    usleep(16_000)
+                }
+            }
+        }
+
+        // A final size-position-size pass mirrors Rectangle's handling for apps
+        // that constrain the first resize against the window's old display.
+        guard writeFrame(target, to: window, repeatSize: true) else { return false }
+
+        let tolerance: CGFloat = 2
+        for attempt in 0..<3 {
+            if let finalPosition = pointAttribute(kAXPositionAttribute as CFString, from: window),
+               let finalSize = sizeAttribute(kAXSizeAttribute as CFString, from: window),
+               abs(finalPosition.x - target.minX) <= tolerance,
+               abs(finalPosition.y - target.minY) <= tolerance,
+               abs(finalSize.width - target.width) <= tolerance,
+               abs(finalSize.height - target.height) <= tolerance {
+                return true
+            }
+            guard attempt < 2 else { break }
+            usleep(20_000)
+            guard writeFrame(target, to: window, repeatSize: true) else { return false }
+        }
+        return false
+    }
+
+    private func writeFrame(
+        _ frame: CGRect,
+        to window: AXUIElement,
+        repeatSize: Bool
+    ) -> Bool {
+        var size = frame.size
+        var position = frame.origin
+        guard let sizeValue = AXValueCreate(.cgSize, &size),
+              let positionValue = AXValueCreate(.cgPoint, &position)
+        else { return false }
+
+        let firstSize = AXUIElementSetAttributeValue(
+            window,
+            kAXSizeAttribute as CFString,
+            sizeValue
+        )
+        let positionResult = AXUIElementSetAttributeValue(
+            window,
+            kAXPositionAttribute as CFString,
+            positionValue
+        )
+        let finalSize = repeatSize
+            ? AXUIElementSetAttributeValue(window, kAXSizeAttribute as CFString, sizeValue)
+            : .success
+        return firstSize == .success
+            && positionResult == .success
+            && finalSize == .success
     }
 
     private func topmostWindow(for application: AXUIElement) -> AXUIElement? {
