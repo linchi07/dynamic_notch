@@ -53,6 +53,8 @@ struct NotchPanelContainer: View {
             NotchHomeView()
         case .shelf:
             ShelfView()
+        case .scratchpad:
+            ScratchpadPanelView()
         }
     }
 }

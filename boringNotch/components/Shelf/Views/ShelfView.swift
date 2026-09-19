@@ -33,7 +33,7 @@ struct ShelfView: View {
     private func handleDrop(providers: [NSItemProvider]) -> Bool {
         guard !selection.isDragging else { return false }
         vm.dropEvent = true
-        tvm.load(providers)
+        DropRouterService.shared.handleDrop(providers: providers)
         return true
     }
     

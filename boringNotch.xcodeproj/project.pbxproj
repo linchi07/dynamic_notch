@@ -7,6 +7,14 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		E7B000012D8A000100000001 /* scratchpad_item.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7A000012D8A000100000001 /* scratchpad_item.swift */; };
+		E7B000022D8A000100000002 /* scratchpad_persistence_service.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7A000022D8A000100000002 /* scratchpad_persistence_service.swift */; };
+		E7B000032D8A000100000003 /* drop_router_service.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7A000032D8A000100000003 /* drop_router_service.swift */; };
+		E7B000042D8A000100000004 /* scratchpad_view_model.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7A000042D8A000100000004 /* scratchpad_view_model.swift */; };
+		E7B000052D8A000100000005 /* scratchpad_panel_view.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7A000052D8A000100000005 /* scratchpad_panel_view.swift */; };
+		E7B000062D8A000100000006 /* scratchpad_card_view.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7A000062D8A000100000006 /* scratchpad_card_view.swift */; };
+		E7B000072D8A000100000007 /* scratchpad_editor_view.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7A000072D8A000100000007 /* scratchpad_editor_view.swift */; };
+		E7B000082D8A000100000008 /* scratchpad_editor_window_controller.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7A000082D8A000100000008 /* scratchpad_editor_window_controller.swift */; };
 		111BEA902ED170010079DD4E /* notch_display_mode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 111BEA912ED170010079DD4E /* notch_display_mode.swift */; };
 		111BEA922ED170020079DD4E /* notch_wings_container.swift in Sources */ = {isa = PBXBuildFile; fileRef = 111BEA932ED170020079DD4E /* notch_wings_container.swift */; };
 		111BEB012ED170020079DD4E /* notch_hero_transition.swift in Sources */ = {isa = PBXBuildFile; fileRef = 111BEB022ED170020079DD4E /* notch_hero_transition.swift */; };
@@ -188,6 +196,14 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		E7A000012D8A000100000001 /* scratchpad_item.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = scratchpad_item.swift; sourceTree = "<group>"; };
+		E7A000022D8A000100000002 /* scratchpad_persistence_service.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = scratchpad_persistence_service.swift; sourceTree = "<group>"; };
+		E7A000032D8A000100000003 /* drop_router_service.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = drop_router_service.swift; sourceTree = "<group>"; };
+		E7A000042D8A000100000004 /* scratchpad_view_model.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = scratchpad_view_model.swift; sourceTree = "<group>"; };
+		E7A000052D8A000100000005 /* scratchpad_panel_view.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = scratchpad_panel_view.swift; sourceTree = "<group>"; };
+		E7A000062D8A000100000006 /* scratchpad_card_view.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = scratchpad_card_view.swift; sourceTree = "<group>"; };
+		E7A000072D8A000100000007 /* scratchpad_editor_view.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = scratchpad_editor_view.swift; sourceTree = "<group>"; };
+		E7A000082D8A000100000008 /* scratchpad_editor_window_controller.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = scratchpad_editor_window_controller.swift; sourceTree = "<group>"; };
 		111BEA912ED170010079DD4E /* notch_display_mode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = notch_display_mode.swift; sourceTree = "<group>"; };
 		111BEA932ED170020079DD4E /* notch_wings_container.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = notch_wings_container.swift; sourceTree = "<group>"; };
 		111BEB022ED170020079DD4E /* notch_hero_transition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = notch_hero_transition.swift; sourceTree = "<group>"; };
@@ -371,6 +387,53 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		E7C000012D8A000100000001 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				E7A000012D8A000100000001 /* scratchpad_item.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		E7C000022D8A000100000002 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				E7A000022D8A000100000002 /* scratchpad_persistence_service.swift */,
+				E7A000032D8A000100000003 /* drop_router_service.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		E7C000032D8A000100000003 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				E7A000042D8A000100000004 /* scratchpad_view_model.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		E7C000042D8A000100000004 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				E7A000052D8A000100000005 /* scratchpad_panel_view.swift */,
+				E7A000062D8A000100000006 /* scratchpad_card_view.swift */,
+				E7A000072D8A000100000007 /* scratchpad_editor_view.swift */,
+				E7A000082D8A000100000008 /* scratchpad_editor_window_controller.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		E7C000052D8A000100000005 /* Scratchpad */ = {
+			isa = PBXGroup;
+			children = (
+				E7C000012D8A000100000001 /* Models */,
+				E7C000022D8A000100000002 /* Services */,
+				E7C000032D8A000100000003 /* ViewModels */,
+				E7C000042D8A000100000004 /* Views */,
+			);
+			path = Scratchpad;
+			sourceTree = "<group>";
+		};
 		1113ABB82E80E27000EC13B2 /* Models */ = {
 			isa = PBXGroup;
 			children = (
@@ -501,6 +564,7 @@
 		1471639B2C5D362F0068B555 /* components */ = {
 			isa = PBXGroup;
 			children = (
+				E7C000052D8A000100000005 /* Scratchpad */,
 				B141C23B2CA5F50900AC8CC8 /* Onboarding */,
 				B1C448992C97375A001F0858 /* Tips */,
 				14C08BB72C8DE49E000F8AA0 /* Calendar */,
@@ -925,6 +989,14 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E7B000012D8A000100000001 /* scratchpad_item.swift in Sources */,
+				E7B000022D8A000100000002 /* scratchpad_persistence_service.swift in Sources */,
+				E7B000032D8A000100000003 /* drop_router_service.swift in Sources */,
+				E7B000042D8A000100000004 /* scratchpad_view_model.swift in Sources */,
+				E7B000052D8A000100000005 /* scratchpad_panel_view.swift in Sources */,
+				E7B000062D8A000100000006 /* scratchpad_card_view.swift in Sources */,
+				E7B000072D8A000100000007 /* scratchpad_editor_view.swift in Sources */,
+				E7B000082D8A000100000008 /* scratchpad_editor_window_controller.swift in Sources */,
 				14C08BB92C8DE4B1000F8AA0 /* BoringCalendar.swift in Sources */,
 				5955950D2E900ED800C66711 /* ApplicationRelauncher.swift in Sources */,
 				1100292A2E8691B400035A57 /* FileShareView.swift in Sources */,

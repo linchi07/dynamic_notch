@@ -41,9 +41,7 @@ struct ShelfDropService {
             return nil
         }
         
-        if let text = await provider.extractText() {
-            return await ShelfItem(kind: .text(string: text), isTemporary: false)
-        }
+        // Plain text is now routed to Scratchpad, not Shelf.
         
         if let data = await provider.loadData() {
             if let tempDataURL = await TemporaryFileStorageService.shared.createTempFile(for: .data(data, suggestedName: provider.suggestedName)),

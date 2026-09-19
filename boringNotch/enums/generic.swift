@@ -27,6 +27,7 @@ public enum NotchState {
 public enum NotchViews: Int, CaseIterable, Identifiable {
     case home = 0
     case shelf = 1
+    case scratchpad = 2
 
     public var id: Int { rawValue }
 }

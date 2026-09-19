@@ -21,6 +21,7 @@ struct ContentView: View {
     @ObservedObject var coordinator = BoringViewCoordinator.shared
     @ObservedObject var musicManager = MusicManager.shared
     @ObservedObject private var shelfState = ShelfStateViewModel.shared
+    @ObservedObject private var scratchpadState = ScratchpadViewModel.shared
     @ObservedObject var brightnessManager = BrightnessManager.shared
     @ObservedObject var volumeManager = VolumeManager.shared
     @State private var hoverTask: Task<Void, Never>?
@@ -148,7 +149,9 @@ struct ContentView: View {
     }
 
     private var shouldShowBottomNavigation: Bool {
-        Defaults[.boringShelf] && (!shelfState.isEmpty || coordinator.alwaysShowTabs)
+        (Defaults[.boringShelf] && (!shelfState.isEmpty || coordinator.alwaysShowTabs))
+            || !scratchpadState.isEmpty
+            || coordinator.currentView == .scratchpad
     }
 
     private var topCornerRadius: CGFloat {
@@ -384,7 +387,11 @@ struct ContentView: View {
 
             if isTargeted {
                 if vm.notchState == .closed {
-                    coordinator.currentView = .shelf
+                    if DropRouterService.shared.isDraggingPlainText() {
+                        coordinator.currentView = .scratchpad
+                    } else {
+                        coordinator.currentView = .shelf
+                    }
                     doOpen()
                 }
                 return
@@ -486,7 +493,7 @@ struct ContentView: View {
                 .contentShape(Rectangle())
         .onDrop(of: [.fileURL, .url, .utf8PlainText, .plainText, .data], isTargeted: $vm.dragDetectorTargeting) { providers in
             vm.dropEvent = true
-            ShelfStateViewModel.shared.load(providers)
+            DropRouterService.shared.handleDrop(providers: providers)
             return true
         }
         } else {
