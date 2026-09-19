@@ -37,13 +37,31 @@ struct ContentView: View {
     @Default(.notchOuterPadding) private var notchOuterPadding
 
     @Default(.showNotHumanFace) var showNotHumanFace
-    @Default(.closedNotchHUDStyle) var closedNotchHUDStyle
 
-    private var isFloatingHUDVisible: Bool {
+    private var isUnifiedHUDVisible: Bool {
         coordinator.sneakPeek.show &&
-        (coordinator.sneakPeek.type == .volume || coordinator.sneakPeek.type == .brightness || coordinator.sneakPeek.type == .backlight || coordinator.sneakPeek.type == .mic) &&
-        vm.notchState == .closed &&
-        closedNotchHUDStyle == .floatingBar
+        (coordinator.sneakPeek.type == .volume || coordinator.sneakPeek.type == .brightness || coordinator.sneakPeek.type == .backlight || coordinator.sneakPeek.type == .mic)
+    }
+
+    private var notchBottomY: CGFloat {
+        vm.notchState == .open
+            ? vm.notchSize.height
+            : vm.effectiveClosedNotchHeight
+    }
+
+    private var floatingNotificationOffsetY: CGFloat {
+        notchBottomY + 8
+    }
+
+    private var floatingHUDOffsetY: CGFloat {
+        let notificationBottom = floatingNotificationOffsetY + 30
+        let anchorBottom = coordinator.isNotificationPresented
+            ? max(notchBottomY, notificationBottom)
+            : notchBottomY
+        let spacing: CGFloat = coordinator.isNotificationPresented
+            ? 8
+            : (vm.notchState == .open ? 16 : 8)
+        return anchorBottom + spacing
     }
 
     // Unified interactive spring for movement/resizing to keep hero and notch layout strictly in sync
@@ -176,13 +194,13 @@ struct ContentView: View {
         }()
         
         ZStack(alignment: .top) {
-            if isFloatingHUDVisible {
+            if isUnifiedHUDVisible {
                 FloatingHUDBar(
                     type: $coordinator.sneakPeek.type,
                     value: $coordinator.sneakPeek.value,
                     icon: $coordinator.sneakPeek.icon
                 )
-                .padding(.top, vm.effectiveClosedNotchHeight + 8)
+                .offset(y: floatingHUDOffsetY)
                 .transition(FloatingPopupStyle.transition)
                 .zIndex(0)
             }
@@ -234,7 +252,8 @@ struct ContentView: View {
                     .clipShape(Capsule())
                     .animation(NOTIFICATION_CONTENT_SLIDE_SPRING, value: notification.id)
                 }
-                .padding(.top, vm.effectiveClosedNotchHeight + 8)
+                .offset(y: floatingNotificationOffsetY)
+                .animation(FloatingPopupStyle.anchorAnimation, value: floatingNotificationOffsetY)
                 .zIndex(0.5)
             }
 
@@ -345,7 +364,8 @@ struct ContentView: View {
             }
             .zIndex(1)
         }
-        .animation(FloatingPopupStyle.springAnimation, value: isFloatingHUDVisible)
+        .animation(FloatingPopupStyle.springAnimation, value: isUnifiedHUDVisible)
+        .animation(FloatingPopupStyle.anchorAnimation, value: floatingHUDOffsetY)
         .padding(.bottom, 8)
         .frame(maxWidth: windowSize.width, maxHeight: windowSize.height, alignment: .top)
         .compositingGroup()
@@ -402,10 +422,7 @@ struct ContentView: View {
                     .padding(.top, 40)
                     Spacer()
                 } else {
-                    if coordinator.sneakPeek.show && (closedNotchHUDStyle == .inline) && (coordinator.sneakPeek.type != .music) && (coordinator.sneakPeek.type != .battery) && vm.notchState == .closed {
-                          InlineHUD(type: $coordinator.sneakPeek.type, value: $coordinator.sneakPeek.value, icon: $coordinator.sneakPeek.icon, hoverAnimation: $isHovering, gestureProgress: $gestureProgress)
-                              .transition(.opacity)
-                      } else if case .active(let activeState) = effectiveDisplayMode, vm.notchState == .closed {
+                    if case .active(let activeState) = effectiveDisplayMode, vm.notchState == .closed {
                           NotchWingsContainer(state: activeState)
                               .frame(alignment: .center)
                       } else if vm.notchState == .closed && (!musicManager.isPlaying && musicManager.isPlayerIdle) && Defaults[.showNotHumanFace] && !vm.hideOnClosed  {
@@ -417,34 +434,7 @@ struct ContentView: View {
                        } else {
                            Rectangle().fill(.clear).frame(width: vm.closedNotchSize.width, height: vm.effectiveClosedNotchHeight)
                        }
-
-                      if coordinator.sneakPeek.show {
-                          if (coordinator.sneakPeek.type != .music) && (coordinator.sneakPeek.type != .battery) && (closedNotchHUDStyle == .standard) && vm.notchState == .closed {
-                              SystemEventIndicatorModifier(
-                                  eventType: $coordinator.sneakPeek.type,
-                                  value: $coordinator.sneakPeek.value,
-                                  icon: $coordinator.sneakPeek.icon,
-                                  sendEventBack: { newVal in
-                                      switch coordinator.sneakPeek.type {
-                                      case .volume:
-                                          VolumeManager.shared.setAbsolute(Float32(newVal))
-                                      case .brightness:
-                                          BrightnessManager.shared.setAbsolute(value: Float32(newVal))
-                                      default:
-                                          break
-                                      }
-                                  }
-                              )
-                              .padding(.bottom, 10)
-                              .padding(.leading, 4)
-                              .padding(.trailing, 8)
-                          }
-                      }
                   }
-              }
-              .conditionalModifier(coordinator.sneakPeek.show && (coordinator.sneakPeek.type != .music) && (vm.notchState == .closed) && (closedNotchHUDStyle == .standard)) { view in
-                  view
-                      .fixedSize()
               }
               .zIndex(2)
             if vm.notchState == .open {
@@ -465,7 +455,6 @@ struct ContentView: View {
                 .opacity(gestureProgress != 0 ? 1.0 - min(abs(gestureProgress) * 0.1, 0.3) : 1.0)
             }
         }
-        .onDrop(of: [.fileURL, .url, .utf8PlainText, .plainText, .data], delegate: GeneralDropTargetDelegate(isTargeted: $vm.generalDropTargeting))
     }
 
     @ViewBuilder
@@ -641,26 +630,6 @@ struct FullScreenDropDelegate: DropDelegate {
         return true
     }
 
-}
-
-struct GeneralDropTargetDelegate: DropDelegate {
-    @Binding var isTargeted: Bool
-
-    func dropEntered(info: DropInfo) {
-        isTargeted = true
-    }
-
-    func dropExited(info: DropInfo) {
-        isTargeted = false
-    }
-
-    func dropUpdated(info: DropInfo) -> DropProposal? {
-        return DropProposal(operation: .cancel)
-    }
-
-    func performDrop(info: DropInfo) -> Bool {
-        return false
-    }
 }
 
 #Preview {

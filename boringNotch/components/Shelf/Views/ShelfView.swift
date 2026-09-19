@@ -21,9 +21,6 @@ struct ShelfView: View {
                 .aspectRatio(1, contentMode: .fit)
                 .environmentObject(vm)
             panel
-                .onDrop(of: [.fileURL, .url, .utf8PlainText, .plainText, .data], isTargeted: $vm.dragDetectorTargeting) { providers in
-                    handleDrop(providers: providers)
-                }
         }
         .frame(height: NOTCH_PANEL_CONTAINER_HEIGHT)
         // Bind Quick Look to shelf selection
@@ -36,7 +33,7 @@ struct ShelfView: View {
     private func handleDrop(providers: [NSItemProvider]) -> Bool {
         guard !selection.isDragging else { return false }
         vm.dropEvent = true
-        ShelfStateViewModel.shared.load(providers)
+        tvm.load(providers)
         return true
     }
     
@@ -60,22 +57,36 @@ struct ShelfView: View {
     }
 
     var panel: some View {
-        RoundedRectangle(cornerRadius: 12, style: .continuous)
-            .stroke(
-                vm.dragDetectorTargeting
-                    ? Color.accentColor.opacity(0.9)
-                    : Color.white.opacity(0.1),
-                style: StrokeStyle(lineWidth: 2, lineCap: .round, dash: [8])
-            )
-            .overlay {
-                content
+        ZStack {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(
+                    vm.dragDetectorTargeting
+                        ? Color.accentColor.opacity(0.9)
+                        : Color.white.opacity(0.1),
+                    style: StrokeStyle(lineWidth: 2, lineCap: .round, dash: [8])
+                )
+
+            content
+                .padding(6)
+
+            if tvm.isLoading {
+                ProgressView()
+                    .controlSize(.small)
                     .padding(8)
+                    .background(.black.opacity(0.7), in: Capsule())
             }
-            .transaction { transaction in
-                transaction.animation = vm.animation
-            }
-            .contentShape(Rectangle())
-            .onTapGesture { selection.clear() }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .transaction { transaction in
+            transaction.animation = vm.animation
+        }
+        .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .onTapGesture { selection.clear() }
+        .onDrop(
+            of: [.fileURL, .url, .utf8PlainText, .plainText, .data],
+            isTargeted: $vm.dragDetectorTargeting,
+            perform: handleDrop(providers:)
+        )
     }
 
     var content: some View {
@@ -101,12 +112,10 @@ struct ShelfView: View {
                                 .environmentObject(quickLookService)
                         }
                     }
+                    .padding(.horizontal, 4)
+                    .frame(maxHeight: .infinity)
                 }
-                .padding(-spacing)
                 .scrollIndicators(.never)
-                .onDrop(of: [.fileURL, .url, .utf8PlainText, .plainText, .data], isTargeted: $vm.dragDetectorTargeting) { providers in
-                    handleDrop(providers: providers)
-                }
             }
         }
         .onAppear {

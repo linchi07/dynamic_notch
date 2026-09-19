@@ -36,9 +36,9 @@ struct ShelfItemView: View {
                     iconView
                     textView
                 }
-                .frame(width: 105)
-                .padding(.vertical, 10)
-                .padding(.horizontal, 5)
+                .frame(width: 82)
+                .padding(.vertical, 4)
+                .padding(.horizontal, 4)
                 .background(backgroundView)
                 .contentShape(Rectangle())
                 .animation(.easeInOut(duration: 0.1), value: debouncedDropTarget)
@@ -58,9 +58,9 @@ struct ShelfItemView: View {
                 )
             } else {
                 Color.clear
-                    .frame(width: 105)
-                    .padding(.vertical, 10)
-                    .padding(.horizontal, 5)
+                    .frame(width: 82)
+                    .padding(.vertical, 4)
+                    .padding(.horizontal, 4)
             }
         }
         .onChange(of: viewModel.isDropTargeted) { _, targeted in
@@ -98,26 +98,26 @@ struct ShelfItemView: View {
         Image(nsImage: viewModel.thumbnail ?? item.icon)
             .resizable()
             .aspectRatio(contentMode: .fit)
-            .frame(width: 56, height: 56)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .frame(width: 44, height: 44)
+            .clipShape(RoundedRectangle(cornerRadius: 10))
             .shadow(color: .black.opacity(0.15), radius: 3, x: 0, y: 2)
     }
 
     private var textView: some View {
         Text(item.displayName)
-            .font(.system(size: 12, weight: .medium))
+            .font(.system(size: 11, weight: .medium))
             .foregroundStyle(.primary)
             .lineLimit(2)
             .truncationMode(.middle)
             .multilineTextAlignment(.center)
-            .frame(height: 30, alignment: .top)
+            .frame(height: 26, alignment: .top)
     }
 
     private var backgroundView: some View {
-        RoundedRectangle(cornerRadius: 12, style: .continuous)
+        RoundedRectangle(cornerRadius: 10, style: .continuous)
             .fill(backgroundColor)
             .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
                     .strokeBorder(
                         strokeColor,
                         lineWidth: strokeWidth

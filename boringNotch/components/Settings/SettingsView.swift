@@ -378,9 +378,6 @@ struct Charge: View {
 
 struct HUD: View {
     @EnvironmentObject var vm: BoringViewModel
-    @Default(.inlineHUD) var inlineHUD
-    @Default(.closedNotchHUDStyle) var closedNotchHUDStyle
-    @Default(.enableGradient) var enableGradient
     @Default(.optionKeyAction) var optionKeyAction
     @Default(.hudReplacement) var hudReplacement
     @ObservedObject var coordinator = BoringViewCoordinator.shared
@@ -429,66 +426,15 @@ struct HUD: View {
                         Text(opt.rawValue).tag(opt)
                     }
                 }
-                
-                Picker("Progress bar style", selection: $enableGradient) {
-                    Text("Hierarchical")
-                        .tag(false)
-                    Text("Gradient")
-                        .tag(true)
-                }
-                Defaults.Toggle(key: .systemEventIndicatorShadow) {
-                    Text("Enable glowing effect")
-                }
-                Defaults.Toggle(key: .systemEventIndicatorUseAccent) {
-                    Text("Tint progress bar with accent color")
-                }
+
+                Text("The same iOS-style floating bar is used in every notch and notification state. Its vertical position follows the current visible content automatically.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             } header: {
                 Text("General")
             }
             .disabled(!hudReplacement)
-            
-            Section {
-                Defaults.Toggle(key: .showOpenNotchHUD) {
-                    Text("Show HUD in open notch")
-                }
-                Defaults.Toggle(key: .showOpenNotchHUDPercentage) {
-                    Text("Show percentage")
-                }
-                .disabled(!Defaults[.showOpenNotchHUD])
-            } header: {
-                HStack {
-                    Text("Open Notch")
-                    customBadge(text: "Beta")
-                }
-            }
-            .disabled(!hudReplacement)
-            
-            Section {
-                Picker("HUD style", selection: $closedNotchHUDStyle) {
-                    Text("Floating Bar (iOS)")
-                        .tag(ClosedNotchHUDStyle.floatingBar)
-                    Text("Inline")
-                        .tag(ClosedNotchHUDStyle.inline)
-                    Text("Default")
-                        .tag(ClosedNotchHUDStyle.standard)
-                }
-                .onChange(of: closedNotchHUDStyle) {
-                    Defaults[.inlineHUD] = (closedNotchHUDStyle == .inline)
-                    if closedNotchHUDStyle == .inline || closedNotchHUDStyle == .floatingBar {
-                        withAnimation {
-                            Defaults[.systemEventIndicatorShadow] = false
-                            Defaults[.enableGradient] = false
-                        }
-                    }
-                }
-                
-                Defaults.Toggle(key: .showClosedNotchHUDPercentage) {
-                    Text("Show percentage")
-                }
-            } header: {
-                Text("Closed Notch")
-            }
-            .disabled(!Defaults[.hudReplacement])
         }
         .accentColor(.effectiveAccent)
         .navigationTitle("HUDs")

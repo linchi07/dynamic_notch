@@ -28,8 +28,13 @@ let downloadSneakSize: CGSize = .init(width: 65, height: 1)
 let batterySneakSize: CGSize = .init(width: 160, height: 1)
 
 let shadowPadding: CGFloat = 20
+/// Extra transparent window space used by HUDs that appear below an expanded notch.
+let floatingOverlaySpace: CGFloat = 64
 let openNotchSize: CGSize = .init(width: 460, height: 170)
-let windowSize: CGSize = .init(width: openNotchSize.width, height: openNotchSize.height + shadowPadding)
+let windowSize: CGSize = .init(
+    width: openNotchSize.width,
+    height: openNotchSize.height + shadowPadding + floatingOverlaySpace
+)
 let cornerRadiusInsets: (opened: (top: CGFloat, bottom: CGFloat), closed: (top: CGFloat, bottom: CGFloat)) = (
     opened: (top: OPEN_NOTCH_TOP_CORNER_RADIUS, bottom: OPEN_NOTCH_BOTTOM_CORNER_RADIUS),
     closed: (top: CLOSED_NOTCH_TOP_CORNER_RADIUS, bottom: CLOSED_NOTCH_BOTTOM_CORNER_RADIUS)

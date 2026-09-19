@@ -13,10 +13,9 @@ import SwiftUI
 struct BoringHeader: View {
     @EnvironmentObject private var vm: BoringViewModel
     @ObservedObject private var batteryModel = BatteryStatusViewModel.shared
-    @ObservedObject private var coordinator = BoringViewCoordinator.shared
 
     var body: some View {
-        HStack(spacing: 0) {
+        HStack(alignment: .center, spacing: 0) {
             leadingStatus
                 .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -30,10 +29,29 @@ struct BoringHeader: View {
             trailingStatus
                 .frame(maxWidth: .infinity, alignment: .trailing)
         }
+        .padding(.horizontal, 4)
+        .offset(y: menuBarCenterOffset + 6)
+        .frame(height: headerHeight)
         .foregroundStyle(.gray)
         .opacity(vm.notchState == .closed ? 0 : 1)
         .blur(radius: vm.notchState == .closed ? 20 : 0)
         .font(.system(.headline, design: .rounded))
+    }
+
+    private var headerHeight: CGFloat {
+        max(24, vm.effectiveClosedNotchHeight)
+    }
+
+    /// The expanded notch window starts at the physical top edge of the screen.
+    /// Center the side controls in the real menu bar instead of in the (usually
+    /// slightly shorter) camera cutout.
+    private var menuBarCenterOffset: CGFloat {
+        guard vm.notchState == .open,
+              let screen = NSScreen.supportedBuiltInDisplay
+        else { return 0 }
+
+        let menuBarHeight = screen.frame.maxY - screen.visibleFrame.maxY
+        return max(0, (menuBarHeight - headerHeight) / 2)
     }
 
     @ViewBuilder
@@ -60,17 +78,7 @@ struct BoringHeader: View {
     @ViewBuilder
     private var trailingStatus: some View {
         if vm.notchState == .open {
-            if isHUDType(coordinator.sneakPeek.type)
-                && coordinator.sneakPeek.show
-                && Defaults[.showOpenNotchHUD]
-            {
-                OpenNotchHUD(
-                    type: $coordinator.sneakPeek.type,
-                    value: $coordinator.sneakPeek.value,
-                    icon: $coordinator.sneakPeek.icon
-                )
-                .transition(.scale(scale: 0.8).combined(with: .opacity))
-            } else if Defaults[.showBatteryIndicator] {
+            if Defaults[.showBatteryIndicator] {
                 BoringBatteryView(
                     batteryWidth: 30,
                     isCharging: batteryModel.isCharging,
@@ -100,15 +108,6 @@ struct BoringHeader: View {
                 }
         }
         .buttonStyle(.plain)
-    }
-
-    private func isHUDType(_ type: SneakContentType) -> Bool {
-        switch type {
-        case .volume, .brightness, .backlight, .mic:
-            return true
-        default:
-            return false
-        }
     }
 }
 

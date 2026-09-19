@@ -44,6 +44,12 @@ enum FloatingPopupStyle {
         .spring(response: SPRING_RESPONSE, dampingFraction: SPRING_DAMPING)
     }
 
+    /// Keeps stacked popups attached to a notch or notification whose bottom
+    /// edge can change while the HUD is already visible.
+    static var anchorAnimation: Animation {
+        .interactiveSpring(response: 0.38, dampingFraction: 0.86, blendDuration: 0.08)
+    }
+
     /// Fluid slider physics with inertia: slight launch delay followed by vigorous acceleration
     static var fluidSliderSpring: Animation {
         .interpolatingSpring(mass: 0.85, stiffness: 135, damping: 14.5)

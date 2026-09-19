@@ -5538,6 +5538,7 @@
       }
     },
     "Closed Notch" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -8551,6 +8552,7 @@
       }
     },
     "Enable glowing effect" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -9651,9 +9653,6 @@
         }
       }
     },
-    "Floating Bar (iOS)" : {
-
-    },
     "Full screen behavior" : {
       "localizations" : {
         "ar" : {
@@ -10355,6 +10354,7 @@
       }
     },
     "Gradient" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -11055,6 +11055,7 @@
       }
     },
     "Hierarchical" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -11455,6 +11456,7 @@
       }
     },
     "HUD style" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -11761,6 +11763,7 @@
       }
     },
     "Inline" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -15675,6 +15678,7 @@
       }
     },
     "Open Notch" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -16476,6 +16480,7 @@
       }
     },
     "Progress bar style" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -19178,6 +19183,7 @@
       }
     },
     "Show HUD in open notch" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -19782,6 +19788,7 @@
       }
     },
     "Show percentage" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -21291,6 +21298,9 @@
     "The menu bar icon stays visible while automatic notch hiding is enabled, so Settings and Quit remain accessible." : {
 
     },
+    "The same iOS-style floating bar is used in every notch and notification state. Its vertical position follows the current visible content automatically." : {
+
+    },
     "This Mac isn't supported" : {
 
     },
@@ -21395,6 +21405,7 @@
       }
     },
     "Tint progress bar with accent color" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -22099,6 +22110,7 @@
       }
     },
     "Unmuted" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {

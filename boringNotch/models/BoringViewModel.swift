@@ -20,7 +20,6 @@ class BoringViewModel: NSObject, ObservableObject {
     @Published private(set) var notchState: NotchState = .closed
 
     @Published var dragDetectorTargeting: Bool = false
-    @Published var generalDropTargeting: Bool = false
     @Published var dropZoneTargeting: Bool = false
     @Published var dropEvent: Bool = false
     @Published var anyDropZoneTargeting: Bool = false
@@ -53,9 +52,9 @@ class BoringViewModel: NSObject, ObservableObject {
 
         super.init()
 
-        Publishers.CombineLatest3($dropZoneTargeting, $dragDetectorTargeting, $generalDropTargeting)
-            .map { shelf, drag, general in
-                shelf || drag || general
+        Publishers.CombineLatest($dropZoneTargeting, $dragDetectorTargeting)
+            .map { shelf, drag in
+                shelf || drag
             }
             // Subscribers.Assign strongly retains its target. Since this model also
             // owns the cancellable, using assign(to:on:) creates a permanent cycle
@@ -205,7 +204,15 @@ class BoringViewModel: NSObject, ObservableObject {
         self.notchState = .closed
         refreshClosedNotchSize()
         self.isBatteryPopoverActive = false
-        self.coordinator.sneakPeek.show = false
+        // Keep an in-flight system HUD alive so its shared floating bar can
+        // follow the notch back to the closed baseline. Non-HUD sneak peeks
+        // retain the previous close-on-collapse behavior.
+        switch coordinator.sneakPeek.type {
+        case .volume, .brightness, .backlight, .mic:
+            break
+        default:
+            coordinator.sneakPeek.show = false
+        }
         self.edgeAutoOpenActive = false
 
         // Set the current view to shelf if it contains files and the user enables openShelfByDefault
