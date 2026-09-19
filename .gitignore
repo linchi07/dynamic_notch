@@ -42,6 +42,7 @@ build/
 *.DS_Store
 *.vscode/
 *.idea/
+.workbuddy-ai/
 
 # User-specific files
 *.xcuserdatad/
@@ -53,4 +54,3 @@ build/
 *.ipa
 *.xcarchive
 *.dSYM
-
