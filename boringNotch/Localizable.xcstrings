@@ -901,6 +901,16 @@
         }
       }
     },
+    "%lld chars, %lld lines" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld chars, %2$lld lines"
+          }
+        }
+      }
+    },
     "%lld pt" : {
 
     },
@@ -1003,6 +1013,9 @@
           }
         }
       }
+    },
+    "•" : {
+
     },
     "• Bug fixes" : {
       "localizations" : {
@@ -6038,6 +6051,12 @@
         }
       }
     },
+    "Copied" : {
+
+    },
+    "Copy" : {
+
+    },
     "Copy items on drag" : {
       "localizations" : {
         "ar" : {
@@ -6137,6 +6156,9 @@
           }
         }
       }
+    },
+    "Copy text" : {
+
     },
     "Corner radius scaling" : {
       "localizations" : {
@@ -7140,6 +7162,12 @@
         }
       }
     },
+    "Delete" : {
+
+    },
+    "Delete note" : {
+
+    },
     "Description" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -7849,6 +7877,9 @@
           }
         }
       }
+    },
+    "Drag plain text here from browser or anywhere to save" : {
+
     },
     "Drop files here" : {
       "localizations" : {
@@ -14566,6 +14597,9 @@
           }
         }
       }
+    },
+    "New" : {
+
     },
     "No custom animation available" : {
       "localizations" : {
@@ -21294,6 +21328,9 @@
           }
         }
       }
+    },
+    "Text Scratchpad" : {
+
     },
     "The menu bar icon stays visible while automatic notch hiding is enabled, so Settings and Quit remain accessible." : {
 

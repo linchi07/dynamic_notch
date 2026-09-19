@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		E7B000092D8A000100000009 /* drop_landing_view.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7A000092D8A000100000009 /* drop_landing_view.swift */; };
 		E7B000012D8A000100000001 /* scratchpad_item.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7A000012D8A000100000001 /* scratchpad_item.swift */; };
 		E7B000022D8A000100000002 /* scratchpad_persistence_service.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7A000022D8A000100000002 /* scratchpad_persistence_service.swift */; };
 		E7B000032D8A000100000003 /* drop_router_service.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7A000032D8A000100000003 /* drop_router_service.swift */; };
@@ -196,6 +197,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		E7A000092D8A000100000009 /* drop_landing_view.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = drop_landing_view.swift; sourceTree = "<group>"; };
 		E7A000012D8A000100000001 /* scratchpad_item.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = scratchpad_item.swift; sourceTree = "<group>"; };
 		E7A000022D8A000100000002 /* scratchpad_persistence_service.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = scratchpad_persistence_service.swift; sourceTree = "<group>"; };
 		E7A000032D8A000100000003 /* drop_router_service.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = drop_router_service.swift; sourceTree = "<group>"; };
@@ -415,6 +417,7 @@
 		E7C000042D8A000100000004 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				E7A000092D8A000100000009 /* drop_landing_view.swift */,
 				E7A000052D8A000100000005 /* scratchpad_panel_view.swift */,
 				E7A000062D8A000100000006 /* scratchpad_card_view.swift */,
 				E7A000072D8A000100000007 /* scratchpad_editor_view.swift */,
@@ -989,6 +992,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E7B000092D8A000100000009 /* drop_landing_view.swift in Sources */,
 				E7B000012D8A000100000001 /* scratchpad_item.swift in Sources */,
 				E7B000022D8A000100000002 /* scratchpad_persistence_service.swift in Sources */,
 				E7B000032D8A000100000003 /* drop_router_service.swift in Sources */,

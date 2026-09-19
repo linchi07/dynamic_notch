@@ -110,8 +110,8 @@ struct ScratchpadPanelView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: CARD_SPACING) {
                     ForEach(viewModel.items) { item in
-                        ScratchpadCardView(item: item) {
-                            ScratchpadEditorWindowController.shared.show(item: item)
+                        ScratchpadCardView(item: item) { rect in
+                            ScratchpadEditorWindowController.shared.show(item: item, from: rect)
                         }
                     }
                 }

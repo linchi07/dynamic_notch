@@ -5,6 +5,7 @@
 
 import AppKit
 import Foundation
+import SwiftUI
 import UniformTypeIdentifiers
 
 @MainActor
@@ -72,14 +73,18 @@ final class DropRouterService {
                 for text in plainTextItems {
                     ScratchpadViewModel.shared.addItem(content: text)
                 }
-                BoringViewCoordinator.shared.currentView = .scratchpad
+                withAnimation(.smooth(duration: 0.28)) {
+                    BoringViewCoordinator.shared.currentView = .scratchpad
+                }
             }
 
             // Route files/links to shelf
             if !shelfProviders.isEmpty {
                 ShelfStateViewModel.shared.load(shelfProviders)
                 if plainTextItems.isEmpty {
-                    BoringViewCoordinator.shared.currentView = .shelf
+                    withAnimation(.smooth(duration: 0.28)) {
+                        BoringViewCoordinator.shared.currentView = .shelf
+                    }
                 }
             }
         }

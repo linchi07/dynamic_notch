@@ -11,6 +11,8 @@ final class ScratchpadEditorWindowController: NSWindowController, NSWindowDelega
     static let shared = ScratchpadEditorWindowController()
 
     private var currentItemId: UUID?
+    private let WINDOW_WIDTH: CGFloat = 480
+    private let WINDOW_HEIGHT: CGFloat = 580
 
     private init() {
         let window = NSWindow(
@@ -43,7 +45,16 @@ final class ScratchpadEditorWindowController: NSWindowController, NSWindowDelega
         window.delegate = self
     }
 
-    func show(item: ScratchpadItem) {
+    /// Resolves the screen hosting the notch window to ensure the editor window never opens on the wrong display.
+    private func resolveNotchScreen() -> NSScreen {
+        if let builtInScreen = NSScreen.supportedBuiltInDisplay {
+            return builtInScreen
+        }
+        return NSScreen.main ?? NSScreen.screens.first ?? NSScreen()
+    }
+
+    /// Shows the editor window for the given item, using a flight expansion animation from sourceScreenRect.
+    func show(item: ScratchpadItem, from sourceScreenRect: NSRect? = nil) {
         currentItemId = item.id
 
         guard let window = window else { return }
@@ -55,6 +66,13 @@ final class ScratchpadEditorWindowController: NSWindowController, NSWindowDelega
 
         NSApp.setActivationPolicy(.regular)
 
+        let targetScreen = resolveNotchScreen()
+        let visibleFrame = targetScreen.visibleFrame
+
+        let centerX = visibleFrame.midX - WINDOW_WIDTH / 2
+        let centerY = visibleFrame.midY - WINDOW_HEIGHT / 2
+        let targetFrame = NSRect(x: centerX, y: centerY, width: WINDOW_WIDTH, height: WINDOW_HEIGHT)
+
         if window.isVisible {
             NSApp.activate(ignoringOtherApps: true)
             window.orderFrontRegardless()
@@ -62,11 +80,32 @@ final class ScratchpadEditorWindowController: NSWindowController, NSWindowDelega
             return
         }
 
-        window.center()
-        window.orderFrontRegardless()
-        window.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
+        // Determine starting frame for the flight animation
+        let initialFrame: NSRect
+        if let sourceRect = sourceScreenRect, sourceRect.width > 20 && sourceRect.height > 20 {
+            initialFrame = sourceRect
+        } else {
+            // Default anchor: directly below the notch center
+            let notchCenterX = targetScreen.frame.midX
+            let notchBottomY = targetScreen.frame.maxY - 140
+            initialFrame = NSRect(x: notchCenterX - 74, y: notchBottomY, width: 148, height: 82)
+        }
 
+        // Prepare initial animation state
+        window.setFrame(initialFrame, display: false)
+        window.alphaValue = 0.25
+        window.orderFrontRegardless()
+
+        // Perform smooth flight expansion animation to center of notch screen
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = 0.28
+            context.timingFunction = CAMediaTimingFunction(controlPoints: 0.16, 1.0, 0.3, 1.0)
+            context.allowsImplicitAnimation = true
+            window.animator().setFrame(targetFrame, display: true)
+            window.animator().alphaValue = 1.0
+        }
+
+        NSApp.activate(ignoringOtherApps: true)
         DispatchQueue.main.async { [weak self] in
             self?.window?.makeKeyAndOrderFront(nil)
         }

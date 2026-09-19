@@ -8,44 +8,45 @@ import Foundation
 /// Represents a single text record stored in the scratchpad.
 struct ScratchpadItem: Identifiable, Codable, Equatable, Sendable {
     let id: UUID
+    var title: String?
     var content: String
     let createdAt: Date
     var updatedAt: Date
 
     init(
         id: UUID = UUID(),
+        title: String? = nil,
         content: String,
         createdAt: Date = Date(),
         updatedAt: Date = Date()
     ) {
         self.id = id
+        let trimmedTitle = title?.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.title = (trimmedTitle?.isEmpty ?? true) ? nil : trimmedTitle
         self.content = content
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
 
-    /// Title line or preview snippet of the note.
-    var previewTitle: String {
-        let trimmed = content.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmed.isEmpty {
-            return "Empty Note"
-        }
-        let firstLine = trimmed.components(separatedBy: .newlines).first ?? trimmed
-        if firstLine.count > 40 {
-            return String(firstLine.prefix(37)) + "..."
-        }
-        return firstLine
+    enum CodingKeys: String, CodingKey {
+        case id, title, content, createdAt, updatedAt
     }
 
-    /// Subtitle or body preview of the note content.
-    var previewSnippet: String {
-        let lines = content.components(separatedBy: .newlines)
-            .map { $0.trimmingCharacters(in: .whitespaces) }
-            .filter { !$0.isEmpty }
-        guard lines.count > 1 else {
-            return previewTitle
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try container.decode(UUID.self, forKey: .id)
+        self.title = try container.decodeIfPresent(String.self, forKey: .title)
+        self.content = try container.decode(String.self, forKey: .content)
+        self.createdAt = try container.decode(Date.self, forKey: .createdAt)
+        self.updatedAt = try container.decode(Date.self, forKey: .updatedAt)
+    }
+
+    /// Whether this note has an explicit user-defined title.
+    var hasCustomTitle: Bool {
+        guard let title = title?.trimmingCharacters(in: .whitespacesAndNewlines) else {
+            return false
         }
-        return lines.dropFirst().joined(separator: " ")
+        return !title.isEmpty
     }
 
     /// Formatted timestamp for compact card display.

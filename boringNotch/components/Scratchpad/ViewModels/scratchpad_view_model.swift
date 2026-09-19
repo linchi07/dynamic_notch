@@ -28,26 +28,28 @@ final class ScratchpadViewModel: ObservableObject {
     }
 
     @discardableResult
-    func addItem(content: String) -> ScratchpadItem {
+    func addItem(content: String, title: String? = nil) -> ScratchpadItem {
         let trimmed = content.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
-            let item = ScratchpadItem(content: content)
+            let item = ScratchpadItem(title: title, content: content)
             items.insert(item, at: 0)
             return item
         }
 
         // Avoid exact duplicate at the top
-        if let first = items.first, first.content == content {
+        if let first = items.first, first.content == content && first.title == title {
             return first
         }
 
-        let item = ScratchpadItem(content: content)
+        let item = ScratchpadItem(title: title, content: content)
         items.insert(item, at: 0)
         return item
     }
 
-    func updateItem(id: UUID, content: String) {
+    func updateItem(id: UUID, title: String? = nil, content: String) {
         guard let index = items.firstIndex(where: { $0.id == id }) else { return }
+        let trimmedTitle = title?.trimmingCharacters(in: .whitespacesAndNewlines)
+        items[index].title = (trimmedTitle?.isEmpty ?? true) ? nil : trimmedTitle
         items[index].content = content
         items[index].updatedAt = Date()
     }

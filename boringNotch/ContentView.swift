@@ -149,9 +149,11 @@ struct ContentView: View {
     }
 
     private var shouldShowBottomNavigation: Bool {
-        (Defaults[.boringShelf] && (!shelfState.isEmpty || coordinator.alwaysShowTabs))
+        coordinator.currentView != .dropLanding && (
+            (Defaults[.boringShelf] && (!shelfState.isEmpty || coordinator.alwaysShowTabs))
             || !scratchpadState.isEmpty
             || coordinator.currentView == .scratchpad
+        )
     }
 
     private var topCornerRadius: CGFloat {
@@ -387,11 +389,7 @@ struct ContentView: View {
 
             if isTargeted {
                 if vm.notchState == .closed {
-                    if DropRouterService.shared.isDraggingPlainText() {
-                        coordinator.currentView = .scratchpad
-                    } else {
-                        coordinator.currentView = .shelf
-                    }
+                    coordinator.currentView = .dropLanding
                     doOpen()
                 }
                 return

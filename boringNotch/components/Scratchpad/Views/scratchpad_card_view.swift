@@ -8,15 +8,16 @@ import SwiftUI
 
 struct ScratchpadCardView: View {
     let item: ScratchpadItem
-    var onSelect: () -> Void
+    var onSelect: ((NSRect?) -> Void)?
 
     @ObservedObject private var viewModel = ScratchpadViewModel.shared
     @State private var isHovering: Bool = false
     @State private var isCopied: Bool = false
+    @State private var screenRect: NSRect?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 5) {
-            // Header row: timestamp and actions
+        VStack(alignment: .leading, spacing: 4) {
+            // Header row: timestamp and quick actions
             HStack(spacing: 4) {
                 Text(item.formattedDate)
                     .font(.system(size: 10, weight: .medium, design: .rounded))
@@ -53,13 +54,26 @@ struct ScratchpadCardView: View {
                 .help("Delete note")
             }
 
-            // Text preview
-            Text(item.content.trimmingCharacters(in: .whitespacesAndNewlines))
-                .font(.system(size: 11, weight: .regular, design: .default))
-                .foregroundStyle(.white.opacity(0.9))
-                .lineLimit(3)
-                .lineSpacing(2)
-                .frame(maxWidth: .infinity, alignment: .topLeading)
+            // Two-state display: with custom title or clean body text only
+            if item.hasCustomTitle, let title = item.title {
+                Text(title)
+                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+
+                Text(item.content.trimmingCharacters(in: .whitespacesAndNewlines))
+                    .font(.system(size: 10, weight: .regular, design: .default))
+                    .foregroundStyle(.white.opacity(0.75))
+                    .lineLimit(2)
+                    .lineSpacing(2)
+            } else {
+                // Default state: no title, pure body preview
+                Text(item.content.trimmingCharacters(in: .whitespacesAndNewlines))
+                    .font(.system(size: 11, weight: .regular, design: .default))
+                    .foregroundStyle(.white.opacity(0.9))
+                    .lineLimit(3)
+                    .lineSpacing(2)
+            }
 
             Spacer(minLength: 0)
         }
@@ -73,6 +87,17 @@ struct ScratchpadCardView: View {
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .stroke(Color.white.opacity(isHovering ? 0.22 : 0.10), lineWidth: 1)
         )
+        .background(
+            GeometryReader { proxy in
+                Color.clear
+                    .onAppear {
+                        updateScreenRect(proxy: proxy)
+                    }
+                    .onChange(of: proxy.frame(in: .global)) { _, _ in
+                        updateScreenRect(proxy: proxy)
+                    }
+            }
+        )
         .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         .onHover { hovering in
             withAnimation(.easeInOut(duration: 0.15)) {
@@ -80,8 +105,15 @@ struct ScratchpadCardView: View {
             }
         }
         .onTapGesture {
-            onSelect()
+            onSelect?(screenRect)
         }
+    }
+
+    private func updateScreenRect(proxy: GeometryProxy) {
+        let globalFrame = proxy.frame(in: .global)
+        guard let window = NSApp.keyWindow ?? NSApp.windows.first(where: { $0.isVisible }) else { return }
+        let windowRect = NSRect(x: globalFrame.origin.x, y: globalFrame.origin.y, width: globalFrame.width, height: globalFrame.height)
+        self.screenRect = window.convertToScreen(windowRect)
     }
 
     private func copyToClipboard() {

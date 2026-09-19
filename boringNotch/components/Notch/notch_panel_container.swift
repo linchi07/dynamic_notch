@@ -55,6 +55,8 @@ struct NotchPanelContainer: View {
             ShelfView()
         case .scratchpad:
             ScratchpadPanelView()
+        case .dropLanding:
+            DropLandingView()
         }
     }
 }
