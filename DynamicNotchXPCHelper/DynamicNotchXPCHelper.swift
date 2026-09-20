@@ -10,7 +10,7 @@ import ApplicationServices
 import IOKit
 import CoreGraphics
 
-class BoringNotchXPCHelper: NSObject, BoringNotchXPCHelperProtocol {
+class DynamicNotchXPCHelper: NSObject, DynamicNotchXPCHelperProtocol {
     private static let MOVE_AND_RESIZE_TITLES: [String] = [
         "Move & Resize",
         "移动与调整大小",
@@ -235,7 +235,7 @@ class BoringNotchXPCHelper: NSObject, BoringNotchXPCHelperProtocol {
             }
 
             guard let window = targetWindow else {
-                NSLog("BoringNotchXPCHelper: Unable to find window for pid %d, windowID %u", processIdentifier, windowID)
+                NSLog("DynamicNotchXPCHelper: Unable to find window for pid %d, windowID %u", processIdentifier, windowID)
                 reply(false)
                 return
             }

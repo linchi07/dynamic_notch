@@ -5,9 +5,9 @@ import Cocoa
 final class XPCHelperClient: NSObject, @unchecked Sendable {
     nonisolated static let shared = XPCHelperClient()
     
-    private let serviceName = "theboringteam.boringnotch.dev.BoringNotchXPCHelper"
+    private let serviceName = "theboringteam.boringnotch.dev.DynamicNotchXPCHelper"
     
-    private var remoteService: RemoteXPCService<BoringNotchXPCHelperProtocol>?
+    private var remoteService: RemoteXPCService<DynamicNotchXPCHelperProtocol>?
     private var connection: NSXPCConnection?
     private var reconnectTask: Task<Void, Never>?
     private var recoveryBudgetResetTask: Task<Void, Never>?
@@ -33,7 +33,7 @@ final class XPCHelperClient: NSObject, @unchecked Sendable {
     @MainActor
     private func ensureRemoteService(
         resettingRecoveryBudget: Bool = true
-    ) -> RemoteXPCService<BoringNotchXPCHelperProtocol> {
+    ) -> RemoteXPCService<DynamicNotchXPCHelperProtocol> {
         if let existing = remoteService {
             return existing
         }
@@ -64,9 +64,9 @@ final class XPCHelperClient: NSObject, @unchecked Sendable {
         
         conn.resume()
         
-        let service = RemoteXPCService<BoringNotchXPCHelperProtocol>(
+        let service = RemoteXPCService<DynamicNotchXPCHelperProtocol>(
             connection: conn,
-            remoteInterface: BoringNotchXPCHelperProtocol.self
+            remoteInterface: DynamicNotchXPCHelperProtocol.self
         )
         
         connection = conn
@@ -99,7 +99,7 @@ final class XPCHelperClient: NSObject, @unchecked Sendable {
               !isShuttingDown
         else {
             if automaticReconnectAttempt >= maximumAutomaticReconnectAttempts {
-                NSLog("BoringNotchXPCHelper automatic recovery paused after %d attempts", automaticReconnectAttempt)
+                NSLog("DynamicNotchXPCHelper automatic recovery paused after %d attempts", automaticReconnectAttempt)
                 // A settings-only permission poll must not reopen the circuit every
                 // three seconds after automatic recovery has been exhausted.
                 stopMonitoringAccessibilityAuthorization()
@@ -145,7 +145,7 @@ final class XPCHelperClient: NSObject, @unchecked Sendable {
             let proxy = candidate.remoteObjectProxyWithErrorHandler { _ in
                 reply.resolve(false)
             }
-            guard let service = proxy as? BoringNotchXPCHelperProtocol else {
+            guard let service = proxy as? DynamicNotchXPCHelperProtocol else {
                 reply.resolve(false)
                 return
             }
