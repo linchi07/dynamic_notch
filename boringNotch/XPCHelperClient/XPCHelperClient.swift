@@ -401,6 +401,33 @@ final class XPCHelperClient: NSObject, @unchecked Sendable {
         }
     }
 
+    nonisolated func applyWindowFrame(
+        processIdentifier: Int32,
+        windowID: CGWindowID,
+        targetFrame: CGRect
+    ) async -> Bool {
+        do {
+            let service = await MainActor.run { ensureRemoteService() }
+            let result: Bool = try await service.withContinuation { service, continuation in
+                service.applyWindowFrame(
+                    processIdentifier,
+                    windowID: UInt32(windowID),
+                    targetX: targetFrame.minX,
+                    targetY: targetFrame.minY,
+                    targetWidth: targetFrame.width,
+                    targetHeight: targetFrame.height
+                ) { success in
+                    continuation.resume(returning: success)
+                }
+            }
+            await MainActor.run { markConnectionHealthy() }
+            return result
+        } catch {
+            await markConnectionUnhealthy()
+            return false
+        }
+    }
+
     nonisolated func performNativeWindowLayout(_ command: Int) async -> Bool {
         do {
             let service = await MainActor.run { ensureRemoteService() }

@@ -104,12 +104,18 @@ final class DragDetector {
     
     /// Checks if the drag pasteboard contains valid content types that can be dropped on the shelf
     private func hasValidDragContent() -> Bool {
-        let validTypes: [NSPasteboard.PasteboardType] = [
-            .fileURL,
-            NSPasteboard.PasteboardType(UTType.url.identifier),
-            .string
-        ]
-        return dragPasteboard.types?.contains(where: validTypes.contains) ?? false
+        guard let pasteboardTypes = dragPasteboard.types else { return false }
+
+        return pasteboardTypes.contains { pasteboardType in
+            guard let contentType = UTType(pasteboardType.rawValue) else {
+                return pasteboardType == .fileURL || pasteboardType == .string
+            }
+            return contentType.conforms(to: .fileURL)
+                || contentType.conforms(to: .url)
+                || contentType.conforms(to: .text)
+                || contentType.conforms(to: .image)
+                || contentType.conforms(to: .data)
+        }
     }
 
     func startMonitoring() {
@@ -362,26 +368,6 @@ private struct WindowSnapOverlayView: View {
 /// window drags still share a single process-wide event monitor.
 @MainActor
 final class WindowSnapController {
-    private enum NativeWindowLayoutCommand: Int {
-        case left = 0
-        case right = 1
-        case top = 2
-        case bottom = 3
-        case topLeft = 4
-        case topRight = 5
-        case bottomLeft = 6
-        case bottomRight = 7
-        case leftAndRight = 8
-        case rightAndLeft = 9
-        case topAndBottom = 10
-        case bottomAndTop = 11
-        case quarters = 12
-        case leftAndQuarters = 13
-        case rightAndQuarters = 14
-        case topAndQuarters = 15
-        case bottomAndQuarters = 16
-    }
-
     private struct TrackedWindow {
         let id: CGWindowID
         let processIdentifier: Int32
@@ -506,14 +492,13 @@ final class WindowSnapController {
                     layout: layout,
                     selectedSlot: selectedSlot,
                     capturedWindow: candidate,
-                    on: screen,
-                    animationMode: animationMode
+                    on: screen
                 )
             } else {
                 await arrangeCurrentWindow(
                     in: selectedSlot,
-                    on: screen,
-                    animationMode: animationMode
+                    candidate: candidate,
+                    on: screen
                 )
             }
         }
@@ -659,25 +644,38 @@ final class WindowSnapController {
 
     private func arrangeCurrentWindow(
         in slot: WindowSnapSlot,
-        on screen: NSScreen,
-        animationMode: WindowSnapAnimationMode
+        candidate: TrackedWindow?,
+        on screen: NSScreen
     ) async {
-        if animationMode != .none,
-           let nativeCommand = nativeCommand(for: slot),
-           await XPCHelperClient.shared.performNativeWindowLayout(nativeCommand.rawValue) {
-            return
+        // Allow the target application a brief moment to finish its mouse-up drag tracking loop
+        try? await Task.sleep(for: .milliseconds(25))
+        let destination = appKitToAccessibility(destinationFrame(for: slot, on: screen))
+
+        var succeeded = false
+        if let candidate {
+            succeeded = await XPCHelperClient.shared.applyWindowFrame(
+                processIdentifier: candidate.processIdentifier,
+                windowID: candidate.id,
+                targetFrame: destination
+            )
         }
 
-        // Let the target application finish its mouse-up drag transaction before
-        // AX writes begin. Otherwise AppKit can replay the old size over our result.
-        try? await Task.sleep(for: .milliseconds(60))
-        let destination = appKitToAccessibility(destinationFrame(for: slot, on: screen))
-        let succeeded = await XPCHelperClient.shared.setCapturedWindowFrame(
-            destination,
-            animated: animationMode == .full
-        )
         if !succeeded {
-            NSLog("Unable to place captured window in slot %@", slot.id)
+            succeeded = await XPCHelperClient.shared.setCapturedWindowFrame(
+                destination,
+                animated: false
+            )
+        }
+
+        if !succeeded {
+            NSLog("Unable to place window in slot %@", slot.id)
+        }
+
+        if let candidate {
+            let application = NSRunningApplication(
+                processIdentifier: candidate.processIdentifier
+            )
+            application?.activate(options: .activateIgnoringOtherApps)
         }
     }
 
@@ -685,8 +683,7 @@ final class WindowSnapController {
         layout: WindowSnapLayout,
         selectedSlot: WindowSnapSlot,
         capturedWindow: TrackedWindow,
-        on screen: NSScreen,
-        animationMode: WindowSnapAnimationMode
+        on screen: NSScreen
     ) async {
         let remainingSlots = layout.slots.filter { $0 != selectedSlot }
         let otherWindows = otherVisibleWindowCandidates(
@@ -695,31 +692,9 @@ final class WindowSnapController {
             limit: remainingSlots.count
         )
 
-        if animationMode != .none,
-           otherWindows.count == remainingSlots.count,
-           let nativeCommand = nativeDesktopCommand(
-               for: layout,
-               selectedSlot: selectedSlot
-           ),
-           await XPCHelperClient.shared.performNativeWindowLayout(nativeCommand.rawValue) {
-            return
-        }
+        // Allow target applications a brief moment to settle
+        try? await Task.sleep(for: .milliseconds(25))
 
-        if animationMode != .none,
-           otherWindows.count == remainingSlots.count,
-           remainingSlots.allSatisfy({ nativeCommand(for: $0) != nil }),
-           nativeCommand(for: selectedSlot) != nil,
-           await arrangeAllWindowsWithNativeCommands(
-               capturedWindow: capturedWindow,
-               selectedSlot: selectedSlot,
-               otherWindows: otherWindows,
-               remainingSlots: remainingSlots
-           ) {
-            return
-        }
-
-        try? await Task.sleep(for: .milliseconds(60))
-        let shouldAnimate = animationMode == .full
         let selectedDestination = appKitToAccessibility(
             destinationFrame(for: selectedSlot, on: screen)
         )
@@ -730,108 +705,26 @@ final class WindowSnapController {
             )
         }
 
-        await withTaskGroup(of: Bool.self) { group in
-            group.addTask {
-                await XPCHelperClient.shared.setCapturedWindowFrame(
-                    selectedDestination,
-                    animated: shouldAnimate
-                )
-            }
-            for (window, destination) in assignments {
-                group.addTask {
-                    await XPCHelperClient.shared.setWindowFrame(
-                        processIdentifier: window.processIdentifier,
-                        initialFrame: window.initialBounds,
-                        targetFrame: destination,
-                        animated: shouldAnimate
-                    )
-                }
-            }
-
-            for await succeeded in group where !succeeded {
-                NSLog("Unable to place one of the windows in layout %@", layout.id)
-            }
-        }
-
-        let application = NSRunningApplication(
-            processIdentifier: capturedWindow.processIdentifier
+        // Place primary window first
+        _ = await XPCHelperClient.shared.applyWindowFrame(
+            processIdentifier: capturedWindow.processIdentifier,
+            windowID: capturedWindow.id,
+            targetFrame: selectedDestination
         )
-        application?.activate(options: .activateIgnoringOtherApps)
-    }
 
-    private func arrangeAllWindowsWithNativeCommands(
-        capturedWindow: TrackedWindow,
-        selectedSlot: WindowSnapSlot,
-        otherWindows: [TrackedWindow],
-        remainingSlots: [WindowSnapSlot]
-    ) async -> Bool {
-        guard let selectedCommand = nativeCommand(for: selectedSlot),
-              await XPCHelperClient.shared.performNativeWindowLayout(
-                  selectedCommand.rawValue
-              )
-        else { return false }
-
-        var allSucceeded = true
-        for (window, slot) in zip(otherWindows, remainingSlots) {
-            guard let command = nativeCommand(for: slot) else {
-                allSucceeded = false
-                continue
-            }
-            try? await Task.sleep(for: .milliseconds(80))
-            let succeeded = await XPCHelperClient.shared.performNativeWindowLayoutForWindow(
+        // Sequentially place remaining windows cleanly without IPC flood
+        for (window, destination) in assignments {
+            _ = await XPCHelperClient.shared.applyWindowFrame(
                 processIdentifier: window.processIdentifier,
-                initialFrame: window.initialBounds,
-                command: command.rawValue
+                windowID: window.id,
+                targetFrame: destination
             )
-            allSucceeded = allSucceeded && succeeded
         }
 
-        if !allSucceeded {
-            NSLog("One or more native window layout commands were rejected")
-        }
         let application = NSRunningApplication(
             processIdentifier: capturedWindow.processIdentifier
         )
         application?.activate(options: .activateIgnoringOtherApps)
-        // Once the captured window's native command succeeds, its AX reference is
-        // intentionally released. Treat the arrangement as handled even if a
-        // secondary app rejects its own menu command.
-        return true
-    }
-
-    private func nativeCommand(for slot: WindowSnapSlot) -> NativeWindowLayoutCommand? {
-        switch slot.id {
-        case "half-left", "one-two-left":
-            return .left
-        case "half-right":
-            return .right
-        case "one-two-top-right", "quarter-top-right":
-            return .topRight
-        case "one-two-bottom-right", "quarter-bottom-right":
-            return .bottomRight
-        case "quarter-top-left":
-            return .topLeft
-        case "quarter-bottom-left":
-            return .bottomLeft
-        default:
-            return nil
-        }
-    }
-
-    private func nativeDesktopCommand(
-        for layout: WindowSnapLayout,
-        selectedSlot: WindowSnapSlot
-    ) -> NativeWindowLayoutCommand? {
-        switch layout.id {
-        case "halves":
-            return selectedSlot.id == "half-left" ? .leftAndRight : .rightAndLeft
-        case "quarters":
-            return .quarters
-        case "one-two" where selectedSlot.id == "one-two-left":
-            return .leftAndQuarters
-        default:
-            return nil
-        }
     }
 
     private func otherVisibleWindowCandidates(

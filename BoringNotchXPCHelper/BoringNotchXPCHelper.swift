@@ -30,6 +30,15 @@ class BoringNotchXPCHelper: NSObject, BoringNotchXPCHelperProtocol {
     private var capturedWindow: AXUIElement?
     private var capturedWindowInitialPosition: CGPoint?
     private var capturedProcessIdentifier: pid_t?
+
+    @_silgen_name("_AXUIElementGetWindow")
+    private static func _AXUIElementGetWindow(_ element: AXUIElement, _ identifier: UnsafeMutablePointer<CGWindowID>) -> AXError
+
+    private func windowID(for element: AXUIElement) -> CGWindowID? {
+        var id: CGWindowID = 0
+        let result = Self._AXUIElementGetWindow(element, &id)
+        return (result == .success && id != 0) ? id : nil
+    }
     
     @objc func isAccessibilityAuthorized(with reply: @escaping (Bool) -> Void) {
         reply(AXIsProcessTrusted())
@@ -143,9 +152,7 @@ class BoringNotchXPCHelper: NSObject, BoringNotchXPCHelperProtocol {
             }
             self.clearCapturedWindow()
             let target = CGRect(x: x, y: y, width: width, height: height)
-            self.animationQueue.async {
-                reply(self.applyFrame(target, to: window, animated: animated))
-            }
+            reply(self.applyFrameDirectly(target, to: window))
         }
     }
 
@@ -186,9 +193,55 @@ class BoringNotchXPCHelper: NSObject, BoringNotchXPCHelperProtocol {
                 width: targetWidth,
                 height: targetHeight
             )
-            self.animationQueue.async {
-                reply(self.applyFrame(target, to: window, animated: animated))
+            reply(self.applyFrameDirectly(target, to: window))
+        }
+    }
+
+    @objc func applyWindowFrame(
+        _ processIdentifier: Int32,
+        windowID: UInt32,
+        targetX: Double,
+        targetY: Double,
+        targetWidth: Double,
+        targetHeight: Double,
+        with reply: @escaping (Bool) -> Void
+    ) {
+        windowQueue.async { [weak self] in
+            guard let self, processIdentifier > 0 else {
+                reply(false)
+                return
             }
+
+            let target = CGRect(x: targetX, y: targetY, width: targetWidth, height: targetHeight)
+
+            var targetWindow: AXUIElement?
+            if let captured = self.capturedWindow,
+               self.capturedProcessIdentifier == processIdentifier {
+                if windowID != 0 {
+                    if self.windowID(for: captured) == CGWindowID(windowID) {
+                        targetWindow = captured
+                    }
+                } else {
+                    targetWindow = captured
+                }
+            }
+
+            if targetWindow == nil {
+                targetWindow = self.window(
+                    for: pid_t(processIdentifier),
+                    windowID: windowID != 0 ? CGWindowID(windowID) : nil
+                )
+            }
+
+            guard let window = targetWindow else {
+                NSLog("BoringNotchXPCHelper: Unable to find window for pid %d, windowID %u", processIdentifier, windowID)
+                reply(false)
+                return
+            }
+
+            let success = self.applyFrameDirectly(target, to: window)
+            self.clearCapturedWindow()
+            reply(success)
         }
     }
 
@@ -319,7 +372,7 @@ class BoringNotchXPCHelper: NSObject, BoringNotchXPCHelperProtocol {
         capturedProcessIdentifier = nil
     }
 
-    private func applyFrame(_ target: CGRect, to window: AXUIElement, animated: Bool) -> Bool {
+    private func applyFrameDirectly(_ target: CGRect, to window: AXUIElement) -> Bool {
         guard target.origin.x.isFinite,
               target.origin.y.isFinite,
               target.width.isFinite,
@@ -328,51 +381,47 @@ class BoringNotchXPCHelper: NSObject, BoringNotchXPCHelperProtocol {
               target.height > 0
         else { return false }
 
-        _ = AXUIElementSetMessagingTimeout(window, 0.05)
+        // Temporarily disable AXEnhancedUserInterface to prevent tree mutation stalls
+        var appPid: pid_t = 0
+        _ = AXUIElementGetPid(window, &appPid)
+        let appElement = appPid > 0 ? AXUIElementCreateApplication(appPid) : nil
+        var previousEnhancedUI: Bool?
+        if let appElement {
+            var enhancedUIValue: CFTypeRef?
+            if AXUIElementCopyAttributeValue(appElement, "AXEnhancedUserInterface" as CFString, &enhancedUIValue) == .success,
+               let num = enhancedUIValue as? NSNumber {
+                previousEnhancedUI = num.boolValue
+                if previousEnhancedUI == true {
+                    _ = AXUIElementSetAttributeValue(appElement, "AXEnhancedUserInterface" as CFString, kCFBooleanFalse)
+                }
+            }
+        }
+        defer {
+            if let appElement, previousEnhancedUI == true {
+                _ = AXUIElementSetAttributeValue(appElement, "AXEnhancedUserInterface" as CFString, kCFBooleanTrue)
+            }
+        }
+
+        _ = AXUIElementSetMessagingTimeout(window, 0.08)
         defer { _ = AXUIElementSetMessagingTimeout(window, 0) }
 
-        if animated,
-           let position = pointAttribute(kAXPositionAttribute as CFString, from: window),
-           let size = sizeAttribute(kAXSizeAttribute as CFString, from: window) {
-            let origin = CGRect(origin: position, size: size)
-            let frameCount = 16
-            for step in 1...frameCount {
-                let progress = CGFloat(step) / CGFloat(frameCount)
-                let eased = progress * (3 + progress * (progress - 3))
-                let frame = CGRect(
-                    x: origin.minX + (target.minX - origin.minX) * eased,
-                    y: origin.minY + (target.minY - origin.minY) * eased,
-                    width: origin.width + (target.width - origin.width) * eased,
-                    height: origin.height + (target.height - origin.height) * eased
-                )
-                guard writeFrame(frame, to: window, repeatSize: false) else {
-                    return false
-                }
-                if step < frameCount {
-                    usleep(16_000)
-                }
+        // Bring the window forward
+        _ = AXUIElementPerformAction(window, kAXRaiseAction as CFString)
+
+        // Standard size-position-size pass
+        guard writeFrame(target, to: window, repeatSize: true) else {
+            return false
+        }
+
+        // Anti-rebound verification pass: allow target app's mouse-up tracking loop to settle
+        usleep(30_000)
+        if let postPosition = pointAttribute(kAXPositionAttribute as CFString, from: window) {
+            if abs(postPosition.x - target.minX) > 15 || abs(postPosition.y - target.minY) > 15 {
+                _ = writeFrame(target, to: window, repeatSize: true)
             }
         }
 
-        // A final size-position-size pass mirrors Rectangle's handling for apps
-        // that constrain the first resize against the window's old display.
-        guard writeFrame(target, to: window, repeatSize: true) else { return false }
-
-        let tolerance: CGFloat = 2
-        for attempt in 0..<3 {
-            if let finalPosition = pointAttribute(kAXPositionAttribute as CFString, from: window),
-               let finalSize = sizeAttribute(kAXSizeAttribute as CFString, from: window),
-               abs(finalPosition.x - target.minX) <= tolerance,
-               abs(finalPosition.y - target.minY) <= tolerance,
-               abs(finalSize.width - target.width) <= tolerance,
-               abs(finalSize.height - target.height) <= tolerance {
-                return true
-            }
-            guard attempt < 2 else { break }
-            usleep(20_000)
-            guard writeFrame(target, to: window, repeatSize: true) else { return false }
-        }
-        return false
+        return true
     }
 
     private func writeFrame(
@@ -689,7 +738,11 @@ class BoringNotchXPCHelper: NSObject, BoringNotchXPCHelperProtocol {
         return unsafeDowncast(windowValue, to: AXUIElement.self)
     }
 
-    private func window(for processIdentifier: pid_t, matching expectedFrame: CGRect) -> AXUIElement? {
+    private func window(
+        for processIdentifier: pid_t,
+        windowID targetWindowID: CGWindowID? = nil,
+        matching expectedFrame: CGRect? = nil
+    ) -> AXUIElement? {
         let application = AXUIElementCreateApplication(processIdentifier)
         var windowsValue: CFTypeRef?
         guard AXUIElementCopyAttributeValue(
@@ -697,14 +750,50 @@ class BoringNotchXPCHelper: NSObject, BoringNotchXPCHelperProtocol {
             kAXWindowsAttribute as CFString,
             &windowsValue
         ) == .success,
-        let windows = windowsValue as? [AXUIElement]
-        else { return nil }
-
-        return windows.min { lhs, rhs in
-            frameDistance(from: lhs, to: expectedFrame) < frameDistance(from: rhs, to: expectedFrame)
-        }.flatMap { candidate in
-            frameDistance(from: candidate, to: expectedFrame) <= 48 ? candidate : nil
+        let windows = windowsValue as? [AXUIElement],
+        !windows.isEmpty
+        else {
+            if let focused = focusedWindow() {
+                var pid: pid_t = 0
+                if AXUIElementGetPid(focused, &pid) == .success, pid == processIdentifier {
+                    return focused
+                }
+            }
+            return nil
         }
+
+        // 1. Exact match by window ID
+        if let targetWindowID, targetWindowID != 0 {
+            for win in windows {
+                if windowID(for: win) == targetWindowID {
+                    return win
+                }
+            }
+        }
+
+        // 2. Proximity match by frame
+        if let expectedFrame, expectedFrame.width > 0, expectedFrame.height > 0 {
+            if let candidate = windows.min(by: { lhs, rhs in
+                frameDistance(from: lhs, to: expectedFrame) < frameDistance(from: rhs, to: expectedFrame)
+            }), frameDistance(from: candidate, to: expectedFrame) <= 160 {
+                return candidate
+            }
+        }
+
+        // 3. Fallback: focused window
+        var focusedValue: CFTypeRef?
+        if AXUIElementCopyAttributeValue(
+            application,
+            kAXFocusedWindowAttribute as CFString,
+            &focusedValue
+        ) == .success,
+        let focusedValue,
+        CFGetTypeID(focusedValue) == AXUIElementGetTypeID() {
+            return unsafeDowncast(focusedValue, to: AXUIElement.self)
+        }
+
+        // 4. Fallback: first window
+        return windows.first
     }
 
     private func frameDistance(from window: AXUIElement, to expectedFrame: CGRect) -> CGFloat {
