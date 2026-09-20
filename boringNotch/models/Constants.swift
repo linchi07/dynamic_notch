@@ -170,6 +170,7 @@ extension Defaults.Keys {
     static let autoRemoveShelfItems = Key<Bool>("autoRemoveShelfItems", default: false)
     static let expandedDragDetection = Key<Bool>("expandedDragDetection", default: true)
     static let enableWindowSnapping = Key<Bool>("enableWindowSnapping", default: true)
+    static let enableWindowSnapGhostAnimation = Key<Bool>("enableWindowSnapGhostAnimation", default: true)
     static let windowSnapAnimationMode = Key<WindowSnapAnimationMode>(
         "windowSnapAnimationMode",
         default: .system

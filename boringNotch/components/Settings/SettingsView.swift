@@ -143,6 +143,7 @@ struct GeneralSettings: View {
     @Default(.openNotchOnHover) var openNotchOnHover
     @Default(.hideNotchOption) var hideNotchOption
     @Default(.enableWindowSnapping) var enableWindowSnapping
+    @Default(.enableWindowSnapGhostAnimation) var enableWindowSnapGhostAnimation
     @Default(.windowSnapAnimationMode) var windowSnapAnimationMode
     
 
@@ -161,10 +162,8 @@ struct GeneralSettings: View {
                 Defaults.Toggle(key: .enableWindowSnapping) {
                     Text("Show window layouts when dragging to the top")
                 }
-                Picker("Window arrangement animation", selection: $windowSnapAnimationMode) {
-                    Text("None").tag(WindowSnapAnimationMode.none)
-                    Text("System when available").tag(WindowSnapAnimationMode.system)
-                    Text("Always animate").tag(WindowSnapAnimationMode.full)
+                Defaults.Toggle(key: .enableWindowSnapGhostAnimation) {
+                    Text("Experimental window snap animation (Frosted glass)")
                 }
                 .disabled(!enableWindowSnapping)
             } header: {

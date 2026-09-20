@@ -9321,6 +9321,28 @@
         }
       }
     },
+    "Experimental window snap animation (Frosted glass)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Experimental window snap animation (Frosted glass)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "实验性窗口分屏动画（毛玻璃效果）"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "實驗性視窗分屏動畫（毛玻璃效果）"
+          }
+        }
+      }
+    },
     "Extend hover area" : {
       "localizations" : {
         "ar" : {

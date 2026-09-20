@@ -647,9 +647,23 @@ final class WindowSnapController {
         candidate: TrackedWindow?,
         on screen: NSScreen
     ) async {
+        let appKitDestination = destinationFrame(for: slot, on: screen)
+        let destination = appKitToAccessibility(appKitDestination)
+
+        // Trigger frosted glass proxy animation
+        if let candidate {
+            let latestBounds = currentWindowBounds(for: candidate.id) ?? candidate.initialBounds
+            let startAppKitFrame = accessibilityToAppKit(latestBounds)
+            WindowSnapGhostAnimator.shared.animate(
+                from: startAppKitFrame,
+                to: appKitDestination,
+                on: screen,
+                processIdentifier: candidate.processIdentifier
+            )
+        }
+
         // Allow the target application a brief moment to finish its mouse-up drag tracking loop
         try? await Task.sleep(for: .milliseconds(25))
-        let destination = appKitToAccessibility(destinationFrame(for: slot, on: screen))
 
         var succeeded = false
         if let candidate {
@@ -692,12 +706,22 @@ final class WindowSnapController {
             limit: remainingSlots.count
         )
 
+        let selectedAppKitDestination = destinationFrame(for: selectedSlot, on: screen)
+        let selectedDestination = appKitToAccessibility(selectedAppKitDestination)
+
+        // Trigger frosted glass proxy animation for the primary captured window
+        let latestBounds = currentWindowBounds(for: capturedWindow.id) ?? capturedWindow.initialBounds
+        let startAppKitFrame = accessibilityToAppKit(latestBounds)
+        WindowSnapGhostAnimator.shared.animate(
+            from: startAppKitFrame,
+            to: selectedAppKitDestination,
+            on: screen,
+            processIdentifier: capturedWindow.processIdentifier
+        )
+
         // Allow target applications a brief moment to settle
         try? await Task.sleep(for: .milliseconds(25))
 
-        let selectedDestination = appKitToAccessibility(
-            destinationFrame(for: selectedSlot, on: screen)
-        )
         let assignments = Array(zip(otherWindows, remainingSlots)).map { window, slot in
             (
                 window,
@@ -774,6 +798,28 @@ final class WindowSnapController {
             width: frame.width,
             height: frame.height
         )
+    }
+
+    private func accessibilityToAppKit(_ frame: CGRect) -> CGRect {
+        let mainScreenMaxY = NSScreen.screens.first?.frame.maxY ?? 0
+        return CGRect(
+            x: frame.minX,
+            y: mainScreenMaxY - (frame.origin.y + frame.height),
+            width: frame.width,
+            height: frame.height
+        )
+    }
+
+    private func currentWindowBounds(for windowID: CGWindowID) -> CGRect? {
+        guard let windowInfo = CGWindowListCopyWindowInfo(
+            [.optionIncludingWindow],
+            windowID
+        ) as? [[CFString: Any]],
+        let info = windowInfo.first,
+        let boundsDictionary = info[kCGWindowBounds] as? NSDictionary,
+        let bounds = CGRect(dictionaryRepresentation: boundsDictionary)
+        else { return nil }
+        return bounds
     }
 
     private func isInTopTrigger(_ point: CGPoint, of screen: NSScreen) -> Bool {
