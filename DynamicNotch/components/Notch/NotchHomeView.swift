@@ -12,14 +12,74 @@ import SwiftUI
 
 // MARK: - Music Player Components
 
-struct MusicPlayerView: View {
-    @EnvironmentObject var vm: BoringViewModel
+struct MediaSessionSwitcherView: View {
+    @ObservedObject var musicManager = MusicManager.shared
 
     var body: some View {
-        HStack(spacing: 12) {
-            AlbumArtView(vm: vm)
-                .frame(width: 86, height: 86)
-            MusicControlsView().drawingGroup().compositingGroup()
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 6) {
+                ForEach(musicManager.availableSessions) { session in
+                    let isSelected = session.type == musicManager.selectedSessionType
+                    Button {
+                        withAnimation(.smooth(duration: 0.2)) {
+                            musicManager.selectSession(type: session.type)
+                        }
+                    } label: {
+                        HStack(spacing: 4) {
+                            if session.isPlaying {
+                                Circle()
+                                    .fill(Color.green)
+                                    .frame(width: 5, height: 5)
+                            } else {
+                                Circle()
+                                    .fill(Color.gray.opacity(0.6))
+                                    .frame(width: 5, height: 5)
+                            }
+
+                            Text(session.displayName)
+                                .font(.system(size: 10, weight: isSelected ? .semibold : .medium))
+                                .foregroundColor(isSelected ? .white : .secondary)
+                                .lineLimit(1)
+                        }
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 3)
+                        .background(
+                            Capsule()
+                                .fill(isSelected ? Color.white.opacity(0.22) : Color.white.opacity(0.07))
+                        )
+                        .overlay(
+                            Capsule()
+                                .stroke(isSelected ? Color.white.opacity(0.3) : Color.clear, lineWidth: 0.5)
+                        )
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
+            }
+            .padding(.horizontal, 2)
+        }
+        .frame(height: 18)
+    }
+}
+
+struct MusicPlayerView: View {
+    @EnvironmentObject var vm: BoringViewModel
+    @ObservedObject var musicManager = MusicManager.shared
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: musicManager.availableSessions.count > 1 ? 4 : 0) {
+            if musicManager.availableSessions.count > 1 {
+                MediaSessionSwitcherView()
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+
+            HStack(spacing: 12) {
+                AlbumArtView(vm: vm)
+                    .frame(
+                        width: musicManager.availableSessions.count > 1 ? 74 : 86,
+                        height: musicManager.availableSessions.count > 1 ? 74 : 86
+                    )
+                MusicControlsView().drawingGroup().compositingGroup()
+            }
         }
         .frame(height: NOTCH_PANEL_CONTAINER_HEIGHT)
     }

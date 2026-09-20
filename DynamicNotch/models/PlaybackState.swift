@@ -5,6 +5,7 @@
 //  Created by Alexander on 2025-03-29.
 //
 
+import AppKit
 import Foundation
 
 enum RepeatMode: Int, Codable {
@@ -28,6 +29,7 @@ struct PlaybackState {
     var artwork: Data?
     var volume: Double = 0.5
     var isFavorite: Bool = false
+    var genre: String = ""
 }
 
 extension PlaybackState: Equatable {
@@ -43,5 +45,40 @@ extension PlaybackState: Equatable {
             && lhs.repeatMode == rhs.repeatMode
             && lhs.artwork == rhs.artwork
             && lhs.isFavorite == rhs.isFavorite
+            && lhs.genre == rhs.genre
     }
 }
+
+struct MediaSession: Identifiable, Equatable {
+    let type: MediaControllerType
+    var bundleIdentifier: String?
+    var title: String
+    var artist: String
+    var album: String
+    var artwork: Data?
+    var isPlaying: Bool
+    var currentTime: Double
+    var duration: Double
+    var playbackRate: Double
+    var isShuffled: Bool
+    var repeatMode: RepeatMode
+    var volume: Double
+    var isFavorite: Bool
+    var genre: String = ""
+    var lastUpdated: Date
+
+    var id: MediaControllerType { type }
+
+    var displayName: String {
+        if type == .nowPlaying {
+            if let bundleID = bundleIdentifier,
+               let app = NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).first,
+               let name = app.localizedName, !name.isEmpty {
+                return name
+            }
+            return "Now Playing"
+        }
+        return type.rawValue
+    }
+}
+

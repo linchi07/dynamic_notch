@@ -147,6 +147,9 @@ class AppleMusicController: MediaControllerProtocol {
         updatedState.artwork = descriptor.atIndex(10)?.data as Data?
         let lovedState = descriptor.atIndex(11)?.booleanValue ?? false
         updatedState.isFavorite = lovedState
+        if descriptor.numberOfItems >= 12 {
+            updatedState.genre = descriptor.atIndex(12)?.stringValue ?? ""
+        }
         updatedState.lastUpdated = Date()
         self.playbackState = updatedState
     }
@@ -187,9 +190,14 @@ class AppleMusicController: MediaControllerProtocol {
                 
                 set currentVolume to sound volume
                 set favoriteState to favorited of current track
-                return {playerState, currentTrackName, currentTrackArtist, currentTrackAlbum, trackPosition, trackDuration, shuffleState, repeatValue, currentVolume, artData, favoriteState}
+                try
+                    set trackGenre to genre of current track
+                on error
+                    set trackGenre to ""
+                end try
+                return {playerState, currentTrackName, currentTrackArtist, currentTrackAlbum, trackPosition, trackDuration, shuffleState, repeatValue, currentVolume, artData, favoriteState, trackGenre}
             on error
-                return {false, "Not Playing", "Unknown", "Unknown", 0, 0, false, 0, 50, "", false}
+                return {false, "Not Playing", "Unknown", "Unknown", 0, 0, false, 0, 50, "", false, ""}
             end try
         end tell
         """

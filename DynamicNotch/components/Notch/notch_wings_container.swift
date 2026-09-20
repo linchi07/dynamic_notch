@@ -105,7 +105,7 @@ struct NotchWingsContainer: View {
                 .fill(item.tintColor.gradient)
                 .frame(width: visualSize, height: visualSize)
                 .mask {
-                    AudioSpectrumView(isPlaying: $musicManager.isPlaying)
+                    AudioSpectrumView(isPlaying: $musicManager.isPlaying, genre: musicManager.currentGenre)
                         .frame(width: min(16, visualSize), height: min(12, visualSize))
                 }
         }

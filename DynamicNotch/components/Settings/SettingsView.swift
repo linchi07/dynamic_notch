@@ -341,6 +341,7 @@ struct HUD: View {
 struct Media: View {
     @Default(.waitInterval) var waitInterval
     @Default(.mediaController) var mediaController
+    @Default(.enabledMediaControllers) var enabledMediaControllers
     @ObservedObject var coordinator = BoringViewCoordinator.shared
     @Default(.hideNotchOption) var hideNotchOption
     @Default(.enableSneakPeek) private var enableSneakPeek
@@ -348,39 +349,46 @@ struct Media: View {
     var body: some View {
         Form {
             Section {
-                Picker("Music Source", selection: $mediaController) {
-                    ForEach(availableMediaControllers) { controller in
-                        Text(LocalizedStringKey(controller.rawValue)).tag(controller)
+                ForEach(availableMediaControllers) { controller in
+                    Toggle(isOn: Binding(
+                        get: {
+                            enabledMediaControllers.contains(controller)
+                        },
+                        set: { isEnabled in
+                            var updated = enabledMediaControllers
+                            if isEnabled {
+                                if !updated.contains(controller) {
+                                    updated.append(controller)
+                                }
+                            } else {
+                                if updated.count > 1 {
+                                    updated.removeAll { $0 == controller }
+                                }
+                            }
+                            enabledMediaControllers = updated
+                            NotificationCenter.default.post(
+                                name: Notification.Name.mediaControllerChanged,
+                                object: nil
+                            )
+                        }
+                    )) {
+                        HStack {
+                            Text(LocalizedStringKey(controller.rawValue))
+                            Spacer()
+                            if controller == .nowPlaying {
+                                Text("Universal")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
                     }
-                }
-                .onChange(of: mediaController) { _, _ in
-                    NotificationCenter.default.post(
-                        name: Notification.Name.mediaControllerChanged,
-                        object: nil
-                    )
                 }
             } header: {
-                Text("Media Source")
+                Text("Active Media Sources")
             } footer: {
-                if MusicManager.shared.isNowPlayingDeprecated {
-                    HStack {
-                        Text("YouTube Music requires this third-party app to be installed: ")
-                            .foregroundStyle(.secondary)
-                            .font(.caption)
-                        Link(
-                            "https://github.com/pear-devs/pear-desktop",
-                            destination: URL(string: "https://github.com/pear-devs/pear-desktop")!
-                        )
-                        .font(.caption)
-                        .foregroundColor(.blue)  // Ensures it's visibly a link
-                    }
-                } else {
-                    Text(
-                        "'Now Playing' was the only option on previous versions and works with all media apps."
-                    )
+                Text("Select media players to monitor concurrently. When multiple players are active (e.g. web browser video + Apple Music), you can switch between them in the Notch.")
                     .foregroundStyle(.secondary)
                     .font(.caption)
-                }
             }
             
             Section {

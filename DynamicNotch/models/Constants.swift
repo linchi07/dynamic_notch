@@ -43,6 +43,8 @@ enum MediaControllerType: String, CaseIterable, Identifiable, Defaults.Serializa
     case nowPlaying = "Now Playing"
     case appleMusic = "Apple Music"
     case spotify = "Spotify"
+    case qqMusic = "QQ Music"
+    case neteaseMusic = "NetEase Music"
     case youtubeMusic = "YouTube Music"
     
     var id: String { self.rawValue }
@@ -166,12 +168,7 @@ extension Defaults.Keys {
     
     // MARK: Media Controller
     static let mediaController = Key<MediaControllerType>("mediaController", default: defaultMediaController)
-    
-    // MARK: Advanced Settings
-    static let useCustomAccentColor = Key<Bool>("useCustomAccentColor", default: false)
-    static let customAccentColorData = Key<Data?>("customAccentColorData", default: nil)
-    // Show or hide the title bar
-    static let hideTitleBar = Key<Bool>("hideTitleBar", default: true)
+    static let enabledMediaControllers = Key<[MediaControllerType]>("enabledMediaControllers", default: defaultEnabledMediaControllers)
     
     // Helper to determine the default media controller based on NowPlaying deprecation status
     static var defaultMediaController: MediaControllerType {
@@ -179,6 +176,14 @@ extension Defaults.Keys {
             return .appleMusic
         } else {
             return .nowPlaying
+        }
+    }
+
+    static var defaultEnabledMediaControllers: [MediaControllerType] {
+        if MusicManager.shared.isNowPlayingDeprecated {
+            return [.appleMusic]
+        } else {
+            return [.nowPlaying, .appleMusic]
         }
     }
 

@@ -130,6 +130,10 @@ extension MediaControllerType {
             return "Connects directly to the Apple Music app."
         case .youtubeMusic:
             return "Requires a third-party client with API plugin enabled."
+        case .qqMusic:
+            return "Connects directly to QQ Music."
+        case .neteaseMusic:
+            return "Connects directly to NetEase Music."
         }
     }
 }

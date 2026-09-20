@@ -18,15 +18,25 @@ class MusicManager: ObservableObject {
     // MARK: - Properties
     static let shared = MusicManager()
     private var cancellables = Set<AnyCancellable>()
-    private var controllerCancellables = Set<AnyCancellable>()
+    private var controllerCancellables: [MediaControllerType: Set<AnyCancellable>] = [:]
     private var debounceIdleTask: Task<Void, Never>?
 
     // Helper to check if macOS has removed support for NowPlayingController
     public private(set) var isNowPlayingDeprecated: Bool = false
     private let mediaChecker = MediaChecker()
 
-    // Active controller
-    private var activeController: (any MediaControllerProtocol)?
+    // Multi-controller management
+    private var controllers: [MediaControllerType: any MediaControllerProtocol] = [:]
+    private var sessionStates: [MediaControllerType: PlaybackState] = [:]
+
+    // Available and selected sessions
+    @Published var availableSessions: [MediaSession] = []
+    @Published var selectedSessionType: MediaControllerType = .nowPlaying
+
+    // Active controller computed property
+    var activeController: (any MediaControllerProtocol)? {
+        controllers[selectedSessionType] ?? controllers.values.first
+    }
 
     // Published properties for UI
     @Published var songTitle: String = "I'm Handsome"
@@ -53,6 +63,7 @@ class MusicManager: ObservableObject {
     @Published var syncedLyrics: [(time: Double, text: String)] = []
     @Published var canFavoriteTrack: Bool = false
     @Published var isFavoriteTrack: Bool = false
+    @Published var currentGenre: String = ""
 
     private var artworkData: Data? = nil
 
@@ -70,10 +81,19 @@ class MusicManager: ObservableObject {
 
     // MARK: - Initialization
     init() {
-        // Listen for changes to the default controller preference
+        // Listen for changes to the controller preference
         NotificationCenter.default.publisher(for: Notification.Name.mediaControllerChanged)
             .sink { [weak self] _ in
-                self?.setActiveControllerBasedOnPreference()
+                self?.setupControllersFromPreferences()
+            }
+            .store(in: &cancellables)
+
+        // Listen for app termination to refresh sessions
+        NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didTerminateApplicationNotification)
+            .sink { [weak self] _ in
+                DispatchQueue.main.async {
+                    self?.refreshAllSessions()
+                }
             }
             .store(in: &cancellables)
 
@@ -87,8 +107,8 @@ class MusicManager: ObservableObject {
                 self.isNowPlayingDeprecated = false
             }
             
-            // Initialize the active controller after deprecation check
-            self.setActiveControllerBasedOnPreference()
+            // Initialize controllers based on preferences
+            self.setupControllersFromPreferences()
         }
     }
 
@@ -99,83 +119,208 @@ class MusicManager: ObservableObject {
     public func destroy() {
         debounceIdleTask?.cancel()
         cancellables.removeAll()
+        controllerCancellables.values.forEach { subs in subs.forEach { $0.cancel() } }
         controllerCancellables.removeAll()
+        controllers.removeAll()
+        sessionStates.removeAll()
         flipWorkItem?.cancel()
         transitionWorkItem?.cancel()
-
-        // Release active controller
-        activeController = nil
     }
 
-    // MARK: - Setup Methods
-    private func createController(for type: MediaControllerType) -> (any MediaControllerProtocol)? {
-        // Cleanup previous controller
-        if activeController != nil {
-            controllerCancellables.removeAll()
-            activeController = nil
+    // MARK: - Setup & Controller Management
+    @MainActor
+    func setupControllersFromPreferences() {
+        var enabledTypes = Defaults[.enabledMediaControllers]
+        if enabledTypes.isEmpty {
+            enabledTypes = Defaults.Keys.defaultEnabledMediaControllers
+            Defaults[.enabledMediaControllers] = enabledTypes
         }
 
-        let newController: (any MediaControllerProtocol)?
+        if isNowPlayingDeprecated {
+            enabledTypes.removeAll { $0 == .nowPlaying }
+        }
 
+        // 1. Remove controllers that are no longer enabled
+        for (type, _) in controllers where !enabledTypes.contains(type) {
+            controllerCancellables[type]?.forEach { $0.cancel() }
+            controllerCancellables.removeValue(forKey: type)
+            controllers.removeValue(forKey: type)
+            sessionStates.removeValue(forKey: type)
+        }
+
+        // 2. Instantiate and observe new controllers
+        for type in enabledTypes {
+            if controllers[type] == nil {
+                if let controller = instantiateController(for: type) {
+                    controllers[type] = controller
+                    var subs = Set<AnyCancellable>()
+                    controller.playbackStatePublisher
+                        .receive(on: DispatchQueue.main)
+                        .sink { [weak self] state in
+                            self?.handleStateUpdate(from: type, state: state)
+                        }
+                        .store(in: &subs)
+                    controllerCancellables[type] = subs
+                }
+            }
+        }
+
+        refreshAllSessions()
+        forceUpdate()
+    }
+
+    private func instantiateController(for type: MediaControllerType) -> (any MediaControllerProtocol)? {
         switch type {
         case .nowPlaying:
-            // Only create NowPlayingController if not deprecated on this macOS version
-            if !self.isNowPlayingDeprecated {
-                newController = NowPlayingController()
-            } else {
-                return nil
-            }
+            guard !self.isNowPlayingDeprecated else { return nil }
+            return NowPlayingController()
         case .appleMusic:
-            newController = AppleMusicController()
+            return AppleMusicController()
         case .spotify:
-            newController = SpotifyController()
+            return SpotifyController()
         case .youtubeMusic:
-            newController = YouTubeMusicController()
+            return YouTubeMusicController()
+        case .qqMusic:
+            return QQMusicController()
+        case .neteaseMusic:
+            return NetEaseMusicController()
         }
+    }
 
-        // Set up state observation for the new controller
-        if let controller = newController {
-            controller.playbackStatePublisher
-                .receive(on: DispatchQueue.main)
-                .sink { [weak self] state in
-                    guard let self = self,
-                          self.activeController === controller else { return }
-                    self.updateFromPlaybackState(state)
+    @MainActor
+    private func handleStateUpdate(from type: MediaControllerType, state: PlaybackState) {
+        sessionStates[type] = state
+        refreshAllSessions(lastUpdatedType: type)
+    }
+
+    @MainActor
+    func refreshAllSessions(lastUpdatedType: MediaControllerType? = nil) {
+        var sessions: [MediaSession] = []
+
+        // 1. Collect dedicated music app sessions
+        let dedicatedTypes: [MediaControllerType] = [.appleMusic, .spotify, .qqMusic, .neteaseMusic, .youtubeMusic]
+        var dedicatedBundleIDs: Set<String> = []
+        var dedicatedTitles: Set<String> = []
+
+        for type in dedicatedTypes {
+            guard let controller = controllers[type], controller.isActive() else { continue }
+            if let state = sessionStates[type] {
+                let hasTrack = !state.title.isEmpty && state.title != "I'm Handsome"
+                if state.isPlaying || hasTrack {
+                    let session = MediaSession(
+                        type: type,
+                        bundleIdentifier: state.bundleIdentifier,
+                        title: state.title,
+                        artist: state.artist,
+                        album: state.album,
+                        artwork: state.artwork,
+                        isPlaying: state.isPlaying,
+                        currentTime: state.currentTime,
+                        duration: state.duration,
+                        playbackRate: state.playbackRate,
+                        isShuffled: state.isShuffled,
+                        repeatMode: state.repeatMode,
+                        volume: state.volume,
+                        isFavorite: state.isFavorite,
+                        genre: state.genre,
+                        lastUpdated: state.lastUpdated
+                    )
+                    sessions.append(session)
+                    if !state.bundleIdentifier.isEmpty {
+                        dedicatedBundleIDs.insert(state.bundleIdentifier)
+                    }
+                    if hasTrack {
+                        dedicatedTitles.insert(state.title)
+                    }
                 }
-                .store(in: &controllerCancellables)
+            }
         }
 
-        return newController
-    }
+        // 2. Now Playing session with deduplication
+        if let npController = controllers[.nowPlaying], npController.isActive(),
+           let npState = sessionStates[.nowPlaying] {
+            let hasTrack = !npState.title.isEmpty && npState.title != "I'm Handsome"
+            if npState.isPlaying || hasTrack {
+                let isDuplicateBundle = dedicatedBundleIDs.contains(npState.bundleIdentifier)
+                let isDuplicateTitle = dedicatedTitles.contains(npState.title)
 
-    private func setActiveControllerBasedOnPreference() {
-        let preferredType = Defaults[.mediaController]
-        print("Preferred Media Controller: \(preferredType)")
-
-        // If NowPlaying is deprecated but that's the preference, use Apple Music instead
-        let controllerType = (self.isNowPlayingDeprecated && preferredType == .nowPlaying)
-            ? .appleMusic
-            : preferredType
-
-        if let controller = createController(for: controllerType) {
-            setActiveController(controller)
-        } else if controllerType != .appleMusic, let fallbackController = createController(for: .appleMusic) {
-            // Fallback to Apple Music if preferred controller couldn't be created
-            setActiveController(fallbackController)
+                // If not duplicated with a dedicated music app, add as distinct session
+                if !isDuplicateBundle && !isDuplicateTitle {
+                    let session = MediaSession(
+                        type: .nowPlaying,
+                        bundleIdentifier: npState.bundleIdentifier,
+                        title: npState.title,
+                        artist: npState.artist,
+                        album: npState.album,
+                        artwork: npState.artwork,
+                        isPlaying: npState.isPlaying,
+                        currentTime: npState.currentTime,
+                        duration: npState.duration,
+                        playbackRate: npState.playbackRate,
+                        isShuffled: npState.isShuffled,
+                        repeatMode: npState.repeatMode,
+                        volume: npState.volume,
+                        isFavorite: npState.isFavorite,
+                        genre: npState.genre,
+                        lastUpdated: npState.lastUpdated
+                    )
+                    sessions.append(session)
+                }
+            }
         }
+
+        // 3. Sort: playing first
+        sessions.sort { s1, s2 in
+            if s1.isPlaying != s2.isPlaying {
+                return s1.isPlaying && !s2.isPlaying
+            }
+            return s1.type.rawValue < s2.type.rawValue
+        }
+
+        self.availableSessions = sessions
+
+        // 4. Update selected session
+        let sessionExists = sessions.contains { $0.type == selectedSessionType }
+
+        // If another session started playing while current is paused, switch to it
+        if let lastUpdatedType = lastUpdatedType,
+           let updatedState = sessionStates[lastUpdatedType],
+           updatedState.isPlaying,
+           lastUpdatedType != selectedSessionType {
+            let currentIsPlaying = sessionStates[selectedSessionType]?.isPlaying ?? false
+            if !currentIsPlaying {
+                selectedSessionType = lastUpdatedType
+            }
+        } else if !sessionExists {
+            if let firstPlaying = sessions.first(where: { $0.isPlaying }) {
+                selectedSessionType = firstPlaying.type
+            } else if let firstSession = sessions.first {
+                selectedSessionType = firstSession.type
+            } else {
+                selectedSessionType = Defaults[.enabledMediaControllers].first ?? .nowPlaying
+            }
+        }
+
+        // 5. Sync active session properties
+        syncActiveSessionProperties()
     }
 
-    private func setActiveController(_ controller: any MediaControllerProtocol) {
-        // Cancel any existing flip animation
-        flipWorkItem?.cancel()
+    func selectSession(type: MediaControllerType) {
+        guard selectedSessionType != type else { return }
+        selectedSessionType = type
+        syncActiveSessionProperties()
+    }
 
-        // Set new active controller
-        activeController = controller
-        
-        self.canFavoriteTrack = controller.supportsFavorite
-
-        // Get current state from active controller
-        forceUpdate()
+    @MainActor
+    private func syncActiveSessionProperties() {
+        if let state = sessionStates[selectedSessionType] {
+            updateFromPlaybackState(state)
+        } else if let controller = controllers[selectedSessionType] {
+            Task {
+                await controller.updatePlaybackInfo()
+            }
+        }
+        self.canFavoriteTrack = activeController?.supportsFavorite ?? false
     }
 
     // MARK: - Update Methods
@@ -295,6 +440,10 @@ class MusicManager: ObservableObject {
         
         if volumeChanged {
             self.volume = state.volume
+        }
+        
+        if state.genre != self.currentGenre {
+            self.currentGenre = state.genre
         }
         
         self.timestampDate = state.lastUpdated
@@ -699,13 +848,15 @@ class MusicManager: ObservableObject {
     }
 
     func forceUpdate() {
-        // Request immediate update from the active controller
         Task { [weak self] in
-            if self?.activeController?.isActive() == true {
-                if let youtubeController = self?.activeController as? YouTubeMusicController {
-                    await youtubeController.pollPlaybackState()
-                } else {
-                    await self?.activeController?.updatePlaybackInfo()
+            guard let self = self else { return }
+            for (_, controller) in self.controllers {
+                if controller.isActive() {
+                    if let youtubeController = controller as? YouTubeMusicController {
+                        await youtubeController.pollPlaybackState()
+                    } else {
+                        await controller.updatePlaybackInfo()
+                    }
                 }
             }
         }
