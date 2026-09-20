@@ -8,6 +8,60 @@ import SwiftUI
 import Defaults
 
 @MainActor
+final class WindowAlphaController {
+    static let shared = WindowAlphaController()
+
+    private typealias CGSConnectionID = Int32
+    private typealias SLSSetWindowAlphaFunc = @convention(c) (CGSConnectionID, CGWindowID, Float) -> CGError
+    private typealias SLSMainConnectionIDFunc = @convention(c) () -> CGSConnectionID
+
+    private var setAlphaFunc: SLSSetWindowAlphaFunc?
+    private var connectionID: CGSConnectionID = 0
+    private var hiddenWindowID: CGWindowID?
+    private var restoreTask: Task<Void, Never>?
+
+    private init() {
+        if let skylight = dlopen("/System/Library/PrivateFrameworks/SkyLight.framework/SkyLight", RTLD_LAZY) {
+            let getMainConn = dlsym(skylight, "SLSMainConnectionID") ?? dlsym(skylight, "CGSMainConnectionID")
+            let setAlpha = dlsym(skylight, "SLSSetWindowAlpha") ?? dlsym(skylight, "CGSSetWindowAlpha")
+            if let getMainConn, let setAlpha {
+                let connFunc = unsafeBitCast(getMainConn, to: SLSMainConnectionIDFunc.self)
+                self.connectionID = connFunc()
+                self.setAlphaFunc = unsafeBitCast(setAlpha, to: SLSSetWindowAlphaFunc.self)
+            }
+        }
+    }
+
+    /// Hides the original target window (alpha = 0.0) with an absolute fail-safe restore timeout.
+    func hideWindow(_ windowID: CGWindowID, fallbackTimeoutMs: Int = 400) {
+        restore()
+        guard Defaults[.hideOriginalWindowDuringSnap],
+              let setAlphaFunc,
+              connectionID != 0 else { return }
+
+        hiddenWindowID = windowID
+        _ = setAlphaFunc(connectionID, windowID, 0.0)
+
+        // Fail-safe guarantee: restore visibility automatically if animation is interrupted
+        restoreTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(fallbackTimeoutMs))
+            self.restore()
+        }
+    }
+
+    /// Restores the original target window to full opacity.
+    func restore() {
+        restoreTask?.cancel()
+        restoreTask = nil
+        guard let windowID = hiddenWindowID,
+              let setAlphaFunc,
+              connectionID != 0 else { return }
+        _ = setAlphaFunc(connectionID, windowID, 1.0)
+        hiddenWindowID = nil
+    }
+}
+
+@MainActor
 final class WindowSnapGhostAnimator {
     static let shared = WindowSnapGhostAnimator()
 
@@ -21,11 +75,17 @@ final class WindowSnapGhostAnimator {
         from startFrame: CGRect,
         to targetFrame: CGRect,
         on screen: NSScreen,
-        processIdentifier: Int32
+        processIdentifier: Int32,
+        windowID: CGWindowID? = nil
     ) {
         guard Defaults[.enableWindowSnapGhostAnimation] else { return }
 
         dismiss()
+
+        if let windowID {
+            let delayMs = Int(Defaults[.windowSnapAnimationStartDelayMs])
+            WindowAlphaController.shared.hideWindow(windowID, fallbackTimeoutMs: delayMs + 420)
+        }
 
         let app = NSRunningApplication(processIdentifier: processIdentifier)
         let appIcon = app?.icon
@@ -53,6 +113,7 @@ final class WindowSnapGhostAnimator {
             startRect: startLocal,
             targetRect: targetLocal
         ) { [weak self] in
+            WindowAlphaController.shared.restore()
             self?.dismiss()
         }
 
@@ -62,6 +123,7 @@ final class WindowSnapGhostAnimator {
     }
 
     func dismiss() {
+        WindowAlphaController.shared.restore()
         if let panel = activePanel {
             panel.orderOut(nil)
             activePanel = nil

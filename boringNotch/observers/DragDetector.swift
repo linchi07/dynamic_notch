@@ -658,7 +658,8 @@ final class WindowSnapController {
                 from: startAppKitFrame,
                 to: appKitDestination,
                 on: screen,
-                processIdentifier: candidate.processIdentifier
+                processIdentifier: candidate.processIdentifier,
+                windowID: candidate.id
             )
         }
 
@@ -713,7 +714,8 @@ final class WindowSnapController {
             from: startAppKitFrame,
             to: selectedAppKitDestination,
             on: screen,
-            processIdentifier: capturedWindow.processIdentifier
+            processIdentifier: capturedWindow.processIdentifier,
+            windowID: capturedWindow.id
         )
 
         let assignments = Array(zip(otherWindows, remainingSlots)).map { window, slot in
