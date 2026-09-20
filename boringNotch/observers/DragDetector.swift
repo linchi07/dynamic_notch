@@ -256,18 +256,47 @@ private final class WindowSnapOverlayModel: ObservableObject {
     @Published var isContentVisible = false
 }
 
+private enum WindowSnapOverlayMetrics {
+    static let contentSize = CGSize(width: 490, height: 112)
+    static let shadowInsets = EdgeInsets(top: 22, leading: 26, bottom: 36, trailing: 26)
+    static let panelSize = CGSize(
+        width: contentSize.width + shadowInsets.leading + shadowInsets.trailing,
+        height: contentSize.height + shadowInsets.top + shadowInsets.bottom
+    )
+}
+
 private struct WindowSnapOverlayView: View {
     @ObservedObject var model: WindowSnapOverlayModel
 
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(Color.black)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color(white: 0.085),
+                            Color(white: 0.025),
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
                 .overlay {
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .stroke(Color.white.opacity(0.10), lineWidth: 0.7)
+                        .stroke(
+                            LinearGradient(
+                                colors: [
+                                    Color.white.opacity(0.20),
+                                    Color.white.opacity(0.055),
+                                ],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            ),
+                            lineWidth: 0.8
+                        )
                 }
-                .shadow(color: .black.opacity(0.48), radius: 16, y: 7)
+                .shadow(color: .black.opacity(0.30), radius: 24, y: 10)
+                .shadow(color: .black.opacity(0.42), radius: 6, y: 3)
 
             VStack(spacing: 8) {
                 HStack(spacing: 6) {
@@ -348,6 +377,10 @@ private struct WindowSnapOverlayView: View {
             .opacity(model.isContentVisible ? 1 : 0)
             .scaleEffect(model.isContentVisible ? 1 : 0.92)
         }
+        .frame(
+            width: WindowSnapOverlayMetrics.contentSize.width,
+            height: WindowSnapOverlayMetrics.contentSize.height
+        )
         .scaleEffect(
             x: model.isPresented ? 1 : 0.40,
             y: model.isPresented ? 1 : 0.22,
@@ -360,6 +393,7 @@ private struct WindowSnapOverlayView: View {
         )
         .animation(.easeOut(duration: 0.13), value: model.isContentVisible)
         .animation(.easeOut(duration: 0.14), value: model.arrangesAllWindows)
+        .padding(WindowSnapOverlayMetrics.shadowInsets)
     }
 }
 
@@ -374,7 +408,6 @@ final class WindowSnapController {
         let initialBounds: CGRect
     }
 
-    private let panelSize = CGSize(width: 490, height: 112)
     /// Window title bars stop at `visibleFrame.maxY`; the menu bar above it is
     /// not a reachable window destination while a native window is being moved.
     private let topTriggerDepth: CGFloat = 44
@@ -527,7 +560,7 @@ final class WindowSnapController {
 
     private func makePanel() -> NSPanel {
         let panel = NSPanel(
-            contentRect: NSRect(origin: .zero, size: panelSize),
+            contentRect: NSRect(origin: .zero, size: WindowSnapOverlayMetrics.panelSize),
             styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
             defer: false
@@ -548,8 +581,12 @@ final class WindowSnapController {
         activeScreen = screen
         let notchHeight = max(getClosedNotchSize().height, 32)
         let origin = CGPoint(
-            x: screen.frame.midX - panelSize.width / 2,
-            y: screen.frame.maxY - notchHeight - panelSize.height - 4
+            x: screen.frame.midX - WindowSnapOverlayMetrics.panelSize.width / 2,
+            y: screen.frame.maxY
+                - notchHeight
+                - WindowSnapOverlayMetrics.contentSize.height
+                - 4
+                - WindowSnapOverlayMetrics.shadowInsets.bottom
         )
         panel.setFrameOrigin(origin)
         model.isPresented = false
@@ -589,7 +626,10 @@ final class WindowSnapController {
     }
 
     private func slot(at point: CGPoint) -> WindowSnapSlot? {
-        let contentOrigin = CGPoint(x: panel.frame.minX + 14, y: panel.frame.minY + 10)
+        let contentOrigin = CGPoint(
+            x: panel.frame.minX + WindowSnapOverlayMetrics.shadowInsets.leading + 14,
+            y: panel.frame.minY + WindowSnapOverlayMetrics.shadowInsets.bottom + 10
+        )
         let cardSize = CGSize(width: 86, height: 64)
         let cardSpacing: CGFloat = 8
         let slotInset: CGFloat = 5
@@ -829,10 +869,18 @@ final class WindowSnapController {
     }
 
     private func isInTopTrigger(_ point: CGPoint, of screen: NSScreen) -> Bool {
-        point.y >= screen.visibleFrame.maxY - topTriggerDepth
+        // Keep activation near the display centre. A full-width strip causes the
+        // chooser to appear while the dragged window is still far from the notch.
+        let triggerWidth = min(
+            WindowSnapOverlayMetrics.contentSize.width,
+            max(280, screen.frame.width * 0.24)
+        )
+        let triggerMinX = screen.frame.midX - triggerWidth / 2
+        let triggerMaxX = screen.frame.midX + triggerWidth / 2
+        return point.y >= screen.visibleFrame.maxY - topTriggerDepth
             && point.y <= screen.frame.maxY
-            && point.x >= screen.frame.minX
-            && point.x <= screen.frame.maxX
+            && point.x >= triggerMinX
+            && point.x <= triggerMaxX
     }
 
     private func screenContaining(_ point: CGPoint) -> NSScreen? {
