@@ -204,6 +204,7 @@ class BoringNotchXPCHelper: NSObject, BoringNotchXPCHelperProtocol {
         targetY: Double,
         targetWidth: Double,
         targetHeight: Double,
+        minimizeIntermediateFrames: Bool,
         with reply: @escaping (Bool) -> Void
     ) {
         windowQueue.async { [weak self] in
@@ -239,7 +240,11 @@ class BoringNotchXPCHelper: NSObject, BoringNotchXPCHelperProtocol {
                 return
             }
 
-            let success = self.applyFrameDirectly(target, to: window)
+            let success = self.applyFrameDirectly(
+                target,
+                to: window,
+                minimizeIntermediateFrames: minimizeIntermediateFrames
+            )
             self.clearCapturedWindow()
             reply(success)
         }
@@ -372,7 +377,11 @@ class BoringNotchXPCHelper: NSObject, BoringNotchXPCHelperProtocol {
         capturedProcessIdentifier = nil
     }
 
-    private func applyFrameDirectly(_ target: CGRect, to window: AXUIElement) -> Bool {
+    private func applyFrameDirectly(
+        _ target: CGRect,
+        to window: AXUIElement,
+        minimizeIntermediateFrames: Bool = false
+    ) -> Bool {
         guard target.origin.x.isFinite,
               target.origin.y.isFinite,
               target.width.isFinite,
@@ -408,20 +417,97 @@ class BoringNotchXPCHelper: NSObject, BoringNotchXPCHelperProtocol {
         // Bring the window forward
         _ = AXUIElementPerformAction(window, kAXRaiseAction as CFString)
 
-        // Standard size-position-size pass
-        guard writeFrame(target, to: window, repeatSize: true) else {
+        // The conservative path resizes before moving because macOS can clamp a
+        // large window while crossing displays. During the experimental ghost
+        // animation, prefer moving first so the expensive content reflow occurs
+        // near the destination, then correct only attributes the app rejected.
+        let initialWriteSucceeded = minimizeIntermediateFrames
+            ? writeFramePositionFirst(target, to: window)
+            : writeFrame(target, to: window, repeatSize: true)
+        guard initialWriteSucceeded else {
             return false
         }
 
         // Anti-rebound verification pass: allow target app's mouse-up tracking loop to settle
         usleep(30_000)
-        if let postPosition = pointAttribute(kAXPositionAttribute as CFString, from: window) {
+        if minimizeIntermediateFrames {
+            _ = repairFrameIfNeeded(target, on: window)
+        } else if let postPosition = pointAttribute(kAXPositionAttribute as CFString, from: window) {
             if abs(postPosition.x - target.minX) > 15 || abs(postPosition.y - target.minY) > 15 {
                 _ = writeFrame(target, to: window, repeatSize: true)
             }
         }
 
         return true
+    }
+
+    /// Uses the smallest useful AX sequence for the proxy animation path.
+    /// Most windows need two writes. A third position write is performed only
+    /// when resizing caused WindowServer or the target app to clamp the origin.
+    private func writeFramePositionFirst(_ frame: CGRect, to window: AXUIElement) -> Bool {
+        var size = frame.size
+        var position = frame.origin
+        guard let sizeValue = AXValueCreate(.cgSize, &size),
+              let positionValue = AXValueCreate(.cgPoint, &position)
+        else { return false }
+
+        guard AXUIElementSetAttributeValue(
+            window,
+            kAXPositionAttribute as CFString,
+            positionValue
+        ) == .success,
+        AXUIElementSetAttributeValue(
+            window,
+            kAXSizeAttribute as CFString,
+            sizeValue
+        ) == .success else { return false }
+
+        if let achievedPosition = pointAttribute(kAXPositionAttribute as CFString, from: window),
+           !pointsMatch(achievedPosition, position, tolerance: 1) {
+            return AXUIElementSetAttributeValue(
+                window,
+                kAXPositionAttribute as CFString,
+                positionValue
+            ) == .success
+        }
+        return true
+    }
+
+    /// Repairs only the values that actually rebounded after mouse-up instead
+    /// of replaying the whole size-position-size sequence.
+    private func repairFrameIfNeeded(_ frame: CGRect, on window: AXUIElement) -> Bool {
+        var succeeded = true
+
+        if let achievedSize = sizeAttribute(kAXSizeAttribute as CFString, from: window),
+           !sizesMatch(achievedSize, frame.size, tolerance: 1) {
+            var targetSize = frame.size
+            guard let value = AXValueCreate(.cgSize, &targetSize) else { return false }
+            succeeded = AXUIElementSetAttributeValue(
+                window,
+                kAXSizeAttribute as CFString,
+                value
+            ) == .success
+        }
+
+        if let achievedPosition = pointAttribute(kAXPositionAttribute as CFString, from: window),
+           !pointsMatch(achievedPosition, frame.origin, tolerance: 1) {
+            var targetPosition = frame.origin
+            guard let value = AXValueCreate(.cgPoint, &targetPosition) else { return false }
+            succeeded = AXUIElementSetAttributeValue(
+                window,
+                kAXPositionAttribute as CFString,
+                value
+            ) == .success && succeeded
+        }
+        return succeeded
+    }
+
+    private func pointsMatch(_ lhs: CGPoint, _ rhs: CGPoint, tolerance: CGFloat) -> Bool {
+        abs(lhs.x - rhs.x) <= tolerance && abs(lhs.y - rhs.y) <= tolerance
+    }
+
+    private func sizesMatch(_ lhs: CGSize, _ rhs: CGSize, tolerance: CGFloat) -> Bool {
+        abs(lhs.width - rhs.width) <= tolerance && abs(lhs.height - rhs.height) <= tolerance
     }
 
     private func writeFrame(

@@ -144,7 +144,6 @@ struct GeneralSettings: View {
     @Default(.hideNotchOption) var hideNotchOption
     @Default(.enableWindowSnapping) var enableWindowSnapping
     @Default(.enableWindowSnapGhostAnimation) var enableWindowSnapGhostAnimation
-    @Default(.windowSnapAnimationMode) var windowSnapAnimationMode
     
 
     var body: some View {
@@ -189,6 +188,11 @@ struct GeneralSettings: View {
         .onChange(of: openNotchOnHover) {
             if !openNotchOnHover {
                 enableGestures = true
+            }
+        }
+        .onChange(of: enableWindowSnapGhostAnimation) {
+            if !enableWindowSnapGhostAnimation {
+                WindowSnapGhostAnimator.shared.dismiss()
             }
         }
     }

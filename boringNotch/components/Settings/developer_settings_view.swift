@@ -14,7 +14,6 @@ struct DeveloperSettingsView: View {
     @ObservedObject private var batteryModel = BatteryStatusViewModel.shared
     @Default(.notchOuterPadding) private var notchOuterPadding
     @Default(.windowSnapAnimationStartDelayMs) private var windowSnapAnimationStartDelayMs
-    @Default(.hideOriginalWindowDuringSnap) private var hideOriginalWindowDuringSnap
 
     @State private var simulatedLevel: Float = 85.0
     @State private var simulatedIsPluggedIn: Bool = true
@@ -55,16 +54,6 @@ struct DeveloperSettingsView: View {
                         }
                     }
                     .controlSize(.small)
-
-                    Divider()
-                        .padding(.vertical, 4)
-
-                    Defaults.Toggle(key: .hideOriginalWindowDuringSnap) {
-                        Text("分屏时原窗口隐身过渡 (方案一)")
-                    }
-                    Text("松手时瞬时隐去原窗口（置为透明），使屏幕上仅展示飞向目标的毛玻璃替身，原窗口后台落位完毕后再恢复显形，消除原位呆立与双重重影。")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
                 }
             } header: {
                 Text("窗口分屏 (Window Snapping)")

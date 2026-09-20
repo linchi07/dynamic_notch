@@ -404,7 +404,8 @@ final class XPCHelperClient: NSObject, @unchecked Sendable {
     nonisolated func applyWindowFrame(
         processIdentifier: Int32,
         windowID: CGWindowID,
-        targetFrame: CGRect
+        targetFrame: CGRect,
+        minimizeIntermediateFrames: Bool = false
     ) async -> Bool {
         do {
             let service = await MainActor.run { ensureRemoteService() }
@@ -415,7 +416,8 @@ final class XPCHelperClient: NSObject, @unchecked Sendable {
                     targetX: targetFrame.minX,
                     targetY: targetFrame.minY,
                     targetWidth: targetFrame.width,
-                    targetHeight: targetFrame.height
+                    targetHeight: targetFrame.height,
+                    minimizeIntermediateFrames: minimizeIntermediateFrames
                 ) { success in
                     continuation.resume(returning: success)
                 }

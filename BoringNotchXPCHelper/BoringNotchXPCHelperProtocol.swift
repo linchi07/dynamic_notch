@@ -16,7 +16,7 @@ import Foundation
     func capturedWindowHasMoved(with reply: @escaping (Bool) -> Void)
     func setCapturedWindowFrame(_ x: Double, y: Double, width: Double, height: Double, animated: Bool, with reply: @escaping (Bool) -> Void)
     func setWindowFrame(_ processIdentifier: Int32, windowX: Double, windowY: Double, windowWidth: Double, windowHeight: Double, targetX: Double, targetY: Double, targetWidth: Double, targetHeight: Double, animated: Bool, with reply: @escaping (Bool) -> Void)
-    func applyWindowFrame(_ processIdentifier: Int32, windowID: UInt32, targetX: Double, targetY: Double, targetWidth: Double, targetHeight: Double, with reply: @escaping (Bool) -> Void)
+    func applyWindowFrame(_ processIdentifier: Int32, windowID: UInt32, targetX: Double, targetY: Double, targetWidth: Double, targetHeight: Double, minimizeIntermediateFrames: Bool, with reply: @escaping (Bool) -> Void)
     func primeNativeWindowLayoutShortcuts(with reply: @escaping () -> Void)
     func performNativeWindowLayout(_ command: Int, with reply: @escaping (Bool) -> Void)
     func performWindowLayoutForProcess(_ processIdentifier: Int32, command: Int, with reply: @escaping (Bool) -> Void)

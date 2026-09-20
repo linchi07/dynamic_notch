@@ -101,7 +101,6 @@ final class QuickLookHostController: NSWindowController, QLPreviewPanelDataSourc
 
     private var currentSourceFrame: NSRect = .zero
     private var currentTransitionImage: NSImage?
-    private var presentationScreenFrame: NSRect?
 
     init() {
         let hostWindow = QuickLookHostWindow(
@@ -157,8 +156,6 @@ final class QuickLookHostController: NSWindowController, QLPreviewPanelDataSourc
         let sourceRect = ShelfItemScreenPositionManager.shared.screenFrame(for: urls)
         self.currentSourceFrame = sourceRect
         self.currentTransitionImage = ShelfItemScreenPositionManager.shared.transitionImage(for: urls)
-        let presentationScreen = screenContainingMouse()
-        self.presentationScreenFrame = presentationScreen?.frame
 
         // 2. Position host window at that exact location on the notch screen
         guard let window = self.window else { return }
@@ -171,9 +168,6 @@ final class QuickLookHostController: NSWindowController, QLPreviewPanelDataSourc
         panel.updateController()
         panel.reloadData()
         panel.currentPreviewItemIndex = 0
-        if let presentationScreen {
-            position(panel, on: presentationScreen)
-        }
         panel.makeKeyAndOrderFront(nil)
     }
 
@@ -188,9 +182,6 @@ final class QuickLookHostController: NSWindowController, QLPreviewPanelDataSourc
         if let panel = QLPreviewPanel.shared(), panel.isVisible && isControlling {
             panel.reloadData()
             panel.currentPreviewItemIndex = 0
-            if let screen = presentationScreen() {
-                position(panel, on: screen)
-            }
         }
     }
 
@@ -205,49 +196,6 @@ final class QuickLookHostController: NSWindowController, QLPreviewPanelDataSourc
     var isPanelVisible: Bool {
         guard let panel = QLPreviewPanel.shared() else { return false }
         return panel.isVisible && isControlling
-    }
-
-    private func screenContainingMouse() -> NSScreen? {
-        let mouseLocation = NSEvent.mouseLocation
-        return NSScreen.screens.first { screen in
-            NSMouseInRect(mouseLocation, screen.frame, false)
-        } ?? NSScreen.main ?? NSScreen.screens.first
-    }
-
-    private func presentationScreen() -> NSScreen? {
-        if let presentationScreenFrame,
-           let screen = NSScreen.screens.first(where: { $0.frame == presentationScreenFrame }) {
-            return screen
-        }
-        return screenContainingMouse()
-    }
-
-    private func position(_ panel: QLPreviewPanel, on screen: NSScreen) {
-        let visibleFrame = screen.visibleFrame
-        let margin: CGFloat = 24
-        let maximumSize = NSSize(
-            width: max(1, visibleFrame.width - margin * 2),
-            height: max(1, visibleFrame.height - margin * 2)
-        )
-        var panelSize = panel.frame.size
-
-        if panelSize.width < 320 || panelSize.height < 240 {
-            panelSize = NSSize(
-                width: min(900, maximumSize.width),
-                height: min(640, maximumSize.height)
-            )
-        } else {
-            panelSize.width = min(panelSize.width, maximumSize.width)
-            panelSize.height = min(panelSize.height, maximumSize.height)
-        }
-
-        let targetFrame = NSRect(
-            x: visibleFrame.midX - panelSize.width / 2,
-            y: visibleFrame.midY - panelSize.height / 2,
-            width: panelSize.width,
-            height: panelSize.height
-        )
-        panel.setFrame(targetFrame, display: false)
     }
 
     // MARK: - QLPreviewPanelDataSource

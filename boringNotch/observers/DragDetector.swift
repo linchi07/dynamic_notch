@@ -501,7 +501,6 @@ final class WindowSnapController {
         let screen = activeScreen
         let generation = dragGeneration
         let candidate = trackedWindow
-        let animationMode = Defaults[.windowSnapAnimationMode]
         let layout = selectedSlot.flatMap { selected in
             WindowSnapLayout.presets.first { $0.slots.contains(selected) }
         }
@@ -708,13 +707,9 @@ final class WindowSnapController {
             succeeded = await XPCHelperClient.shared.applyWindowFrame(
                 processIdentifier: candidate.processIdentifier,
                 windowID: candidate.id,
-                targetFrame: destination
+                targetFrame: destination,
+                minimizeIntermediateFrames: Defaults[.enableWindowSnapGhostAnimation]
             )
-
-            if let actualBounds = currentWindowBounds(for: candidate.id) {
-                let actualAppKitFrame = accessibilityToAppKit(actualBounds)
-                WindowSnapGhostAnimator.shared.updateTarget(actualAppKitFrame, on: screen)
-            }
         }
 
         if !succeeded {
@@ -729,6 +724,12 @@ final class WindowSnapController {
         }
 
         if let candidate {
+            if succeeded {
+                await completeGhostPlacement(for: candidate.id, on: screen)
+            } else {
+                WindowSnapGhostAnimator.shared.placementFailed()
+            }
+
             let application = NSRunningApplication(
                 processIdentifier: candidate.processIdentifier
             )
@@ -771,15 +772,17 @@ final class WindowSnapController {
         }
 
         // Place primary window first
-        _ = await XPCHelperClient.shared.applyWindowFrame(
+        let primarySucceeded = await XPCHelperClient.shared.applyWindowFrame(
             processIdentifier: capturedWindow.processIdentifier,
             windowID: capturedWindow.id,
-            targetFrame: selectedDestination
+            targetFrame: selectedDestination,
+            minimizeIntermediateFrames: Defaults[.enableWindowSnapGhostAnimation]
         )
 
-        if let actualBounds = currentWindowBounds(for: capturedWindow.id) {
-            let actualAppKitFrame = accessibilityToAppKit(actualBounds)
-            WindowSnapGhostAnimator.shared.updateTarget(actualAppKitFrame, on: screen)
+        if primarySucceeded {
+            await completeGhostPlacement(for: capturedWindow.id, on: screen)
+        } else {
+            WindowSnapGhostAnimator.shared.placementFailed()
         }
 
         // Sequentially place remaining windows cleanly without IPC flood
@@ -787,7 +790,8 @@ final class WindowSnapController {
             _ = await XPCHelperClient.shared.applyWindowFrame(
                 processIdentifier: window.processIdentifier,
                 windowID: window.id,
-                targetFrame: destination
+                targetFrame: destination,
+                minimizeIntermediateFrames: Defaults[.enableWindowSnapGhostAnimation]
             )
         }
 
@@ -866,6 +870,47 @@ final class WindowSnapController {
         let bounds = CGRect(dictionaryRepresentation: boundsDictionary)
         else { return nil }
         return bounds
+    }
+
+    /// Samples WindowServer a bounded number of times so asynchronously constrained
+    /// resizes can retarget the proxy before the real window is revealed. This is
+    /// deliberately not a display-link or per-frame AX loop.
+    private func completeGhostPlacement(for windowID: CGWindowID, on screen: NSScreen) async {
+        let maximumSamples = 6
+        let sampleIntervalMs = 25
+        var previousBounds: CGRect?
+        var latestAppKitFrame: CGRect?
+        var stableComparisons = 0
+
+        for sampleIndex in 0..<maximumSamples {
+            if sampleIndex > 0 {
+                try? await Task.sleep(for: .milliseconds(sampleIntervalMs))
+            }
+
+            guard let bounds = currentWindowBounds(for: windowID) else { continue }
+            let appKitFrame = accessibilityToAppKit(bounds)
+            latestAppKitFrame = appKitFrame
+            WindowSnapGhostAnimator.shared.updateTarget(appKitFrame, on: screen)
+
+            if let previousBounds, framesMatch(previousBounds, bounds, tolerance: 1) {
+                stableComparisons += 1
+                if stableComparisons >= 2 {
+                    break
+                }
+            } else {
+                stableComparisons = 0
+            }
+            previousBounds = bounds
+        }
+
+        WindowSnapGhostAnimator.shared.completePlacement(latestAppKitFrame, on: screen)
+    }
+
+    private func framesMatch(_ lhs: CGRect, _ rhs: CGRect, tolerance: CGFloat) -> Bool {
+        abs(lhs.minX - rhs.minX) <= tolerance
+            && abs(lhs.minY - rhs.minY) <= tolerance
+            && abs(lhs.width - rhs.width) <= tolerance
+            && abs(lhs.height - rhs.height) <= tolerance
     }
 
     private func isInTopTrigger(_ point: CGPoint, of screen: NSScreen) -> Bool {
