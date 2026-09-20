@@ -13,16 +13,11 @@ import SwiftUI
 @main
 struct DynamicNotchApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-    @Default(.menubarIcon) var showMenuBarIcon
 
     let updaterController: SPUStandardUpdaterController
 
     init() {
-        // Never launch as an accessory-only app with every visible entry point
-        // disabled. Existing preferences from older versions are repaired here.
-        if Defaults[.hideNotchOption] != .never && !Defaults[.menubarIcon] {
-            Defaults[.menubarIcon] = true
-        }
+        Defaults[.menubarIcon] = false
 
         updaterController = SPUStandardUpdaterController(
             startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
@@ -30,7 +25,7 @@ struct DynamicNotchApp: App {
     }
 
     var body: some Scene {
-        MenuBarExtra("DynamicNotch", systemImage: "sparkle", isInserted: $showMenuBarIcon) {
+        MenuBarExtra("DynamicNotch", systemImage: "sparkle", isInserted: .constant(false)) {
             Button("Settings") {
                 DispatchQueue.main.async {
                     SettingsWindowController.shared.showWindow()

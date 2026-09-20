@@ -54,9 +54,6 @@ struct SettingsView: View {
                 // NavigationLink(value: "Extensions") {
                 //     Label("Extensions", systemImage: "puzzlepiece.extension")
                 // }
-                NavigationLink(value: "Advanced") {
-                    Label("Advanced", systemImage: "gearshape.2")
-                }
                 if isDeveloperModeEnabled {
                     NavigationLink(value: "Developer") {
                         Label("Developer", systemImage: "hammer")
@@ -89,8 +86,6 @@ struct SettingsView: View {
                     Shortcuts()
                 case "Extensions":
                     GeneralSettings()
-                case "Advanced":
-                    Advanced()
                 case "Developer":
                     if isDeveloperModeEnabled {
                         DeveloperSettingsView()
@@ -136,28 +131,12 @@ struct SettingsView: View {
 struct GeneralSettings: View {
     @ObservedObject var coordinator = BoringViewCoordinator.shared
 
-    @Default(.mirrorShape) var mirrorShape
-    @Default(.showEmojis) var showEmojis
-    @Default(.gestureSensitivity) var gestureSensitivity
-    @Default(.minimumHoverDuration) var minimumHoverDuration
-    @Default(.enableGestures) var enableGestures
-    @Default(.openNotchOnHover) var openNotchOnHover
-    @Default(.hideNotchOption) var hideNotchOption
     @Default(.enableWindowSnapping) var enableWindowSnapping
     @Default(.enableWindowSnapGhostAnimation) var enableWindowSnapGhostAnimation
-    
 
     var body: some View {
         Form {
             Section {
-                Toggle(isOn: Binding(
-                    get: { Defaults[.menubarIcon] },
-                    set: { Defaults[.menubarIcon] = $0 }
-                )) {
-                    Text("Show menu bar icon")
-                }
-                .tint(.effectiveAccent)
-                .disabled(hideNotchOption != .never)
                 LaunchAtLogin.Toggle("Launch at login")
                 Defaults.Toggle(key: .enableWindowSnapping) {
                     Text("Show window layouts when dragging to the top")
@@ -168,15 +147,7 @@ struct GeneralSettings: View {
                 .disabled(!enableWindowSnapping)
             } header: {
                 Text("System features")
-            } footer: {
-                if hideNotchOption != .never {
-                    Text("The menu bar icon stays visible while automatic notch hiding is enabled, so Settings and Quit remain accessible.")
-                }
             }
-
-            NotchBehaviour()
-
-            gestureControls()
         }
         .toolbar {
             Button("Quit app") {
@@ -186,82 +157,10 @@ struct GeneralSettings: View {
         }
         .accentColor(.effectiveAccent)
         .navigationTitle("General")
-        .onChange(of: openNotchOnHover) {
-            if !openNotchOnHover {
-                enableGestures = true
-            }
-        }
         .onChange(of: enableWindowSnapGhostAnimation) {
             if !enableWindowSnapGhostAnimation {
                 WindowSnapGhostAnimator.shared.dismiss()
             }
-        }
-    }
-
-    @ViewBuilder
-    func gestureControls() -> some View {
-        Section {
-            Defaults.Toggle(key: .enableGestures) {
-                Text("Enable gestures")
-            }
-                .disabled(!openNotchOnHover)
-            if enableGestures {
-                Toggle("Change media with horizontal gestures", isOn: .constant(false))
-                    .disabled(true)
-                Defaults.Toggle(key: .closeGestureEnabled) {
-                    Text("Close gesture")
-                }
-                Slider(value: $gestureSensitivity, in: 100...300, step: 100) {
-                    HStack {
-                        Text("Gesture sensitivity")
-                        Spacer()
-                        Text(
-                            LocalizedStringKey(
-                                Defaults[.gestureSensitivity] == 100
-                                    ? "High" : Defaults[.gestureSensitivity] == 200 ? "Medium" : "Low"
-                            )
-                        )
-                        .foregroundStyle(.secondary)
-                    }
-                }
-            }
-        } header: {
-            HStack {
-                Text("Gesture control")
-                customBadge(text: "Beta")
-            }
-        } footer: {
-            Text(
-                "Two-finger swipe up on notch to close, two-finger swipe down on notch to open when **Open notch on hover** option is disabled"
-            )
-            .multilineTextAlignment(.trailing)
-            .foregroundStyle(.secondary)
-            .font(.caption)
-        }
-    }
-
-    @ViewBuilder
-    func NotchBehaviour() -> some View {
-        Section {
-            Defaults.Toggle(key: .openNotchOnHover) {
-                Text("Open notch on hover")
-            }
-            Defaults.Toggle(key: .enableHaptics) {
-                    Text("Enable haptic feedback")
-            }
-            Toggle("Remember last tab", isOn: $coordinator.openLastTabByDefault)
-            if openNotchOnHover {
-                Slider(value: $minimumHoverDuration, in: 0...1, step: 0.1) {
-                    HStack {
-                        Text("Hover delay")
-                        Spacer()
-                        Text("\(minimumHoverDuration, specifier: "%.1f")s")
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            }
-        } header: {
-            Text("Notch behavior")
         }
     }
 }
@@ -273,31 +172,14 @@ struct Charge: View {
                 Defaults.Toggle(key: .showBatteryIndicator) {
                     Text("Show battery indicator")
                 }
+                Defaults.Toggle(key: .showBatteryPercentage) {
+                    Text("Show battery percentage")
+                }
                 Defaults.Toggle(key: .showPowerStatusNotifications) {
                     Text("Show power status notifications")
                 }
             } header: {
                 Text("General")
-            }
-            Section {
-                Defaults.Toggle(key: .showBatteryPercentage) {
-                    Text("Show battery percentage")
-                }
-                Defaults.Toggle(key: .showPowerStatusIcons) {
-                    Text("Show power status icons")
-                }
-            } header: {
-                Text("Battery Information")
-            }
-
-            Section {
-                Button {
-                    BatteryStatusViewModel.shared.triggerBatteryNotification(isLowBatteryAlert: false)
-                } label: {
-                    Label("Trigger current battery notification", systemImage: "bolt.fill")
-                }
-            } header: {
-                Text("Developer / Debug")
             }
         }
         .onAppear {
@@ -392,7 +274,6 @@ struct Charge: View {
 
 struct HUD: View {
     @EnvironmentObject var vm: BoringViewModel
-    @Default(.optionKeyAction) var optionKeyAction
     @Default(.hudReplacement) var hudReplacement
     @ObservedObject var coordinator = BoringViewCoordinator.shared
     @State private var accessibilityAuthorized = false
@@ -432,23 +313,11 @@ struct HUD: View {
                     }
                     .padding(.top, 6)
                 }
-            }
-            
-            Section {
-                Picker("Option key behaviour", selection: $optionKeyAction) {
-                    ForEach(OptionKeyAction.allCases) { opt in
-                        Text(LocalizedStringKey(opt.rawValue)).tag(opt)
-                    }
+            } footer: {
+                if hudReplacement {
+                    Text("The same iOS-style floating bar is used in every notch and notification state. Its vertical position follows the current visible content automatically.")
                 }
-
-                Text("The same iOS-style floating bar is used in every notch and notification state. Its vertical position follows the current visible content automatically.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            } header: {
-                Text("General")
             }
-            .disabled(!hudReplacement)
         }
         .accentColor(.effectiveAccent)
         .navigationTitle("HUDs")
@@ -475,8 +344,6 @@ struct Media: View {
     @ObservedObject var coordinator = BoringViewCoordinator.shared
     @Default(.hideNotchOption) var hideNotchOption
     @Default(.enableSneakPeek) private var enableSneakPeek
-
-    @Default(.enableLyrics) var enableLyrics
 
     var body: some View {
         Form {
@@ -517,10 +384,6 @@ struct Media: View {
             }
             
             Section {
-                Toggle(
-                    "Show music live activity",
-                    isOn: $coordinator.musicLiveActivityEnabled.animation()
-                )
                 Toggle("Show notification on playback changes", isOn: $enableSneakPeek)
                 HStack {
                     Stepper(value: $waitInterval, in: 0...10, step: 1) {
@@ -545,23 +408,12 @@ struct Media: View {
                         HideNotchOption.nowPlayingOnly)
                     Text("Never hide").tag(HideNotchOption.never)
                 }
-                .onChange(of: hideNotchOption) { _, option in
-                    if option != .never {
-                        Defaults[.menubarIcon] = true
-                    }
-                }
             } header: {
                 Text("Media playback live activity")
             }
             
             Section {
                 MusicSlotConfigurationView()
-                Defaults.Toggle(key: .enableLyrics) {
-                    HStack {
-                        Text("Show lyrics below artist name")
-                        customBadge(text: "Beta")
-                    }
-                }
             } header: {
                 Text("Media controls")
             }  footer: {
@@ -692,7 +544,6 @@ struct Shelf: View {
     
     @Default(.shelfTapToOpen) var shelfTapToOpen: Bool
     @Default(.quickShareProvider) var quickShareProvider
-    @Default(.expandedDragDetection) var expandedDragDetection: Bool
     @StateObject private var quickShareService = QuickShareService.shared
 
     private var selectedProvider: QuickShareProvider? {
@@ -706,28 +557,12 @@ struct Shelf: View {
     var body: some View {
         Form {
             Section {
-                Defaults.Toggle(key: .boringShelf) {
-                    Text("Enable shelf")
-                }
                 Defaults.Toggle(key: .openShelfByDefault) {
                     Text("Open shelf by default if items are present")
-                }
-                Defaults.Toggle(key: .expandedDragDetection) {
-                    Text("Expanded drag detection area")
-                }
-                .onChange(of: expandedDragDetection) {
-                    NotificationCenter.default.post(
-                        name: Notification.Name.expandedDragDetectionChanged,
-                        object: nil
-                    )
-                }
-                Defaults.Toggle(key: .copyOnDrag) {
-                    Text("Copy items on drag")
                 }
                 Defaults.Toggle(key: .autoRemoveShelfItems) {
                     Text("Remove from shelf after dragging")
                 }
-
             } header: {
                 HStack {
                     Text("General")
@@ -937,7 +772,6 @@ struct Shelf: View {
 //}
 
 struct Appearance: View {
-    @ObservedObject var coordinator = BoringViewCoordinator.shared
     @Default(.mirrorShape) var mirrorShape
     @Default(.sliderColor) var sliderColor
     @Default(.useMusicVisualizer) var useMusicVisualizer
@@ -953,15 +787,6 @@ struct Appearance: View {
     @State private var speed: CGFloat = 1.0
     var body: some View {
         Form {
-            Section {
-                Toggle("Always show tabs", isOn: $coordinator.alwaysShowTabs)
-                Defaults.Toggle(key: .settingsIconInNotch) {
-                    Text("Show settings icon in notch")
-                }
-
-            } header: {
-                Text("General")
-            }
 
             Section {
                 Defaults.Toggle(key: .coloredSpectrogram) {
@@ -1188,318 +1013,7 @@ struct Appearance: View {
     }
 }
 
-struct Advanced: View {
-    @Default(.useCustomAccentColor) var useCustomAccentColor
-    @Default(.customAccentColorData) var customAccentColorData
-    @Default(.extendHoverArea) var extendHoverArea
-    @Default(.showOnLockScreen) var showOnLockScreen
-    @Default(.hideFromScreenRecording) var hideFromScreenRecording
-    
-    @State private var customAccentColor: Color = .accentColor
-    @State private var selectedPresetColor: PresetAccentColor? = nil
-    let icons: [String] = ["logo2"]
-    @State private var selectedIcon: String = "logo2"
-    
-    // macOS accent colors
-    enum PresetAccentColor: String, CaseIterable, Identifiable {
-        case blue = "Blue"
-        case purple = "Purple"
-        case pink = "Pink"
-        case red = "Red"
-        case orange = "Orange"
-        case yellow = "Yellow"
-        case green = "Green"
-        case graphite = "Graphite"
-        
-        var id: String { self.rawValue }
-        
-        var color: Color {
-            switch self {
-            case .blue: return Color(red: 0.0, green: 0.478, blue: 1.0)
-            case .purple: return Color(red: 0.686, green: 0.322, blue: 0.871)
-            case .pink: return Color(red: 1.0, green: 0.176, blue: 0.333)
-            case .red: return Color(red: 1.0, green: 0.271, blue: 0.227)
-            case .orange: return Color(red: 1.0, green: 0.584, blue: 0.0)
-            case .yellow: return Color(red: 1.0, green: 0.8, blue: 0.0)
-            case .green: return Color(red: 0.4, green: 0.824, blue: 0.176)
-            case .graphite: return Color(red: 0.557, green: 0.557, blue: 0.576)
-            }
-        }
-    }
-    
-    var body: some View {
-        Form {
-            Section {
-                VStack(alignment: .leading, spacing: 16) {
-                    // Toggle between system and custom
-                    Picker("Accent color", selection: $useCustomAccentColor) {
-                        Text("System").tag(false)
-                        Text("Custom").tag(true)
-                    }
-                    .pickerStyle(.segmented)
-                    
-                    if !useCustomAccentColor {
-                        // System accent info
-                        VStack(alignment: .leading, spacing: 8) {
-                            HStack(spacing: 12) {
-                                AccentCircleButton(
-                                    isSelected: true,
-                                    color: .accentColor,
-                                    isSystemDefault: true
-                                ) {}
-                                
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text("Using System Accent")
-                                        .font(.body)
-                                    Text("Your macOS system accent color")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                Spacer()
-                            }
-                        }
-                    } else {
-                        // Custom color options
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Color Presets")
-                                .font(.caption)
-                                .fontWeight(.semibold)
-                                .foregroundStyle(.secondary)
-                            
-                            HStack(spacing: 12) {
-                                ForEach(PresetAccentColor.allCases) { preset in
-                                    AccentCircleButton(
-                                        isSelected: selectedPresetColor == preset,
-                                        color: preset.color,
-                                        isMulticolor: false
-                                    ) {
-                                        selectedPresetColor = preset
-                                        customAccentColor = preset.color
-                                        saveCustomColor(preset.color)
-                                        forceUiUpdate()
-                                    }
-                                }
-                                Spacer()
-                            }
-                            
-                            Divider()
-                                .padding(.vertical, 4)
-                            
-                            // Custom color picker
-                            HStack(spacing: 12) {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text("Pick a Color")
-                                        .font(.body)
-                                    Text("Choose any color")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                
-                                Spacer()
-                                
-                                ColorPicker(selection: Binding(
-                                    get: { customAccentColor },
-                                    set: { newColor in
-                                        customAccentColor = newColor
-                                        selectedPresetColor = nil
-                                        saveCustomColor(newColor)
-                                        forceUiUpdate()
-                                    }
-                                ), supportsOpacity: false) {
-                                    ZStack {
-                                        Circle()
-                                            .fill(customAccentColor)
-                                            .frame(width: 32, height: 32)
-                                        
-                                        if selectedPresetColor == nil {
-                                            Circle()
-                                                .strokeBorder(.primary.opacity(0.3), lineWidth: 2)
-                                                .frame(width: 32, height: 32)
-                                        }
-                                    }
-                                }
-                                .labelsHidden()
-                            }
-                        }
-                    }
-                }
-                .padding(.vertical, 4)
-            } header: {
-                Text("Accent color")
-            } footer: {
-                Text("Choose between your system accent color or customize it with your own selection.")
-                    .multilineTextAlignment(.trailing)
-                    .foregroundStyle(.secondary)
-                    .font(.caption)
-            }
-            .onAppear {
-                initializeAccentColorState()
-            }
-            
-            Section {
-                Defaults.Toggle(key: .enableShadow) {
-                    Text("Enable window shadow")
-                }
-                Defaults.Toggle(key: .cornerRadiusScaling) {
-                    Text("Corner radius scaling")
-                }
-            } header: {
-                Text("Window Appearance")
-            }
-            
-            Section {
-                HStack {
-                    ForEach(icons, id: \.self) { icon in
-                        Spacer()
-                        VStack {
-                            Image(icon)
-                                .resizable()
-                                .frame(width: 80, height: 80)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 20, style: .circular)
-                                        .strokeBorder(
-                                            icon == selectedIcon ? Color.effectiveAccent : .clear,
-                                            lineWidth: 2.5
-                                        )
-                                )
 
-                            Text("Default")
-                                .fontWeight(.medium)
-                                .font(.caption)
-                                .foregroundStyle(icon == selectedIcon ? .white : .secondary)
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 3)
-                                .background(
-                                    Capsule()
-                                        .fill(icon == selectedIcon ? Color.effectiveAccent : .clear)
-                                )
-                        }
-                        .onTapGesture {
-                            withAnimation {
-                                selectedIcon = icon
-                            }
-                            NSApp.applicationIconImage = NSImage(named: icon)
-                        }
-                        Spacer()
-                    }
-                }
-                .disabled(true)
-            } header: {
-                HStack {
-                    Text("App icon")
-                    customBadge(text: "Coming soon")
-                }
-            }
-            
-            Section {
-                Defaults.Toggle(key: .extendHoverArea) {
-                    Text("Extend hover area")
-                }
-                Defaults.Toggle(key: .hideTitleBar) {
-                    Text("Hide title bar")
-                }
-                Defaults.Toggle(key: .showOnLockScreen) {
-                    Text("Show notch on lock screen")
-                }
-                Defaults.Toggle(key: .hideFromScreenRecording) {
-                    Text("Hide from screen recording")
-                }
-            } header: {
-                Text("Window Behavior")
-            }
-        }
-        .accentColor(.effectiveAccent)
-        .navigationTitle("Advanced")
-        .onAppear {
-            loadCustomColor()
-        }
-    }
-    
-    private func forceUiUpdate() {
-        // Force refresh the UI
-        DispatchQueue.main.async {
-            NotificationCenter.default.post(name: Notification.Name("AccentColorChanged"), object: nil)
-        }
-    }
-    
-    private func saveCustomColor(_ color: Color) {
-        let nsColor = NSColor(color)
-        if let colorData = try? NSKeyedArchiver.archivedData(withRootObject: nsColor, requiringSecureCoding: false) {
-            Defaults[.customAccentColorData] = colorData
-            forceUiUpdate()
-        }
-    }
-    
-    private func loadCustomColor() {
-        if let colorData = Defaults[.customAccentColorData],
-           let nsColor = try? NSKeyedUnarchiver.unarchivedObject(ofClass: NSColor.self, from: colorData) {
-            customAccentColor = Color(nsColor: nsColor)
-            
-            // Check if loaded color matches a preset
-            selectedPresetColor = nil
-            for preset in PresetAccentColor.allCases {
-                if colorsAreEqual(Color(nsColor: nsColor), preset.color) {
-                    selectedPresetColor = preset
-                    break
-                }
-            }
-        }
-    }
-    
-    private func colorsAreEqual(_ color1: Color, _ color2: Color) -> Bool {
-        let nsColor1 = NSColor(color1).usingColorSpace(.sRGB) ?? NSColor(color1)
-        let nsColor2 = NSColor(color2).usingColorSpace(.sRGB) ?? NSColor(color2)
-        
-        return abs(nsColor1.redComponent - nsColor2.redComponent) < 0.01 &&
-               abs(nsColor1.greenComponent - nsColor2.greenComponent) < 0.01 &&
-               abs(nsColor1.blueComponent - nsColor2.blueComponent) < 0.01
-    }
-    
-    private func initializeAccentColorState() {
-        if !useCustomAccentColor {
-            selectedPresetColor = nil // Multicolor is selected when useCustomAccentColor is false
-        } else {
-            loadCustomColor()
-        }
-    }
-}
-
-// MARK: - Accent Circle Button Component
-struct AccentCircleButton: View {
-    let isSelected: Bool
-    let color: Color
-    var isSystemDefault: Bool = false
-    var isMulticolor: Bool = false
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            ZStack {
-                // Color circle
-                Circle()
-                    .fill(color)
-                    .frame(width: 32, height: 32)
-                
-                // Subtle border
-                Circle()
-                    .strokeBorder(Color.primary.opacity(0.15), lineWidth: 1)
-                    .frame(width: 32, height: 32)
-                
-                // Apple-style highlight ring around the middle when selected
-                if isSelected {
-                    Circle()
-                        .strokeBorder(
-                            Color.white.opacity(0.5),
-                            lineWidth: 2
-                        )
-                        .frame(width: 28, height: 28)
-                }
-            }
-        }
-        .buttonStyle(.plain)
-        .help(isSystemDefault ? "Use your macOS system accent color" : "")
-    }
-}
 
 struct Shortcuts: View {
     var body: some View {
