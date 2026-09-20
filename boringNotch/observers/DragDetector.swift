@@ -670,6 +670,11 @@ final class WindowSnapController {
                 windowID: candidate.id,
                 targetFrame: destination
             )
+
+            if let actualBounds = currentWindowBounds(for: candidate.id) {
+                let actualAppKitFrame = accessibilityToAppKit(actualBounds)
+                WindowSnapGhostAnimator.shared.updateTarget(actualAppKitFrame, on: screen)
+            }
         }
 
         if !succeeded {
@@ -731,6 +736,11 @@ final class WindowSnapController {
             windowID: capturedWindow.id,
             targetFrame: selectedDestination
         )
+
+        if let actualBounds = currentWindowBounds(for: capturedWindow.id) {
+            let actualAppKitFrame = accessibilityToAppKit(actualBounds)
+            WindowSnapGhostAnimator.shared.updateTarget(actualAppKitFrame, on: screen)
+        }
 
         // Sequentially place remaining windows cleanly without IPC flood
         for (window, destination) in assignments {

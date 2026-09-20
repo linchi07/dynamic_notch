@@ -62,10 +62,55 @@ final class WindowAlphaController {
 }
 
 @MainActor
+final class WindowSnapGhostViewModel: ObservableObject {
+    @Published var currentRect: CGRect
+    @Published var targetRect: CGRect
+    @Published var opacity: Double = 0.0
+
+    let icon: NSImage?
+    let title: String?
+    let onFadeOutStart: () -> Void
+    let onCompletion: () -> Void
+
+    init(
+        icon: NSImage?,
+        title: String?,
+        startRect: CGRect,
+        targetRect: CGRect,
+        onFadeOutStart: @escaping () -> Void,
+        onCompletion: @escaping () -> Void
+    ) {
+        self.icon = icon
+        self.title = title
+        self.startRect = startRect
+        self.targetRect = targetRect
+        self.currentRect = startRect
+        self.onFadeOutStart = onFadeOutStart
+        self.onCompletion = onCompletion
+    }
+
+    private let startRect: CGRect
+
+    func updateTarget(_ newTargetRect: CGRect) {
+        guard abs(targetRect.width - newTargetRect.width) > 1 ||
+              abs(targetRect.height - newTargetRect.height) > 1 ||
+              abs(targetRect.origin.x - newTargetRect.origin.x) > 1 ||
+              abs(targetRect.origin.y - newTargetRect.origin.y) > 1 else { return }
+
+        self.targetRect = newTargetRect
+        withAnimation(.interactiveSpring(response: 0.28, dampingFraction: 0.82, blendDuration: 0)) {
+            self.currentRect = newTargetRect
+        }
+    }
+}
+
+@MainActor
 final class WindowSnapGhostAnimator {
     static let shared = WindowSnapGhostAnimator()
 
     private var activePanel: NSPanel?
+    private var activeViewModel: WindowSnapGhostViewModel?
+    private var activeScreen: NSScreen?
 
     private init() {}
 
@@ -84,7 +129,8 @@ final class WindowSnapGhostAnimator {
 
         if let windowID {
             let delayMs = Int(Defaults[.windowSnapAnimationStartDelayMs])
-            WindowAlphaController.shared.hideWindow(windowID, fallbackTimeoutMs: delayMs + 420)
+            // Generous fallback margin (delay + 800ms) to ensure window never unhides prematurely
+            WindowAlphaController.shared.hideWindow(windowID, fallbackTimeoutMs: delayMs + 800)
         }
 
         let app = NSRunningApplication(processIdentifier: processIdentifier)
@@ -107,19 +153,33 @@ final class WindowSnapGhostAnimator {
         panel.ignoresMouseEvents = true
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .transient]
 
-        let rootView = WindowSnapGhostCanvasView(
+        let viewModel = WindowSnapGhostViewModel(
             icon: appIcon,
             title: appName,
             startRect: startLocal,
-            targetRect: targetLocal
-        ) { [weak self] in
-            WindowAlphaController.shared.restore()
-            self?.dismiss()
-        }
+            targetRect: targetLocal,
+            onFadeOutStart: {
+                // Cross-fade交接：在替身开始淡出的瞬间解除原窗口隐藏，实现平滑显形
+                WindowAlphaController.shared.restore()
+            },
+            onCompletion: { [weak self] in
+                self?.dismiss()
+            }
+        )
 
-        panel.contentView = NSHostingView(rootView: rootView)
+        panel.contentView = NSHostingView(rootView: WindowSnapGhostCanvasView(viewModel: viewModel))
         panel.orderFrontRegardless()
         activePanel = panel
+        activeViewModel = viewModel
+        activeScreen = screen
+    }
+
+    /// Dynamically retargets the flying proxy window to the actual clamped frame accepted by the target application.
+    func updateTarget(_ actualAppKitFrame: CGRect, on screen: NSScreen) {
+        guard let activeViewModel else { return }
+        let currentScreen = activeScreen ?? screen
+        let actualLocal = appKitToLocalSwiftUI(actualAppKitFrame, in: currentScreen)
+        activeViewModel.updateTarget(actualLocal)
     }
 
     func dismiss() {
@@ -128,6 +188,8 @@ final class WindowSnapGhostAnimator {
             panel.orderOut(nil)
             activePanel = nil
         }
+        activeViewModel = nil
+        activeScreen = nil
     }
 
     private func appKitToLocalSwiftUI(_ rect: CGRect, in screen: NSScreen) -> CGRect {
@@ -141,29 +203,7 @@ final class WindowSnapGhostAnimator {
 }
 
 private struct WindowSnapGhostCanvasView: View {
-    let icon: NSImage?
-    let title: String?
-    let startRect: CGRect
-    let targetRect: CGRect
-    let onCompletion: () -> Void
-
-    @State private var currentRect: CGRect
-    @State private var opacity: Double = 0.0
-
-    init(
-        icon: NSImage?,
-        title: String?,
-        startRect: CGRect,
-        targetRect: CGRect,
-        onCompletion: @escaping () -> Void
-    ) {
-        self.icon = icon
-        self.title = title
-        self.startRect = startRect
-        self.targetRect = targetRect
-        self.onCompletion = onCompletion
-        _currentRect = State(initialValue: startRect)
-    }
+    @ObservedObject var viewModel: WindowSnapGhostViewModel
 
     var body: some View {
         ZStack(alignment: .topLeading) {
@@ -190,7 +230,7 @@ private struct WindowSnapGhostCanvasView: View {
                     .shadow(color: Color.black.opacity(0.30), radius: 24, x: 0, y: 12)
 
                 VStack(spacing: 8) {
-                    if let icon {
+                    if let icon = viewModel.icon {
                         Image(nsImage: icon)
                             .resizable()
                             .aspectRatio(contentMode: .fit)
@@ -202,7 +242,7 @@ private struct WindowSnapGhostCanvasView: View {
                             .foregroundStyle(Color.white.opacity(0.85))
                     }
 
-                    if let title, !title.isEmpty {
+                    if let title = viewModel.title, !title.isEmpty {
                         Text(title)
                             .font(.system(size: 13, weight: .semibold, design: .rounded))
                             .foregroundStyle(Color.white.opacity(0.9))
@@ -212,9 +252,9 @@ private struct WindowSnapGhostCanvasView: View {
                 }
                 .padding(16)
             }
-            .frame(width: max(1, currentRect.width), height: max(1, currentRect.height))
-            .position(x: currentRect.midX, y: currentRect.midY)
-            .opacity(opacity)
+            .frame(width: max(1, viewModel.currentRect.width), height: max(1, viewModel.currentRect.height))
+            .position(x: viewModel.currentRect.midX, y: viewModel.currentRect.midY)
+            .opacity(viewModel.opacity)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear {
@@ -222,7 +262,7 @@ private struct WindowSnapGhostCanvasView: View {
             let delaySeconds = max(0.0, delayMs) / 1000.0
 
             withAnimation(.easeOut(duration: 0.08)) {
-                opacity = 1.0
+                viewModel.opacity = 1.0
             }
 
             if delaySeconds > 0 {
@@ -230,22 +270,26 @@ private struct WindowSnapGhostCanvasView: View {
                     .interactiveSpring(response: 0.28, dampingFraction: 0.82, blendDuration: 0)
                     .delay(delaySeconds)
                 ) {
-                    currentRect = targetRect
+                    viewModel.currentRect = viewModel.targetRect
                 }
             } else {
                 withAnimation(.interactiveSpring(response: 0.28, dampingFraction: 0.82, blendDuration: 0)) {
-                    currentRect = targetRect
+                    viewModel.currentRect = viewModel.targetRect
                 }
             }
 
             Task {
                 let totalWaitMs = Int(delayMs) + 270
                 try? await Task.sleep(for: .milliseconds(totalWaitMs))
-                withAnimation(.easeOut(duration: 0.09)) {
-                    opacity = 0.0
+
+                // 到达终点后，在淡出开始的瞬间解除原窗口隐藏
+                viewModel.onFadeOutStart()
+
+                withAnimation(.easeOut(duration: 0.12)) {
+                    viewModel.opacity = 0.0
                 }
-                try? await Task.sleep(for: .milliseconds(95))
-                onCompletion()
+                try? await Task.sleep(for: .milliseconds(125))
+                viewModel.onCompletion()
             }
         }
     }
