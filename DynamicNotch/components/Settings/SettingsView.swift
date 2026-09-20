@@ -216,8 +216,10 @@ struct GeneralSettings: View {
                         Text("Gesture sensitivity")
                         Spacer()
                         Text(
-                            Defaults[.gestureSensitivity] == 100
-                                ? "High" : Defaults[.gestureSensitivity] == 200 ? "Medium" : "Low"
+                            LocalizedStringKey(
+                                Defaults[.gestureSensitivity] == 100
+                                    ? "High" : Defaults[.gestureSensitivity] == 200 ? "Medium" : "Low"
+                            )
                         )
                         .foregroundStyle(.secondary)
                     }
@@ -292,7 +294,7 @@ struct Charge: View {
                 Button {
                     BatteryStatusViewModel.shared.triggerBatteryNotification(isLowBatteryAlert: false)
                 } label: {
-                    Label("触发当前电池通知", systemImage: "bolt.fill")
+                    Label("Trigger current battery notification", systemImage: "bolt.fill")
                 }
             } header: {
                 Text("Developer / Debug")
@@ -435,7 +437,7 @@ struct HUD: View {
             Section {
                 Picker("Option key behaviour", selection: $optionKeyAction) {
                     ForEach(OptionKeyAction.allCases) { opt in
-                        Text(opt.rawValue).tag(opt)
+                        Text(LocalizedStringKey(opt.rawValue)).tag(opt)
                     }
                 }
 
@@ -481,7 +483,7 @@ struct Media: View {
             Section {
                 Picker("Music Source", selection: $mediaController) {
                     ForEach(availableMediaControllers) { controller in
-                        Text(controller.rawValue).tag(controller)
+                        Text(LocalizedStringKey(controller.rawValue)).tag(controller)
                     }
                 }
                 .onChange(of: mediaController) { _, _ in
@@ -972,7 +974,7 @@ struct Appearance: View {
                 }
                 Picker("Slider color", selection: $sliderColor) {
                     ForEach(SliderColorEnum.allCases, id: \.self) { option in
-                        Text(option.rawValue)
+                        Text(LocalizedStringKey(option.rawValue))
                     }
                 }
             } header: {
@@ -1545,7 +1547,7 @@ func comingSoonTag() -> some View {
 }
 
 func customBadge(text: String) -> some View {
-    Text(text)
+    Text(LocalizedStringKey(text))
         .foregroundStyle(.secondary)
         .font(.footnote.bold())
         .padding(.vertical, 3)
@@ -1561,9 +1563,9 @@ func warningBadge(_ text: String, _ description: String) -> some View {
                 .font(.system(size: 22))
                 .foregroundStyle(.yellow)
             VStack(alignment: .leading) {
-                Text(text)
+                Text(LocalizedStringKey(text))
                     .font(.headline)
-                Text(description)
+                Text(LocalizedStringKey(description))
                     .foregroundStyle(.secondary)
             }
             Spacer()
