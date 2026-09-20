@@ -911,6 +911,9 @@
         }
       }
     },
+    "%lld ms" : {
+
+    },
     "%lld pt" : {
 
     },
@@ -2457,9 +2460,6 @@
           }
         }
       }
-    },
-    "Always animate" : {
-
     },
     "Always show full event titles" : {
       "localizations" : {
@@ -15184,9 +15184,6 @@
         }
       }
     },
-    "None" : {
-
-    },
     "Not Now" : {
       "localizations" : {
         "ar" : {
@@ -21439,9 +21436,6 @@
         }
       }
     },
-    "System when available" : {
-
-    },
     "Text Scratchpad" : {
 
     },
@@ -23363,9 +23357,6 @@
         }
       }
     },
-    "Window arrangement animation" : {
-
-    },
     "Window Behavior" : {
       "localizations" : {
         "ar" : {
@@ -23881,6 +23872,9 @@
     "刘海状态与 Activity 演示" : {
 
     },
+    "动画开始延迟" : {
+
+    },
     "单 Activity（占据两侧）" : {
 
     },
@@ -23929,6 +23923,12 @@
     "真实硬件电量" : {
 
     },
+    "窗口分屏 (Window Snapping)" : {
+
+    },
+    "窗口分屏吸附与毛玻璃动画调优" : {
+
+    },
     "立即收回通知 (测试两阶段收回)" : {
 
     },
@@ -23947,7 +23947,19 @@
     "触发当前电池通知" : {
 
     },
+    "设为 80 ms" : {
+
+    },
+    "设为 150 ms" : {
+
+    },
+    "调整从拖拽释放到替身位移动画开始执行之间的延迟时间（毫秒），用于诊断目标应用在主线程响应 AX 窗口缩放请求的时延。" : {
+
+    },
     "运行 Notification → Active → Notification" : {
+
+    },
+    "重置为 0 ms" : {
 
     },
     "黄色填充状态（低电量模式启用）" : {

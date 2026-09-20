@@ -156,16 +156,29 @@ private struct WindowSnapGhostCanvasView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear {
+            let delayMs = Defaults[.windowSnapAnimationStartDelayMs]
+            let delaySeconds = max(0.0, delayMs) / 1000.0
+
             withAnimation(.easeOut(duration: 0.08)) {
                 opacity = 1.0
             }
 
-            withAnimation(.interactiveSpring(response: 0.28, dampingFraction: 0.82, blendDuration: 0)) {
-                currentRect = targetRect
+            if delaySeconds > 0 {
+                withAnimation(
+                    .interactiveSpring(response: 0.28, dampingFraction: 0.82, blendDuration: 0)
+                    .delay(delaySeconds)
+                ) {
+                    currentRect = targetRect
+                }
+            } else {
+                withAnimation(.interactiveSpring(response: 0.28, dampingFraction: 0.82, blendDuration: 0)) {
+                    currentRect = targetRect
+                }
             }
 
             Task {
-                try? await Task.sleep(for: .milliseconds(270))
+                let totalWaitMs = Int(delayMs) + 270
+                try? await Task.sleep(for: .milliseconds(totalWaitMs))
                 withAnimation(.easeOut(duration: 0.09)) {
                     opacity = 0.0
                 }

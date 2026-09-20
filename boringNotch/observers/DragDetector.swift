@@ -662,9 +662,6 @@ final class WindowSnapController {
             )
         }
 
-        // Allow the target application a brief moment to finish its mouse-up drag tracking loop
-        try? await Task.sleep(for: .milliseconds(25))
-
         var succeeded = false
         if let candidate {
             succeeded = await XPCHelperClient.shared.applyWindowFrame(
@@ -718,9 +715,6 @@ final class WindowSnapController {
             on: screen,
             processIdentifier: capturedWindow.processIdentifier
         )
-
-        // Allow target applications a brief moment to settle
-        try? await Task.sleep(for: .milliseconds(25))
 
         let assignments = Array(zip(otherWindows, remainingSlots)).map { window, slot in
             (

@@ -13,6 +13,7 @@ struct DeveloperSettingsView: View {
     @ObservedObject private var coordinator = BoringViewCoordinator.shared
     @ObservedObject private var batteryModel = BatteryStatusViewModel.shared
     @Default(.notchOuterPadding) private var notchOuterPadding
+    @Default(.windowSnapAnimationStartDelayMs) private var windowSnapAnimationStartDelayMs
 
     @State private var simulatedLevel: Float = 85.0
     @State private var simulatedIsPluggedIn: Bool = true
@@ -24,6 +25,40 @@ struct DeveloperSettingsView: View {
 
     var body: some View {
         Form {
+            Section {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("窗口分屏吸附与毛玻璃动画调优")
+                        .font(.headline)
+                    Text("调整从拖拽释放到替身位移动画开始执行之间的延迟时间（毫秒），用于诊断目标应用在主线程响应 AX 窗口缩放请求的时延。")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+
+                    HStack {
+                        Text("动画开始延迟")
+                        Slider(value: $windowSnapAnimationStartDelayMs, in: 0...600, step: 10)
+                        Text("\(Int(windowSnapAnimationStartDelayMs)) ms")
+                            .monospacedDigit()
+                            .foregroundStyle(.secondary)
+                            .frame(width: 54, alignment: .trailing)
+                    }
+
+                    HStack {
+                        Button("重置为 0 ms") {
+                            windowSnapAnimationStartDelayMs = 0.0
+                        }
+                        Button("设为 80 ms") {
+                            windowSnapAnimationStartDelayMs = 80.0
+                        }
+                        Button("设为 150 ms") {
+                            windowSnapAnimationStartDelayMs = 150.0
+                        }
+                    }
+                    .controlSize(.small)
+                }
+            } header: {
+                Text("窗口分屏 (Window Snapping)")
+            }
+
             Section {
                 VStack(alignment: .leading, spacing: 10) {
                     Text("刘海状态与 Activity 演示")
