@@ -101,70 +101,6 @@
         }
       }
     },
-    "All windows" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "All windows"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "全部窗口"
-          }
-        }
-      }
-    },
-    "Current window" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Current window"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "当前窗口"
-          }
-        }
-      }
-    },
-    "Hold Shift for all" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hold Shift for all"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "按住 Shift 排列全部"
-          }
-        }
-      }
-    },
-    "Shift held" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Shift held"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已按住 Shift"
-          }
-        }
-      }
-    },
     " – %lld" : {
       "localizations" : {
         "ar" : {
@@ -2306,6 +2242,22 @@
         }
       }
     },
+    "All windows" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All windows"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全部窗口"
+          }
+        }
+      }
+    },
     "All-day" : {
       "localizations" : {
         "ar" : {
@@ -2505,6 +2457,9 @@
           }
         }
       }
+    },
+    "Always animate" : {
+
     },
     "Always show full event titles" : {
       "localizations" : {
@@ -6324,6 +6279,22 @@
         }
       }
     },
+    "Current window" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Current window"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当前窗口"
+          }
+        }
+      }
+    },
     "Currently selected: %@" : {
       "localizations" : {
         "ar" : {
@@ -8045,6 +8016,9 @@
         }
       }
     },
+    "Drop Here to Save" : {
+
+    },
     "Easily copy, store, and manage your most-used content. Upgrade now for advanced features like multi-item storage and quick access!" : {
       "localizations" : {
         "ar" : {
@@ -9547,6 +9521,12 @@
           }
         }
       }
+    },
+    "File Shelf" : {
+
+    },
+    "Files & URLs" : {
+
     },
     "Files dropped on the shelf will be shared via this service" : {
       "localizations" : {
@@ -11346,6 +11326,22 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "高"
+          }
+        }
+      }
+    },
+    "Hold Shift for all" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hold Shift for all"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "按住 Shift 排列全部"
           }
         }
       }
@@ -15166,6 +15162,9 @@
         }
       }
     },
+    "None" : {
+
+    },
     "Not Now" : {
       "localizations" : {
         "ar" : {
@@ -15668,6 +15667,9 @@
           }
         }
       }
+    },
+    "Notes Shelf" : {
+
     },
     "Notification 胶囊" : {
 
@@ -16375,6 +16377,9 @@
           }
         }
       }
+    },
+    "Plain Text" : {
+
     },
     "Plugged In" : {
       "localizations" : {
@@ -17477,6 +17482,9 @@
           }
         }
       }
+    },
+    "Remove from shelf" : {
+
     },
     "Remove from shelf after dragging" : {
       "localizations" : {
@@ -18776,6 +18784,22 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "暂存器"
+          }
+        }
+      }
+    },
+    "Shift held" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shift held"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已按住 Shift"
           }
         }
       }
@@ -21393,6 +21417,9 @@
         }
       }
     },
+    "System when available" : {
+
+    },
     "Text Scratchpad" : {
 
     },
@@ -21605,6 +21632,9 @@
           }
         }
       }
+    },
+    "Title (optional)" : {
+
     },
     "Toggle Notch Open:" : {
       "localizations" : {
@@ -23310,6 +23340,9 @@
           }
         }
       }
+    },
+    "Window arrangement animation" : {
+
     },
     "Window Behavior" : {
       "localizations" : {

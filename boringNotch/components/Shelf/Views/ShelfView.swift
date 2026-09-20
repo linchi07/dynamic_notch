@@ -12,7 +12,7 @@ struct ShelfView: View {
     @EnvironmentObject var vm: BoringViewModel
     @StateObject var tvm = ShelfStateViewModel.shared
     @StateObject var selection = ShelfSelectionModel.shared
-    @StateObject private var quickLookService = QuickLookService()
+    @ObservedObject private var quickLookService = QuickLookService.shared
     private let spacing: CGFloat = 8
 
     var body: some View {
@@ -23,6 +23,7 @@ struct ShelfView: View {
             panel
         }
         .frame(height: NOTCH_PANEL_CONTAINER_HEIGHT)
+        .compositingGroup()
         // Bind Quick Look to shelf selection
         .onChange(of: selection.selectedIDs) {
             updateQuickLookSelection()
@@ -77,9 +78,6 @@ struct ShelfView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .transaction { transaction in
-            transaction.animation = vm.animation
-        }
         .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .onTapGesture { selection.clear() }
         .onDrop(
@@ -120,6 +118,10 @@ struct ShelfView: View {
         }
         .onAppear {
             ShelfStateViewModel.shared.cleanupInvalidItems()
+            ShelfKeyboardMonitor.shared.start()
+        }
+        .onDisappear {
+            ShelfKeyboardMonitor.shared.stop()
         }
     }
 }

@@ -8,10 +8,11 @@
 import SwiftUI
 
 struct TabModel: Identifiable {
-    let id = UUID()
     let label: String
     let icon: String
     let view: NotchViews
+
+    var id: NotchViews { view }
 }
 
 let tabs = [
@@ -26,25 +27,21 @@ struct TabSelectionView: View {
     var body: some View {
         HStack(spacing: 0) {
             ForEach(tabs) { tab in
-                    TabButton(label: tab.label, icon: tab.icon, selected: coordinator.currentView == tab.view) {
-                        withAnimation(.smooth(duration: 0.28)) {
-                            coordinator.currentView = tab.view
-                        }
+                TabButton(label: tab.label, icon: tab.icon, selected: coordinator.currentView == tab.view) {
+                    withAnimation(.smooth(duration: 0.28)) {
+                        coordinator.currentView = tab.view
                     }
-                    .frame(height: 18)
-                    .foregroundStyle(tab.view == coordinator.currentView ? .white : .gray)
-                    .background {
-                        if tab.view == coordinator.currentView {
-                            Capsule()
-                                .fill(coordinator.currentView == tab.view ? Color(nsColor: .secondarySystemFill) : Color.clear)
-                                .matchedGeometryEffect(id: "capsule", in: animation)
-                        } else {
-                            Capsule()
-                                .fill(coordinator.currentView == tab.view ? Color(nsColor: .secondarySystemFill) : Color.clear)
-                                .matchedGeometryEffect(id: "capsule", in: animation)
-                                .hidden()
-                        }
+                }
+                .frame(height: 18)
+                .foregroundStyle(tab.view == coordinator.currentView ? .white : .gray)
+                .background {
+                    if tab.view == coordinator.currentView {
+                        Capsule()
+                            .fill(Color(nsColor: .secondarySystemFill))
+                            .matchedGeometryEffect(id: "capsule", in: animation)
                     }
+                }
+                .accessibilityLabel(tab.label)
             }
         }
         .padding(2)

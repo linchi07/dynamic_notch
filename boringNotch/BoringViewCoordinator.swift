@@ -38,7 +38,14 @@ struct SharedSneakPeek: Codable {
 class BoringViewCoordinator: ObservableObject {
     static let shared = BoringViewCoordinator()
 
-    @Published var currentView: NotchViews = .home
+    @Published var currentView: NotchViews = .home {
+        didSet {
+            if currentView != .dropLanding {
+                lastContentView = currentView
+            }
+        }
+    }
+    private var lastContentView: NotchViews = .home
     @Published var helloAnimationRunning: Bool = false
     @Published var isNotificationPresented: Bool = false
     @Published var displayMode: NotchDisplayMode = .idle
@@ -47,6 +54,11 @@ class BoringViewCoordinator: ObservableObject {
     private var comboTask: Task<Void, Never>?
     private var sneakPeekDispatch: DispatchWorkItem?
     private var hudEnableTask: Task<Void, Never>?
+
+    func restoreViewAfterDropLanding() {
+        guard currentView == .dropLanding else { return }
+        currentView = lastContentView
+    }
 
     private func setDisplayMode(_ mode: NotchDisplayMode) {
         withAnimation(.smooth(duration: 0.3)) {

@@ -389,8 +389,10 @@ struct ContentView: View {
 
             if isTargeted {
                 if vm.notchState == .closed {
-                    coordinator.currentView = .dropLanding
                     doOpen()
+                    // `BoringViewModel.open()` may select Home for active music;
+                    // the explicit drag destination must win that state change.
+                    coordinator.currentView = .dropLanding
                 }
                 return
             }

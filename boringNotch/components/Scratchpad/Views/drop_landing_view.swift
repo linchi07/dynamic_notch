@@ -10,9 +10,7 @@ import UniformTypeIdentifiers
 /// Dedicated landing view displayed when dragging items over the notch,
 /// eliminating confusion between Shelf and Scratchpad before the drop completes.
 struct DropLandingView: View {
-    @ObservedObject var coordinator = BoringViewCoordinator.shared
     @EnvironmentObject var vm: BoringViewModel
-    @State private var isTargeted: Bool = false
     @State private var pulseAnimation: Bool = false
 
     private let DASH_PATTERN: [CGFloat] = [6, 4]
@@ -30,7 +28,11 @@ struct DropLandingView: View {
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     ),
-                    style: StrokeStyle(lineWidth: 2, lineCap: .round, dash: DASH_PATTERN)
+                    style: StrokeStyle(
+                        lineWidth: vm.dragDetectorTargeting ? 3 : 2,
+                        lineCap: .round,
+                        dash: DASH_PATTERN
+                    )
                 )
                 .background(
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -103,7 +105,7 @@ struct DropLandingView: View {
         }
         .onDrop(
             of: [.fileURL, .url, .utf8PlainText, .plainText, .data],
-            isTargeted: $isTargeted,
+            isTargeted: $vm.dragDetectorTargeting,
             perform: handleDrop(providers:)
         )
     }

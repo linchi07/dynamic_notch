@@ -20,6 +20,7 @@ struct ShelfItemView: View {
     @State private var showStack = false
     @State private var cachedPreviewImage: NSImage?
     @State private var debouncedDropTarget = false
+    @State private var isHovering: Bool = false
 
     private var isSelected: Bool { viewModel.isSelected }
     private var shouldHideDuringDrag: Bool { selection.isDragging && selection.isSelected(item.id) && false }
@@ -30,7 +31,7 @@ struct ShelfItemView: View {
     }
 
     var body: some View {
-        ZStack {
+        ZStack(alignment: .topTrailing) {
             if !shouldHideDuringDrag {
                 VStack(alignment: .center, spacing: 2) {
                     iconView
@@ -56,11 +57,38 @@ struct ShelfItemView: View {
                         viewModel.handleClick(event: event, view: nsview)
                     }
                 )
+
+                if isHovering || isSelected {
+                    Button {
+                        withAnimation(.smooth(duration: 0.2)) {
+                            ShelfStateViewModel.shared.remove(item)
+                        }
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 7, weight: .bold))
+                            .foregroundStyle(.white)
+                            .frame(width: 16, height: 16)
+                            .background(Color.black.opacity(0.82))
+                            .clipShape(Circle())
+                            .overlay(
+                                Circle().stroke(Color.white.opacity(0.25), lineWidth: 0.5)
+                            )
+                    }
+                    .buttonStyle(.plain)
+                    .padding(2)
+                    .transition(.opacity)
+                    .help("Remove from shelf")
+                }
             } else {
                 Color.clear
                     .frame(width: 82)
                     .padding(.vertical, 4)
                     .padding(.horizontal, 4)
+            }
+        }
+        .onHover { hovering in
+            withAnimation(.easeInOut(duration: 0.15)) {
+                isHovering = hovering
             }
         }
         .onChange(of: viewModel.isDropTargeted) { _, targeted in
@@ -223,12 +251,32 @@ private struct DraggableClickHandler<Content: View>: NSViewRepresentable {
         private var draggedURLs: [URL] = []
         private var draggedItems: [ShelfItem] = []
         
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            updateScreenPosition()
+        }
+
+        override func layout() {
+            super.layout()
+            updateScreenPosition()
+        }
+
+        private func updateScreenPosition() {
+            guard let window = self.window, let item = self.item else { return }
+            let windowRect = self.convert(self.bounds, to: nil)
+            let screenRect = window.convertToScreen(windowRect)
+            ShelfItemScreenPositionManager.shared.register(id: item.id, screenFrame: screenRect)
+        }
+
         override func rightMouseDown(with event: NSEvent) {
+            updateScreenPosition()
             onRightClick?(event, self)
         }
         
         override func mouseDown(with event: NSEvent) {
             mouseDownEvent = event
+            updateScreenPosition()
+            NSApp.activate(ignoringOtherApps: true)
             onClick?(event, self)
         }
         

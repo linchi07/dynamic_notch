@@ -140,7 +140,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                       self.window?.isVisible == true
                 else { return }
                 self.vm.open()
-                self.coordinator.currentView = .shelf
+                // `open()` intentionally selects Home while music is active. A
+                // content drag is an explicit destination, so apply it last.
+                self.coordinator.currentView = .dropLanding
+            }
+        }
+        detector.onDragExitsNotchRegion = { [weak self] in
+            Task { @MainActor in
+                guard let self else { return }
+                if self.coordinator.currentView == .dropLanding {
+                    self.vm.close()
+                }
             }
         }
         detector.onMouseDown = { [weak self] point, modifiers in
@@ -163,6 +173,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
         detector.onMouseUp = { [weak self] point, modifiers in
             Task { @MainActor in
+                if let self, self.coordinator.currentView == .dropLanding {
+                    // Give SwiftUI's drop target and the asynchronous router time
+                    // to claim the drop before treating mouse-up as a cancellation.
+                    try? await Task.sleep(for: .milliseconds(300))
+                    if self.coordinator.currentView == .dropLanding,
+                       !self.vm.dropEvent {
+                        self.vm.close()
+                    }
+                }
                 guard Defaults[.enableWindowSnapping] else {
                     self?.windowSnapController.cancel()
                     return

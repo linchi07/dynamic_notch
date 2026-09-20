@@ -61,7 +61,7 @@ struct ScratchpadPanelView: View {
 
                 Button {
                     let newItem = viewModel.addItem(content: "")
-                    ScratchpadEditorWindowController.shared.show(item: newItem)
+                    openEditor(for: newItem)
                 } label: {
                     HStack(spacing: 4) {
                         Image(systemName: "plus")
@@ -87,7 +87,7 @@ struct ScratchpadPanelView: View {
             // New note quick button
             Button {
                 let newItem = viewModel.addItem(content: "")
-                ScratchpadEditorWindowController.shared.show(item: newItem)
+                openEditor(for: newItem)
             } label: {
                 VStack(spacing: 6) {
                     Image(systemName: "plus")
@@ -110,8 +110,8 @@ struct ScratchpadPanelView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: CARD_SPACING) {
                     ForEach(viewModel.items) { item in
-                        ScratchpadCardView(item: item) { rect in
-                            ScratchpadEditorWindowController.shared.show(item: item, from: rect)
+                        ScratchpadCardView(item: item) { sourceRect in
+                            openEditor(for: item, from: sourceRect)
                         }
                     }
                 }
@@ -119,6 +119,14 @@ struct ScratchpadPanelView: View {
             }
         }
         .padding(.horizontal, 6)
+    }
+
+    private func openEditor(for item: ScratchpadItem, from sourceRect: NSRect? = nil) {
+        ScratchpadEditorWindowController.shared.show(item: item, from: sourceRect) {
+            withAnimation(.smooth(duration: 0.28)) {
+                vm.close()
+            }
+        }
     }
 
     private func handleDrop(providers: [NSItemProvider]) -> Bool {

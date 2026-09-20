@@ -201,6 +201,7 @@ class BoringViewModel: NSObject, ObservableObject {
         if SharingStateManager.shared.preventNotchClose {
             return
         }
+        coordinator.restoreViewAfterDropLanding()
         self.notchState = .closed
         refreshClosedNotchSize()
         self.isBatteryPopoverActive = false

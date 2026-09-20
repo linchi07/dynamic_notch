@@ -6,9 +6,47 @@
 import AppKit
 import SwiftUI
 
+private struct ScratchpadCardScreenFrameReader: NSViewRepresentable {
+    let onChange: (NSRect) -> Void
+
+    func makeNSView(context: Context) -> ScreenFrameView {
+        let view = ScreenFrameView()
+        view.onChange = onChange
+        return view
+    }
+
+    func updateNSView(_ nsView: ScreenFrameView, context: Context) {
+        nsView.onChange = onChange
+        nsView.reportFrame()
+    }
+
+    final class ScreenFrameView: NSView {
+        var onChange: ((NSRect) -> Void)?
+
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            reportFrame()
+        }
+
+        override func layout() {
+            super.layout()
+            reportFrame()
+        }
+
+        func reportFrame() {
+            guard let window else { return }
+            let frameInWindow = convert(bounds, to: nil)
+            let frameOnScreen = window.convertToScreen(frameInWindow)
+            DispatchQueue.main.async { [weak self] in
+                self?.onChange?(frameOnScreen)
+            }
+        }
+    }
+}
+
 struct ScratchpadCardView: View {
     let item: ScratchpadItem
-    var onSelect: ((NSRect?) -> Void)?
+    var onSelect: (NSRect?) -> Void
 
     @ObservedObject private var viewModel = ScratchpadViewModel.shared
     @State private var isHovering: Bool = false
@@ -87,17 +125,14 @@ struct ScratchpadCardView: View {
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .stroke(Color.white.opacity(isHovering ? 0.22 : 0.10), lineWidth: 1)
         )
-        .background(
-            GeometryReader { proxy in
-                Color.clear
-                    .onAppear {
-                        updateScreenRect(proxy: proxy)
-                    }
-                    .onChange(of: proxy.frame(in: .global)) { _, _ in
-                        updateScreenRect(proxy: proxy)
-                    }
+        .background {
+            ScratchpadCardScreenFrameReader { newRect in
+                guard newRect.width > 20, newRect.height > 20,
+                      screenRect != newRect
+                else { return }
+                screenRect = newRect
             }
-        )
+        }
         .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         .onHover { hovering in
             withAnimation(.easeInOut(duration: 0.15)) {
@@ -105,15 +140,8 @@ struct ScratchpadCardView: View {
             }
         }
         .onTapGesture {
-            onSelect?(screenRect)
+            onSelect(screenRect)
         }
-    }
-
-    private func updateScreenRect(proxy: GeometryProxy) {
-        let globalFrame = proxy.frame(in: .global)
-        guard let window = NSApp.keyWindow ?? NSApp.windows.first(where: { $0.isVisible }) else { return }
-        let windowRect = NSRect(x: globalFrame.origin.x, y: globalFrame.origin.y, width: globalFrame.width, height: globalFrame.height)
-        self.screenRect = window.convertToScreen(windowRect)
     }
 
     private func copyToClipboard() {
