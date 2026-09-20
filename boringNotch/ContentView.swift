@@ -591,7 +591,7 @@ struct ContentView: View {
     }
 
     private func handleUpGesture(translation: CGFloat, phase: NSEvent.Phase) {
-        guard vm.notchState == .open && !vm.isHoveringCalendar else { return }
+        guard vm.notchState == .open else { return }
 
         withAnimation(NOTCH_CLOSE_SPRING) {
             gestureProgress = (translation / Defaults[.gestureSensitivity]) * -20

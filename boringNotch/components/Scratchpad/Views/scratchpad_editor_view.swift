@@ -55,6 +55,9 @@ private struct ScratchpadNativeTextView: NSViewRepresentable {
         textView.textContainer?.lineFragmentPadding = 0
         textView.isSelectable = true
         textView.isEditable = true
+        if #available(macOS 15.0, *) {
+            textView.writingToolsBehavior = .none
+        }
 
         scrollView.documentView = textView
         return scrollView

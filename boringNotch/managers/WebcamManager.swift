@@ -113,10 +113,18 @@ class WebcamManager: NSObject, ObservableObject {
         }
     }
     
+    private var supportedCameraTypes: [AVCaptureDevice.DeviceType] {
+        if #available(macOS 14.0, *) {
+            return [.continuityCamera, .external, .builtInWideAngleCamera]
+        } else {
+            return [.external, .builtInWideAngleCamera]
+        }
+    }
+
     /// Checks if any camera devices are available and sets up capture session if needed
     func checkCameraAvailability() {
         let availableDevices = AVCaptureDevice.DiscoverySession(
-            deviceTypes: [.external, .builtInWideAngleCamera],
+            deviceTypes: supportedCameraTypes,
             mediaType: .video,
             position: .unspecified
         ).devices
@@ -144,7 +152,7 @@ class WebcamManager: NSObject, ObservableObject {
             do {
                 // Get available devices and prefer external camera if available
                 let discoverySession = AVCaptureDevice.DiscoverySession(
-                    deviceTypes: [.external, .builtInWideAngleCamera],
+                    deviceTypes: self.supportedCameraTypes,
                     mediaType: .video,
                     position: .unspecified
                 )
