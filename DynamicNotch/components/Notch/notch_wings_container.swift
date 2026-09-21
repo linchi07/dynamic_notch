@@ -61,6 +61,13 @@ struct NotchWingsContainer: View {
             case .trailing: return .trailing
             }
         }
+
+        var innerPaddingEdge: Edge.Set {
+            switch self {
+            case .leading: return .trailing
+            case .trailing: return .leading
+            }
+        }
     }
 
     @ViewBuilder
@@ -72,6 +79,7 @@ struct NotchWingsContainer: View {
                 activityVisual(item)
                     .frame(width: visualSize, height: visualSize)
                     .padding(edge.outerPaddingEdge, outerPadding)
+                    .padding(edge.innerPaddingEdge, NotchLayoutMetrics.innerPadding)
                     .accessibilityLabel(item.accessibilityLabel)
             }
         }
