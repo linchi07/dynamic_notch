@@ -460,6 +460,11 @@ class MusicManager: ObservableObject {
     }
 
     @MainActor
+    func refreshLiveActivity() {
+        updateLiveActivity()
+    }
+
+    @MainActor
     private func updateLiveActivity() {
         guard BoringViewCoordinator.shared.musicLiveActivityEnabled,
               isPlaying || !isPlayerIdle,
@@ -732,18 +737,20 @@ class MusicManager: ObservableObject {
         }
     }
 
+    @MainActor
     private func updateIdleState(state: Bool) {
         if state {
             isPlayerIdle = false
             debounceIdleTask?.cancel()
         } else {
             debounceIdleTask?.cancel()
-            debounceIdleTask = Task { [weak self] in
+            debounceIdleTask = Task { @MainActor [weak self] in
                 guard let self = self else { return }
                 try? await Task.sleep(for: .seconds(Defaults[.waitInterval]))
                 withAnimation {
                     self.isPlayerIdle = !self.isPlaying
                 }
+                self.updateLiveActivity()
             }
         }
     }
