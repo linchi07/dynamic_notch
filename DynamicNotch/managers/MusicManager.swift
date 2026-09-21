@@ -140,10 +140,6 @@ class MusicManager: ObservableObject {
     @MainActor
     func setupControllersFromPreferences() {
         var enabledTypes = Defaults[.enabledMediaControllers]
-        if enabledTypes.isEmpty {
-            enabledTypes = Defaults.Keys.defaultEnabledMediaControllers
-            Defaults[.enabledMediaControllers] = enabledTypes
-        }
 
         if isNowPlayingDeprecated {
             enabledTypes.removeAll { $0 == .nowPlaying }

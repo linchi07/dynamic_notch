@@ -417,11 +417,12 @@ struct ContentView: View {
             if vm.notchState == .open {
                 VStack(spacing: 4) {
                     NotchPanelContainer()
+                        .padding(.top, 6)
 
                     if shouldShowBottomNavigation {
                         Spacer(minLength: 0)
                         TabSelectionView()
-                            .padding(.bottom, 2)
+                            .padding(.top, 2)
                             .transition(.move(edge: .bottom).combined(with: .opacity))
                     }
                 }

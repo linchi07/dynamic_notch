@@ -17,10 +17,11 @@ struct TabButton: View {
         Button(action: onClick) {
             Image(systemName: icon)
                 .font(.system(size: 11, weight: .semibold))
-                .padding(.horizontal, 10)
-                .contentShape(Capsule())
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .contentShape(Rectangle())
         }
         .buttonStyle(PlainButtonStyle())
+        .contentShape(Rectangle())
     }
 }
 

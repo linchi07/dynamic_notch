@@ -12,6 +12,7 @@ import SwiftUI
 struct NotchPanelContainer: View {
     @ObservedObject var coordinator = BoringViewCoordinator.shared
     @State private var visiblePage: NotchViews?
+    @State private var programmaticDestination: NotchViews?
 
     private let pages: [NotchViews] = [.home, .shelf, .scratchpad]
 
@@ -23,24 +24,27 @@ struct NotchPanelContainer: View {
             } else {
                 GeometryReader { proxy in
                     ScrollView(.horizontal) {
-                        HStack(spacing: 0) {
+                        LazyHStack(spacing: 0) {
                             ForEach(pages) { page in
                                 panelComponent(for: page)
                                     .frame(
                                         width: proxy.size.width,
                                         height: proxy.size.height
                                     )
-                                    // Keep compound pages such as Shelf on one
-                                    // composited surface while they travel.
+                                    // Keep every page as one strictly bounded
+                                    // render and hit-test surface.
+                                    .contentShape(Rectangle())
                                     .compositingGroup()
+                                    .clipped()
                                     .id(page)
                             }
                         }
                         .scrollTargetLayout()
                     }
                     .scrollIndicators(.never)
+                    .scrollClipDisabled(false)
                     .scrollTargetBehavior(.paging)
-                    .scrollPosition(id: $visiblePage)
+                    .scrollPosition(id: $visiblePage, anchor: .center)
                     .onAppear {
                         visiblePage = coordinator.currentView
                     }
@@ -48,14 +52,25 @@ struct NotchPanelContainer: View {
                         guard newPage != .dropLanding,
                               visiblePage != newPage
                         else { return }
+                        programmaticDestination = newPage
                         withAnimation(.smooth(duration: 0.28)) {
                             visiblePage = newPage
                         }
                     }
                     .onChange(of: visiblePage) { _, newPage in
-                        guard let newPage,
-                              coordinator.currentView != newPage
-                        else { return }
+                        guard let newPage else { return }
+
+                        // A programmatic jump can report the middle page while
+                        // travelling from the first page to the third. Do not let
+                        // that transient value overwrite the button's destination.
+                        if let destination = programmaticDestination {
+                            if newPage == destination {
+                                programmaticDestination = nil
+                            }
+                            return
+                        }
+
+                        guard coordinator.currentView != newPage else { return }
                         coordinator.currentView = newPage
                     }
                 }
@@ -63,7 +78,9 @@ struct NotchPanelContainer: View {
         }
         .frame(height: NOTCH_PANEL_CONTAINER_HEIGHT)
         .frame(maxWidth: .infinity)
+        .contentShape(Rectangle())
         .clipped()
+        .mask(Rectangle())
     }
 
     /// 各功能面板的统一插拔注册处

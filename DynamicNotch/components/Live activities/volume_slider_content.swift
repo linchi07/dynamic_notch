@@ -19,11 +19,11 @@ struct VolumeSliderContent: View {
     // Visual Constants (Compact iOS-style proportions)
     private static let CONTENT_WIDTH: CGFloat = 200
     private static let EXPANDED_HEIGHT: CGFloat = 30
-    private static let NARROWED_HEIGHT: CGFloat = 12
+    private static let NARROWED_HEIGHT: CGFloat = 8
     private static let DRAG_NORMAL_WIDTH: CGFloat = 208
     private static let DRAG_NORMAL_HEIGHT: CGFloat = 34
-    private static let DRAG_BOUNDARY_WIDTH: CGFloat = 216
-    private static let DRAG_BOUNDARY_HEIGHT: CGFloat = 38
+    private static let DRAG_BOUNDARY_WIDTH: CGFloat = 212
+    private static let DRAG_BOUNDARY_HEIGHT: CGFloat = 36
     private static let ICON_SIZE: CGFloat = 14
 
     // Interactive states
@@ -36,13 +36,13 @@ struct VolumeSliderContent: View {
     @State private var boundaryReleaseTask: Task<Void, Never>?
     @State private var hasTriggeredDragHaptic: Bool = false
 
-    // Effective width: 208 for normal drag, 216 for drag at boundary, 216 for key boundary hold, 200 for rest
+    // Effective width: 208 for normal drag, 212 at a boundary, 200 at rest.
     private var effectiveWidth: CGFloat {
         if isDragging {
             return isDraggingAtBoundary ? Self.DRAG_BOUNDARY_WIDTH : Self.DRAG_NORMAL_WIDTH
         }
         if isHoldingAtBoundary {
-            return Self.CONTENT_WIDTH + 16.0
+            return Self.CONTENT_WIDTH + 12.0
         }
         return Self.CONTENT_WIDTH
     }
@@ -58,13 +58,13 @@ struct VolumeSliderContent: View {
         return Self.EXPANDED_HEIGHT
     }
 
-    // Effective height: 34 for normal drag, 38 for drag at boundary, 9.8 for key boundary hold, 12 for narrow, 30 for rest
+    // Boundary holds compress the already-narrow 8pt bar a little further.
     private var effectiveHeight: CGFloat {
         if isDragging {
             return isDraggingAtBoundary ? Self.DRAG_BOUNDARY_HEIGHT : Self.DRAG_NORMAL_HEIGHT
         }
         if isHoldingAtBoundary {
-            return baseHeight * 0.82
+            return baseHeight * 0.78
         }
         return baseHeight
     }
@@ -73,10 +73,6 @@ struct VolumeSliderContent: View {
         let clampedValue = max(0, min(1, value))
         let liveWidth = effectiveWidth
         let liveHeight = effectiveHeight
-
-        let isFull = clampedValue >= 0.999
-        let isZero = clampedValue <= 0.001
-        let progressWidth = isFull ? liveWidth : (isZero ? 0 : max(0, min(liveWidth, liveWidth * clampedValue)))
 
         ZStack(alignment: .leading) {
             // 1. Base Layer (Unfilled): Light gray icon and label over the frosted background
@@ -94,7 +90,7 @@ struct VolumeSliderContent: View {
             ZStack(alignment: .leading) {
                 Rectangle()
                     .fill(Color.white)
-                    .frame(width: progressWidth, height: liveHeight)
+                    .frame(width: liveWidth, height: liveHeight)
 
                 // Foreground content over white fill (Dark gray for sharp readability)
                 HStack(spacing: 8) {
@@ -107,11 +103,18 @@ struct VolumeSliderContent: View {
                 .opacity(isRapidAdjusting && !isDragging ? 0.0 : 1.0)
                 .animation(.easeInOut(duration: 0.16), value: isRapidAdjusting)
             }
-            .frame(width: progressWidth, height: liveHeight, alignment: .leading)
-            .clipped()
+            // Scale a full-size mask instead of animating several independent
+            // widths. At 100% this covers the base exactly, and when the whole
+            // HUD moves vertically the fill and its shell remain one surface.
+            .mask(alignment: .leading) {
+                Rectangle()
+                    .frame(width: liveWidth, height: liveHeight)
+                    .scaleEffect(x: clampedValue, anchor: .leading)
+            }
             .animation(isDragging ? nil : FloatingPopupStyle.fluidSliderSpring, value: clampedValue)
         }
         .frame(width: liveWidth, height: liveHeight)
+        .compositingGroup()
         .contentShape(Rectangle())
         .gesture(
             DragGesture(minimumDistance: 0)
@@ -126,31 +129,23 @@ struct VolumeSliderContent: View {
         .animation(isHoldingAtBoundary ? FloatingPopupStyle.bounceSpring : FloatingPopupStyle.strongBounceSpring, value: isHoldingAtBoundary)
         .animation(isDragging ? .interactiveSpring(response: 0.25, dampingFraction: 0.78) : FloatingPopupStyle.strongBounceSpring, value: isDragging)
         .animation(.interactiveSpring(response: 0.25, dampingFraction: 0.78), value: isDraggingAtBoundary)
-        .onChange(of: value) { oldValue, newValue in
-            handleValueChange(oldValue: oldValue, newValue: newValue)
+        .onChange(of: value) {
+            handleValueChange()
         }
-        .onReceive(NotificationCenter.default.publisher(for: .notchBoundaryHit)) { notification in
-            let isTop = (notification.object as? Bool) ?? (value >= 0.5)
-            handleBoundaryHit(isTop: isTop)
+        .onReceive(NotificationCenter.default.publisher(for: .notchBoundaryHit)) { _ in
+            handleBoundaryHit()
         }
         .onReceive(NotificationCenter.default.publisher(for: .notchMediaKeyDidRelease)) { _ in
             handleKeyRelease()
         }
     }
 
-    private func handleValueChange(oldValue: CGFloat, newValue: CGFloat) {
+    private func handleValueChange() {
         guard !isDragging else { return }
 
         let now = Date().timeIntervalSince1970
         let timeDelta = now - lastValueChangeTime
         lastValueChangeTime = now
-
-        // Check boundary impact backup
-        if newValue >= 0.999 && oldValue >= 0.90 {
-            handleBoundaryHit(isTop: true)
-        } else if newValue <= 0.001 && oldValue <= 0.10 {
-            handleBoundaryHit(isTop: false)
-        }
 
         // Acceleration detection: rapid consecutive keystrokes or holding (< 340ms)
         if timeDelta < 0.34 {
@@ -165,7 +160,7 @@ struct VolumeSliderContent: View {
         }
     }
 
-    private func handleBoundaryHit(isTop: Bool) {
+    private func handleBoundaryHit() {
         guard !isDragging else { return }
 
         if !isHoldingAtBoundary {
@@ -225,7 +220,7 @@ struct VolumeSliderContent: View {
         updateValue(progress)
 
         // Hysteresis boundary detection (anti-shake):
-        // Trigger secondary expansion (216*38) only at true limits (100% or 0%)
+        // Trigger secondary expansion (212*36) only at true limits (100% or 0%)
         // Pull back to normal expansion (208*34) only after moving inward into [0.05, 0.95]
         let nextAtBoundary: Bool
         if isDraggingAtBoundary {

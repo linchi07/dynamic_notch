@@ -57,12 +57,12 @@ enum FloatingPopupStyle {
 
     /// Responsive bouncy spring for boundary collisions and rubber-banding
     static var bounceSpring: Animation {
-        .interpolatingSpring(mass: 0.5, stiffness: 220, damping: 12)
+        .spring(response: 0.26, dampingFraction: 0.88, blendDuration: 0)
     }
 
-    /// High-impact elastic bounce for releasing boundary tension (BOING effect)
+    /// Firm return spring without the exaggerated overshoot of the previous HUD.
     static var strongBounceSpring: Animation {
-        .interpolatingSpring(mass: 0.45, stiffness: 340, damping: 9.5)
+        .spring(response: 0.30, dampingFraction: 0.90, blendDuration: 0)
     }
 
     static var transition: AnyTransition {

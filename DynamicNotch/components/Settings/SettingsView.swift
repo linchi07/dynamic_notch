@@ -341,6 +341,7 @@ struct HUD: View {
 struct Media: View {
     @Default(.waitInterval) var waitInterval
     @Default(.mediaController) var mediaController
+    @Default(.enabledMediaControllers) var enabledMediaControllers
     @Default(.enabledMediaAppBundleIDs) var enabledMediaAppBundleIDs
     @Default(.discoveredMediaAppBundleIDs) var discoveredMediaAppBundleIDs
     @ObservedObject var musicManager = MusicManager.shared
@@ -350,6 +351,23 @@ struct Media: View {
 
     var body: some View {
         Form {
+            Section {
+                Toggle(isOn: sourceEnabled(.nowPlaying)) {
+                    Label("Universal", systemImage: "play.rectangle.on.rectangle")
+                }
+                .disabled(musicManager.isNowPlayingDeprecated)
+
+                ForEach([MediaControllerType.appleMusic, .spotify, .youtubeMusic]) { source in
+                    Toggle(source.rawValue, isOn: sourceEnabled(source))
+                }
+            } header: {
+                Text("Playback sources")
+            } footer: {
+                Text("Universal reads the app currently playing through macOS media controls. Dedicated sources can be enabled separately. The playback switcher shows the actual app icon.")
+                    .foregroundStyle(.secondary)
+                    .font(.caption)
+            }
+
             Section {
                 let mediaApps = MediaAppHelper.getAllMediaApps()
                 ForEach(mediaApps) { app in
@@ -457,6 +475,22 @@ struct Media: View {
         }
         .accentColor(.effectiveAccent)
         .navigationTitle("Media")
+    }
+
+    private func sourceEnabled(_ source: MediaControllerType) -> Binding<Bool> {
+        Binding(
+            get: { enabledMediaControllers.contains(source) },
+            set: { isEnabled in
+                var updated = enabledMediaControllers
+                if isEnabled {
+                    if !updated.contains(source) { updated.append(source) }
+                } else {
+                    updated.removeAll { $0 == source }
+                }
+                enabledMediaControllers = updated
+                NotificationCenter.default.post(name: .mediaControllerChanged, object: nil)
+            }
+        )
     }
 }
 

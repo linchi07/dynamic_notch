@@ -103,9 +103,9 @@ final class BrightnessManager: ObservableObject {
 
 	@MainActor
 	private func notifyBoundaryHit(starting: Float, target: Float, delta: Float) {
-		if (starting >= 0.999 || target >= 0.999) && delta > 0 {
+		if starting >= 0.999 && delta > 0 {
 			NotificationCenter.default.post(name: .notchBoundaryHit, object: true)
-		} else if (starting <= 0.001 || target <= 0.001) && delta < 0 {
+		} else if starting <= 0.001 && delta < 0 {
 			NotificationCenter.default.post(name: .notchBoundaryHit, object: false)
 		}
 	}
@@ -218,9 +218,9 @@ final class KeyboardBacklightManager: ObservableObject {
 
 	@MainActor
 	private func notifyBoundaryHit(starting: Float, target: Float, delta: Float) {
-		if (starting >= 0.999 || target >= 0.999) && delta > 0 {
+		if starting >= 0.999 && delta > 0 {
 			NotificationCenter.default.post(name: .notchBoundaryHit, object: true)
-		} else if (starting <= 0.001 || target <= 0.001) && delta < 0 {
+		} else if starting <= 0.001 && delta < 0 {
 			NotificationCenter.default.post(name: .notchBoundaryHit, object: false)
 		}
 	}

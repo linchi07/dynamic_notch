@@ -16,48 +16,51 @@ struct MediaSessionSwitcherView: View {
     @ObservedObject var musicManager = MusicManager.shared
 
     var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 6) {
-                ForEach(musicManager.availableSessions) { session in
-                    let isSelected = session.type == musicManager.selectedSessionType
-                    Button {
-                        withAnimation(.smooth(duration: 0.2)) {
-                            musicManager.selectSession(type: session.type)
-                        }
-                    } label: {
-                        HStack(spacing: 4) {
-                            if session.isPlaying {
-                                Circle()
-                                    .fill(Color.green)
-                                    .frame(width: 5, height: 5)
-                            } else {
-                                Circle()
-                                    .fill(Color.gray.opacity(0.6))
-                                    .frame(width: 5, height: 5)
-                            }
-
-                            Text(session.displayName)
-                                .font(.system(size: 10, weight: isSelected ? .semibold : .medium))
-                                .foregroundColor(isSelected ? .white : .secondary)
-                                .lineLimit(1)
-                        }
-                        .padding(.horizontal, 7)
-                        .padding(.vertical, 3)
-                        .background(
-                            Capsule()
-                                .fill(isSelected ? Color.white.opacity(0.22) : Color.white.opacity(0.07))
-                        )
-                        .overlay(
-                            Capsule()
-                                .stroke(isSelected ? Color.white.opacity(0.3) : Color.clear, lineWidth: 0.5)
-                        )
+        if let session = nextSession {
+            Button(action: selectNextSession) {
+                Group {
+                    if let bundleIdentifier = session.bundleIdentifier,
+                       let appIcon = MediaAppHelper.icon(for: bundleIdentifier) {
+                        Image(nsImage: appIcon)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                    } else {
+                        Image(systemName: "play.rectangle.fill")
+                            .font(.system(size: 14))
                     }
-                    .buttonStyle(PlainButtonStyle())
                 }
+                .foregroundStyle(.white)
+                .frame(width: 16, height: 16)
+                .frame(width: 28, height: 25)
+                .background(Color.white.opacity(0.12), in: Capsule())
+                .overlay {
+                    Capsule()
+                        .stroke(Color.white.opacity(0.14), lineWidth: 0.5)
+                }
+                .contentShape(Capsule())
             }
-            .padding(.horizontal, 2)
+            .buttonStyle(.plain)
+            .help("Switch to \(session.displayName)")
+            .accessibilityLabel("Switch playback source")
+            .accessibilityValue(session.displayName)
         }
-        .frame(height: 18)
+    }
+
+    private var nextSession: MediaSession? {
+        let sessions = musicManager.availableSessions
+        guard sessions.count > 1 else { return nil }
+        let currentIndex = sessions.firstIndex {
+            $0.type == musicManager.selectedSessionType
+        } ?? 0
+        return sessions[(currentIndex + 1) % sessions.count]
+    }
+
+    private func selectNextSession() {
+        guard let nextSession else { return }
+
+        withAnimation(.smooth(duration: 0.2)) {
+            musicManager.selectSession(type: nextSession.type)
+        }
     }
 }
 
@@ -66,19 +69,18 @@ struct MusicPlayerView: View {
     @ObservedObject var musicManager = MusicManager.shared
 
     var body: some View {
-        VStack(alignment: .leading, spacing: musicManager.availableSessions.count > 1 ? 4 : 0) {
+        HStack(spacing: 10) {
+            AlbumArtView(vm: vm)
+                .frame(width: 86, height: 86)
+
+            MusicControlsView()
+                .drawingGroup()
+                .compositingGroup()
+                .frame(maxWidth: .infinity)
+
             if musicManager.availableSessions.count > 1 {
                 MediaSessionSwitcherView()
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-            }
-
-            HStack(spacing: 12) {
-                AlbumArtView(vm: vm)
-                    .frame(
-                        width: musicManager.availableSessions.count > 1 ? 74 : 86,
-                        height: musicManager.availableSessions.count > 1 ? 74 : 86
-                    )
-                MusicControlsView().drawingGroup().compositingGroup()
+                    .transition(.opacity.combined(with: .move(edge: .trailing)))
             }
         }
         .frame(height: NOTCH_PANEL_CONTAINER_HEIGHT)

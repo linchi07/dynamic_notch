@@ -42,7 +42,9 @@ final class VolumeManager: NSObject, ObservableObject {
         let target = max(0, min(1, current + delta))
         setAbsolute(target)
         BoringViewCoordinator.shared.toggleSneakPeek(status: true, type: .volume, value: CGFloat(target))
-        if current >= 0.999 || target >= 0.999 {
+        // Reaching the limit is a normal adjustment. Rubber-band only when
+        // another key event tries to move outward from an existing limit.
+        if current >= 0.999 {
             NotificationCenter.default.post(name: .notchBoundaryHit, object: true)
         }
     }
@@ -55,7 +57,7 @@ final class VolumeManager: NSObject, ObservableObject {
         let target = max(0, min(1, current - delta))
         setAbsolute(target)
         BoringViewCoordinator.shared.toggleSneakPeek(status: true, type: .volume, value: CGFloat(target))
-        if current <= 0.001 || target <= 0.001 {
+        if current <= 0.001 {
             NotificationCenter.default.post(name: .notchBoundaryHit, object: false)
         }
     }
@@ -382,5 +384,3 @@ final class VolumeManager: NSObject, ObservableObject {
 extension Array where Element == Float32 {
     fileprivate var average: Float32? { isEmpty ? nil : reduce(0, +) / Float32(count) }
 }
-
-

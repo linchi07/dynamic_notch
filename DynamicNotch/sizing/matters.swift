@@ -30,7 +30,7 @@ let batterySneakSize: CGSize = .init(width: 160, height: 1)
 let shadowPadding: CGFloat = 20
 /// Extra transparent window space used by HUDs that appear below an expanded notch.
 let floatingOverlaySpace: CGFloat = 64
-let openNotchSize: CGSize = .init(width: 460, height: 170)
+let openNotchSize: CGSize = .init(width: 460, height: 176)
 let windowSize: CGSize = .init(
     width: openNotchSize.width,
     height: openNotchSize.height + shadowPadding + floatingOverlaySpace

@@ -258,11 +258,15 @@ private final class WindowSnapOverlayModel: ObservableObject {
 
 private enum WindowSnapOverlayMetrics {
     static let contentSize = CGSize(width: 490, height: 112)
-    static let shadowInsets = EdgeInsets(top: 22, leading: 26, bottom: 36, trailing: 26)
+    static let shadowInsets = EdgeInsets(top: 46, leading: 50, bottom: 60, trailing: 50)
     static let panelSize = CGSize(
         width: contentSize.width + shadowInsets.leading + shadowInsets.trailing,
         height: contentSize.height + shadowInsets.top + shadowInsets.bottom
     )
+}
+
+private final class TransparentWindowSnapHostingView<Content: View>: NSHostingView<Content> {
+    override var isOpaque: Bool { false }
 }
 
 private struct WindowSnapOverlayView: View {
@@ -295,8 +299,19 @@ private struct WindowSnapOverlayView: View {
                             lineWidth: 0.8
                         )
                 }
-                .shadow(color: .black.opacity(0.30), radius: 24, y: 10)
-                .shadow(color: .black.opacity(0.42), radius: 6, y: 3)
+                .background {
+                    // Draw the shadow from the rounded silhouette itself. A
+                    // blurred filled shape fades naturally into the transparent
+                    // panel, without shadowing the rectangular hosting layer.
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .fill(Color.black.opacity(0.42))
+                        .blur(radius: 22)
+                        .offset(y: 10)
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .fill(Color.black.opacity(0.32))
+                        .blur(radius: 6)
+                        .offset(y: 3)
+                }
 
             VStack(spacing: 8) {
                 HStack(spacing: 6) {
@@ -394,6 +409,7 @@ private struct WindowSnapOverlayView: View {
         .animation(.easeOut(duration: 0.13), value: model.isContentVisible)
         .animation(.easeOut(duration: 0.14), value: model.arrangesAllWindows)
         .padding(WindowSnapOverlayMetrics.shadowInsets)
+        .background(Color.clear)
     }
 }
 
@@ -570,7 +586,7 @@ final class WindowSnapController {
         panel.level = .floating
         panel.ignoresMouseEvents = true
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .transient]
-        let hostingView = NSHostingView(rootView: WindowSnapOverlayView(model: model))
+        let hostingView = TransparentWindowSnapHostingView(rootView: WindowSnapOverlayView(model: model))
         panel.contentView = hostingView
         return panel
     }
