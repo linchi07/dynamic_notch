@@ -5,200 +5,138 @@
 
 import AppKit
 import Combine
+import Defaults
 import Foundation
 
-// MARK: - QQ Music Controller
+// MARK: - Discovered Media App Model
 
-class QQMusicController: MediaControllerProtocol {
-    @Published private var playbackState: PlaybackState = PlaybackState(
-        bundleIdentifier: "com.tencent.QQMusicMac",
-        playbackRate: 1
-    )
-    
-    var playbackStatePublisher: AnyPublisher<PlaybackState, Never> {
-        $playbackState.eraseToAnyPublisher()
-    }
-    
-    var supportsVolumeControl: Bool { false }
-    var supportsFavorite: Bool { false }
-    
-    private var isAppActive: Bool = false
-    private var monitorTimer: AnyCancellable?
-    
-    init() {
-        setupProcessObserver()
-    }
-    
-    deinit {
-        monitorTimer?.cancel()
-    }
-    
-    private func setupProcessObserver() {
-        monitorTimer = Timer.publish(every: 3.0, on: .main, in: .common)
-            .autoconnect()
-            .sink { [weak self] _ in
-                self?.checkAppStatus()
+struct DiscoveredMediaApp: Identifiable, Hashable {
+    var id: String { bundleIdentifier }
+    let bundleIdentifier: String
+    let displayName: String
+    let icon: NSImage?
+    let isRunning: Bool
+}
+
+// MARK: - Media App Helper
+
+enum MediaAppHelper {
+    static let DEFAULT_FALLBACK_NAMES: [String: String] = [
+        "com.apple.Music": "Apple Music",
+        "com.spotify.client": "Spotify",
+        "com.netease.163music": "网易云音乐",
+        "com.tencent.QQMusicMac": "QQ 音乐",
+        "com.apple.podcasts": "播客",
+        "com.apple.Safari": "Safari",
+        "com.google.Chrome": "Google Chrome",
+        "com.colliderli.iina": "IINA"
+    ]
+
+    /// 获取应用的本地化展示名称
+    static func displayName(for bundleIdentifier: String) -> String {
+        if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleIdentifier) {
+            let name = FileManager.default.displayName(atPath: url.path)
+            if name.hasSuffix(".app") {
+                return String(name.dropLast(4))
             }
-        checkAppStatus()
+            return name
+        }
+        if let app = NSRunningApplication.runningApplications(withBundleIdentifier: bundleIdentifier).first,
+           let name = app.localizedName, !name.isEmpty {
+            return name
+        }
+        return DEFAULT_FALLBACK_NAMES[bundleIdentifier] ?? bundleIdentifier
     }
-    
-    private func checkAppStatus() {
-        let running = isActive()
-        if running != isAppActive {
-            isAppActive = running
-            if !running {
-                playbackState.isPlaying = false
-            }
+
+    /// 获取应用的高清图标
+    static func icon(for bundleIdentifier: String) -> NSImage? {
+        if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleIdentifier) {
+            return NSWorkspace.shared.icon(forFile: url.path)
+        }
+        if let app = NSRunningApplication.runningApplications(withBundleIdentifier: bundleIdentifier).first {
+            return app.icon
+        }
+        return nil
+    }
+
+    /// 检查应用是否正在运行
+    static func isRunning(bundleIdentifier: String) -> Bool {
+        !NSRunningApplication.runningApplications(withBundleIdentifier: bundleIdentifier).isEmpty
+    }
+
+    /// 动态注册检测到的媒体应用
+    @MainActor
+    static func registerDiscoveredApp(_ bundleIdentifier: String) {
+        guard !bundleIdentifier.isEmpty else { return }
+        var discovered = Defaults[.discoveredMediaAppBundleIDs]
+        if !discovered.contains(bundleIdentifier) {
+            discovered.append(bundleIdentifier)
+            Defaults[.discoveredMediaAppBundleIDs] = discovered
         }
     }
-    
-    func isActive() -> Bool {
-        !NSRunningApplication.runningApplications(withBundleIdentifier: "com.tencent.QQMusicMac").isEmpty
+
+    /// 检查指定的 bundleIdentifier 是否被用户允许显示频谱与灵动岛
+    static func isAppEnabled(_ bundleIdentifier: String) -> Bool {
+        guard !bundleIdentifier.isEmpty else { return true }
+        let enabled = Defaults[.enabledMediaAppBundleIDs]
+        return enabled.contains(bundleIdentifier)
     }
-    
-    func play() async {
-        sendMediaKey(NX_KEYTYPE_PLAY)
-    }
-    
-    func pause() async {
-        sendMediaKey(NX_KEYTYPE_PLAY)
-    }
-    
-    func togglePlay() async {
-        sendMediaKey(NX_KEYTYPE_PLAY)
-    }
-    
-    func nextTrack() async {
-        sendMediaKey(NX_KEYTYPE_NEXT)
-    }
-    
-    func previousTrack() async {
-        sendMediaKey(NX_KEYTYPE_PREVIOUS)
-    }
-    
-    func seek(to time: Double) async {}
-    func toggleShuffle() async {}
-    func toggleRepeat() async {}
-    func setVolume(_ level: Double) async {}
-    func setFavorite(_ favorite: Bool) async {}
-    func updatePlaybackInfo() async {}
-    
-    private func sendMediaKey(_ key: Int32) {
-        func postKeyEvent(down: Bool) {
-            let flags = NSEvent.ModifierFlags(rawValue: down ? 0xa00 : 0xb00)
-            let data1 = Int((key << 16) | (down ? 0xa00 : 0xb00))
-            let ev = NSEvent.otherEvent(
-                with: .systemDefined,
-                location: .zero,
-                modifierFlags: flags,
-                timestamp: 0,
-                windowNumber: 0,
-                context: nil,
-                subtype: 8,
-                data1: data1,
-                data2: -1
+
+    /// 获取所有供设置界面展示的媒体应用列表
+    static func getAllMediaApps() -> [DiscoveredMediaApp] {
+        let discovered = Defaults[.discoveredMediaAppBundleIDs]
+        var allIDs = Defaults.Keys.DEFAULT_KNOWN_MEDIA_APP_BUNDLE_IDS
+        for id in discovered where !allIDs.contains(id) {
+            allIDs.append(id)
+        }
+
+        return allIDs.map { bundleID in
+            DiscoveredMediaApp(
+                bundleIdentifier: bundleID,
+                displayName: displayName(for: bundleID),
+                icon: icon(for: bundleID),
+                isRunning: isRunning(bundleIdentifier: bundleID)
             )
-            ev?.cgEvent?.post(tap: .cghidEventTap)
         }
-        postKeyEvent(down: true)
-        postKeyEvent(down: false)
     }
 }
 
-// MARK: - NetEase Music Controller
+// MARK: - Legacy Compatibility Controllers
 
-class NetEaseMusicController: MediaControllerProtocol {
-    @Published private var playbackState: PlaybackState = PlaybackState(
-        bundleIdentifier: "com.netease.163music",
-        playbackRate: 1
-    )
-    
-    var playbackStatePublisher: AnyPublisher<PlaybackState, Never> {
-        $playbackState.eraseToAnyPublisher()
-    }
-    
+class QQMusicController: MediaControllerProtocol {
+    @Published private var playbackState: PlaybackState = PlaybackState(bundleIdentifier: "com.tencent.QQMusicMac")
+    var playbackStatePublisher: AnyPublisher<PlaybackState, Never> { $playbackState.eraseToAnyPublisher() }
     var supportsVolumeControl: Bool { false }
     var supportsFavorite: Bool { false }
-    
-    private var isAppActive: Bool = false
-    private var monitorTimer: AnyCancellable?
-    
-    init() {
-        setupProcessObserver()
-    }
-    
-    deinit {
-        monitorTimer?.cancel()
-    }
-    
-    private func setupProcessObserver() {
-        monitorTimer = Timer.publish(every: 3.0, on: .main, in: .common)
-            .autoconnect()
-            .sink { [weak self] _ in
-                self?.checkAppStatus()
-            }
-        checkAppStatus()
-    }
-    
-    private func checkAppStatus() {
-        let running = isActive()
-        if running != isAppActive {
-            isAppActive = running
-            if !running {
-                playbackState.isPlaying = false
-            }
-        }
-    }
-    
-    func isActive() -> Bool {
-        !NSRunningApplication.runningApplications(withBundleIdentifier: "com.netease.163music").isEmpty
-    }
-    
-    func play() async {
-        sendMediaKey(NX_KEYTYPE_PLAY)
-    }
-    
-    func pause() async {
-        sendMediaKey(NX_KEYTYPE_PLAY)
-    }
-    
-    func togglePlay() async {
-        sendMediaKey(NX_KEYTYPE_PLAY)
-    }
-    
-    func nextTrack() async {
-        sendMediaKey(NX_KEYTYPE_NEXT)
-    }
-    
-    func previousTrack() async {
-        sendMediaKey(NX_KEYTYPE_PREVIOUS)
-    }
-    
+    func isActive() -> Bool { MediaAppHelper.isRunning(bundleIdentifier: "com.tencent.QQMusicMac") }
+    func play() async {}
+    func pause() async {}
+    func togglePlay() async {}
+    func nextTrack() async {}
+    func previousTrack() async {}
     func seek(to time: Double) async {}
     func toggleShuffle() async {}
     func toggleRepeat() async {}
     func setVolume(_ level: Double) async {}
     func setFavorite(_ favorite: Bool) async {}
     func updatePlaybackInfo() async {}
-    
-    private func sendMediaKey(_ key: Int32) {
-        func postKeyEvent(down: Bool) {
-            let flags = NSEvent.ModifierFlags(rawValue: down ? 0xa00 : 0xb00)
-            let data1 = Int((key << 16) | (down ? 0xa00 : 0xb00))
-            let ev = NSEvent.otherEvent(
-                with: .systemDefined,
-                location: .zero,
-                modifierFlags: flags,
-                timestamp: 0,
-                windowNumber: 0,
-                context: nil,
-                subtype: 8,
-                data1: data1,
-                data2: -1
-            )
-            ev?.cgEvent?.post(tap: .cghidEventTap)
-        }
-        postKeyEvent(down: true)
-        postKeyEvent(down: false)
-    }
+}
+
+class NetEaseMusicController: MediaControllerProtocol {
+    @Published private var playbackState: PlaybackState = PlaybackState(bundleIdentifier: "com.netease.163music")
+    var playbackStatePublisher: AnyPublisher<PlaybackState, Never> { $playbackState.eraseToAnyPublisher() }
+    var supportsVolumeControl: Bool { false }
+    var supportsFavorite: Bool { false }
+    func isActive() -> Bool { MediaAppHelper.isRunning(bundleIdentifier: "com.netease.163music") }
+    func play() async {}
+    func pause() async {}
+    func togglePlay() async {}
+    func nextTrack() async {}
+    func previousTrack() async {}
+    func seek(to time: Double) async {}
+    func toggleShuffle() async {}
+    func toggleRepeat() async {}
+    func setVolume(_ level: Double) async {}
+    func setFavorite(_ favorite: Bool) async {}
+    func updatePlaybackInfo() async {}
 }

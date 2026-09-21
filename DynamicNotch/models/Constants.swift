@@ -187,5 +187,34 @@ extension Defaults.Keys {
         }
     }
 
+    // MARK: Dynamic Media App Filtering
+    static let DEFAULT_KNOWN_MEDIA_APP_BUNDLE_IDS: [String] = [
+        "com.apple.Music",
+        "com.spotify.client",
+        "com.netease.163music",
+        "com.tencent.QQMusicMac",
+        "com.apple.podcasts",
+        "com.apple.Safari",
+        "com.google.Chrome"
+    ]
+
+    static let DEFAULT_ENABLED_MEDIA_APP_BUNDLE_IDS: [String] = [
+        "com.apple.Music",
+        "com.spotify.client",
+        "com.netease.163music",
+        "com.tencent.QQMusicMac",
+        "com.apple.podcasts"
+    ]
+
+    static let enabledMediaAppBundleIDs = Key<[String]>(
+        "enabledMediaAppBundleIDs",
+        default: DEFAULT_ENABLED_MEDIA_APP_BUNDLE_IDS
+    )
+
+    static let discoveredMediaAppBundleIDs = Key<[String]>(
+        "discoveredMediaAppBundleIDs",
+        default: DEFAULT_KNOWN_MEDIA_APP_BUNDLE_IDS
+    )
+
     static let didClearLegacyURLCacheV1 = Key<Bool>("didClearLegacyURLCache_v1", default: false)
 }

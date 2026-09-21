@@ -97,4 +97,15 @@ enum MusicControlButton: String, CaseIterable, Identifiable, Codable, Defaults.S
     var prefersLargeScale: Bool {
         self == .playPause
     }
+
+    var compatibilityBadge: String? {
+        switch self {
+        case .favorite:
+            return "Apple Music"
+        case .volume:
+            return "Music & Spotify"
+        default:
+            return nil
+        }
+    }
 }

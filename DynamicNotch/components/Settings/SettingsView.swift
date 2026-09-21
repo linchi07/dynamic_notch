@@ -341,7 +341,9 @@ struct HUD: View {
 struct Media: View {
     @Default(.waitInterval) var waitInterval
     @Default(.mediaController) var mediaController
-    @Default(.enabledMediaControllers) var enabledMediaControllers
+    @Default(.enabledMediaAppBundleIDs) var enabledMediaAppBundleIDs
+    @Default(.discoveredMediaAppBundleIDs) var discoveredMediaAppBundleIDs
+    @ObservedObject var musicManager = MusicManager.shared
     @ObservedObject var coordinator = BoringViewCoordinator.shared
     @Default(.hideNotchOption) var hideNotchOption
     @Default(.enableSneakPeek) private var enableSneakPeek
@@ -349,44 +351,67 @@ struct Media: View {
     var body: some View {
         Form {
             Section {
-                ForEach(availableMediaControllers) { controller in
+                let mediaApps = MediaAppHelper.getAllMediaApps()
+                ForEach(mediaApps) { app in
                     Toggle(isOn: Binding(
                         get: {
-                            enabledMediaControllers.contains(controller)
+                            enabledMediaAppBundleIDs.contains(app.bundleIdentifier)
                         },
                         set: { isEnabled in
-                            var updated = enabledMediaControllers
+                            var updated = enabledMediaAppBundleIDs
                             if isEnabled {
-                                if !updated.contains(controller) {
-                                    updated.append(controller)
+                                if !updated.contains(app.bundleIdentifier) {
+                                    updated.append(app.bundleIdentifier)
                                 }
                             } else {
-                                if updated.count > 1 {
-                                    updated.removeAll { $0 == controller }
-                                }
+                                updated.removeAll { $0 == app.bundleIdentifier }
                             }
-                            enabledMediaControllers = updated
+                            enabledMediaAppBundleIDs = updated
                             NotificationCenter.default.post(
-                                name: Notification.Name.mediaControllerChanged,
+                                name: Notification.Name("mediaAppFilterChanged"),
                                 object: nil
                             )
                         }
                     )) {
-                        HStack {
-                            Text(LocalizedStringKey(controller.rawValue))
-                            Spacer()
-                            if controller == .nowPlaying {
-                                Text("Universal")
-                                    .font(.caption2)
+                        HStack(spacing: 8) {
+                            if let icon = app.icon {
+                                Image(nsImage: icon)
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                                    .frame(width: 20, height: 20)
+                                    .cornerRadius(4)
+                            } else {
+                                Image(systemName: "music.note")
+                                    .font(.system(size: 13))
+                                    .frame(width: 20, height: 20)
                                     .foregroundStyle(.secondary)
+                            }
+
+                            Text(app.displayName)
+                                .font(.body)
+
+                            Spacer()
+
+                            if app.bundleIdentifier == musicManager.bundleIdentifier && musicManager.isPlaying {
+                                Text("播放中")
+                                    .font(.system(size: 10, weight: .semibold))
+                                    .foregroundStyle(.green)
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 2)
+                                    .background(Color.green.opacity(0.15))
+                                    .clipShape(Capsule())
+                            } else if app.isRunning {
+                                Circle()
+                                    .fill(Color.secondary.opacity(0.4))
+                                    .frame(width: 6, height: 6)
                             }
                         }
                     }
                 }
             } header: {
-                Text("Active Media Sources")
+                Text("受监控的媒体应用")
             } footer: {
-                Text("Select media players to monitor concurrently. When multiple players are active (e.g. web browser video + Apple Music), you can switch between them in the Notch.")
+                Text("根据当前访问系统媒体控制的所有应用动态构建。开启开关的应用在播放时会触发刘海屏展开与频谱图显示；未开启的应用（如网页视频）将被静默忽略，不打扰听歌体验。")
                     .foregroundStyle(.secondary)
                     .font(.caption)
             }
@@ -432,15 +457,6 @@ struct Media: View {
         }
         .accentColor(.effectiveAccent)
         .navigationTitle("Media")
-    }
-
-    // Only show controller options that are available on this macOS version
-    private var availableMediaControllers: [MediaControllerType] {
-        if MusicManager.shared.isNowPlayingDeprecated {
-            return MediaControllerType.allCases.filter { $0 != .nowPlaying }
-        } else {
-            return MediaControllerType.allCases
-        }
     }
 }
 

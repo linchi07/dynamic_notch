@@ -155,12 +155,33 @@ struct MusicSlotConfigurationView: View {
                                     .frame(width: 60)
                                     .multilineTextAlignment(.center)
                                     .lineLimit(2)
+
+                                if let badge = control.compatibilityBadge {
+                                    Text(badge)
+                                        .font(.system(size: 7, weight: .bold))
+                                        .foregroundStyle(.orange)
+                                        .padding(.horizontal, 4)
+                                        .padding(.vertical, 1)
+                                        .background(Color.orange.opacity(0.15))
+                                        .clipShape(Capsule())
+                                }
                             }
                         }
                     }
                     .padding(.vertical, 4)
                 }
                 .scrollIndicators(.visible)
+
+                HStack(alignment: .top, spacing: 6) {
+                    Image(systemName: "info.circle")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text("提示：“喜欢 (Favorite)”仅 Apple Music 支持；“音量”仅 Apple Music 与 Spotify 支持应用内独立调节；其余控制项通用支持所有播放器与网页。")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(.top, 6)
             }
         }
     }

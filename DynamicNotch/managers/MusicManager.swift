@@ -97,6 +97,15 @@ class MusicManager: ObservableObject {
             }
             .store(in: &cancellables)
 
+        // Listen for changes to dynamic media app filter
+        NotificationCenter.default.publisher(for: Notification.Name("mediaAppFilterChanged"))
+            .sink { [weak self] _ in
+                DispatchQueue.main.async {
+                    self?.refreshAllSessions()
+                }
+            }
+            .store(in: &cancellables)
+
         // Initialize deprecation check asynchronously
         Task { @MainActor in
             do {
@@ -205,6 +214,13 @@ class MusicManager: ObservableObject {
         for type in dedicatedTypes {
             guard let controller = controllers[type], controller.isActive() else { continue }
             if let state = sessionStates[type] {
+                if !state.bundleIdentifier.isEmpty {
+                    MediaAppHelper.registerDiscoveredApp(state.bundleIdentifier)
+                }
+
+                // App filter check
+                guard MediaAppHelper.isAppEnabled(state.bundleIdentifier) else { continue }
+
                 let hasTrack = !state.title.isEmpty && state.title != "I'm Handsome"
                 if state.isPlaying || hasTrack {
                     let session = MediaSession(
@@ -236,35 +252,42 @@ class MusicManager: ObservableObject {
             }
         }
 
-        // 2. Now Playing session with deduplication
+        // 2. Now Playing session with dynamic app filtering and deduplication
         if let npController = controllers[.nowPlaying], npController.isActive(),
            let npState = sessionStates[.nowPlaying] {
-            let hasTrack = !npState.title.isEmpty && npState.title != "I'm Handsome"
-            if npState.isPlaying || hasTrack {
-                let isDuplicateBundle = dedicatedBundleIDs.contains(npState.bundleIdentifier)
-                let isDuplicateTitle = dedicatedTitles.contains(npState.title)
+            if !npState.bundleIdentifier.isEmpty {
+                MediaAppHelper.registerDiscoveredApp(npState.bundleIdentifier)
+            }
 
-                // If not duplicated with a dedicated music app, add as distinct session
-                if !isDuplicateBundle && !isDuplicateTitle {
-                    let session = MediaSession(
-                        type: .nowPlaying,
-                        bundleIdentifier: npState.bundleIdentifier,
-                        title: npState.title,
-                        artist: npState.artist,
-                        album: npState.album,
-                        artwork: npState.artwork,
-                        isPlaying: npState.isPlaying,
-                        currentTime: npState.currentTime,
-                        duration: npState.duration,
-                        playbackRate: npState.playbackRate,
-                        isShuffled: npState.isShuffled,
-                        repeatMode: npState.repeatMode,
-                        volume: npState.volume,
-                        isFavorite: npState.isFavorite,
-                        genre: npState.genre,
-                        lastUpdated: npState.lastUpdated
-                    )
-                    sessions.append(session)
+            // App filter check
+            if MediaAppHelper.isAppEnabled(npState.bundleIdentifier) {
+                let hasTrack = !npState.title.isEmpty && npState.title != "I'm Handsome"
+                if npState.isPlaying || hasTrack {
+                    let isDuplicateBundle = dedicatedBundleIDs.contains(npState.bundleIdentifier)
+                    let isDuplicateTitle = dedicatedTitles.contains(npState.title)
+
+                    // If not duplicated with a dedicated music app, add as distinct session
+                    if !isDuplicateBundle && !isDuplicateTitle {
+                        let session = MediaSession(
+                            type: .nowPlaying,
+                            bundleIdentifier: npState.bundleIdentifier,
+                            title: npState.title,
+                            artist: npState.artist,
+                            album: npState.album,
+                            artwork: npState.artwork,
+                            isPlaying: npState.isPlaying,
+                            currentTime: npState.currentTime,
+                            duration: npState.duration,
+                            playbackRate: npState.playbackRate,
+                            isShuffled: npState.isShuffled,
+                            repeatMode: npState.repeatMode,
+                            volume: npState.volume,
+                            isFavorite: npState.isFavorite,
+                            genre: npState.genre,
+                            lastUpdated: npState.lastUpdated
+                        )
+                        sessions.append(session)
+                    }
                 }
             }
         }
@@ -278,6 +301,16 @@ class MusicManager: ObservableObject {
         }
 
         self.availableSessions = sessions
+
+        if sessions.isEmpty {
+            if self.isPlaying {
+                withAnimation(.smooth) {
+                    self.isPlaying = false
+                    self.updateIdleState(state: false)
+                }
+            }
+            return
+        }
 
         // 4. Update selected session
         let sessionExists = sessions.contains { $0.type == selectedSessionType }
