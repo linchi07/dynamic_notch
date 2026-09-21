@@ -16,6 +16,7 @@ enum NotchActivityVisual: Equatable {
     case customImage(image: NSImage)
     case colorDot(color: Color)
     case audioVisualizer
+    case progress(Double)
 }
 
 /// One side of a live activity. Active wings intentionally render only compact
@@ -103,13 +104,15 @@ final class LiveActivityManager: ObservableObject {
     @Published var isAlertPresented = false
 
     var displayMode: NotchDisplayMode {
-        let state = activities.isEmpty ? nil : NotchActiveState(activities: activities)
         if let alert = activeAlert, isAlertPresented,
            let id = alert.activityId,
            activities.contains(where: { $0.id == id }) {
-            return .notification(alert)
+            let unaffected = activities.filter { $0.id != id }
+            return unaffected.isEmpty
+                ? .notification(alert)
+                : .active(NotchActiveState(activities: unaffected))
         }
-        if let state { return .active(state) }
+        if !activities.isEmpty { return .active(NotchActiveState(activities: activities)) }
         if let alert = activeAlert, isAlertPresented { return .notification(alert) }
         return .idle
     }

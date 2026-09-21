@@ -35,7 +35,7 @@ class WebcamManager: NSObject, ObservableObject {
         }
     }
 
-    private let sessionQueue = DispatchQueue(label: "BoringNotch.WebcamManager.SessionQueue", qos: .userInitiated)
+    private let sessionQueue = DispatchQueue(label: "DynamicNotch.WebcamManager.SessionQueue", qos: .userInitiated)
     
     private var isCleaningUp: Bool = false
     
@@ -175,7 +175,7 @@ class WebcamManager: NSObject, ObservableObject {
                 
                 let videoInput = try AVCaptureDeviceInput(device: videoDevice)
                 guard session.canAddInput(videoInput) else {
-                    throw NSError(domain: "BoringNotch.WebcamManager", code: -1, userInfo: [NSLocalizedDescriptionKey: "Cannot add video input"])
+                    throw NSError(domain: "DynamicNotch.WebcamManager", code: -1, userInfo: [NSLocalizedDescriptionKey: "Cannot add video input"])
                 }
                 
                 session.beginConfiguration()

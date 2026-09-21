@@ -108,6 +108,16 @@ struct NotchWingsContainer: View {
                     AudioSpectrumView(isPlaying: $musicManager.isPlaying, genre: musicManager.currentGenre)
                         .frame(width: min(16, visualSize), height: min(12, visualSize))
                 }
+        case .progress(let value):
+            Circle()
+                .stroke(item.tintColor.opacity(0.25), lineWidth: 2.5)
+                .overlay {
+                    Circle()
+                        .trim(from: 0, to: min(max(value, 0), 1))
+                        .stroke(item.tintColor, style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
+                        .rotationEffect(.degrees(-90))
+                }
+                .padding(2)
         }
     }
 }

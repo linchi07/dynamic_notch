@@ -196,7 +196,6 @@ class MusicManager: ObservableObject {
         // 1. Collect dedicated music app sessions
         let dedicatedTypes: [MediaControllerType] = [.appleMusic, .spotify, .youtubeMusic]
         var dedicatedBundleIDs: Set<String> = []
-        var dedicatedTitles: Set<String> = []
 
         for type in dedicatedTypes {
             guard let controller = controllers[type], controller.isActive() else { continue }
@@ -225,9 +224,6 @@ class MusicManager: ObservableObject {
                     if !state.bundleIdentifier.isEmpty {
                         dedicatedBundleIDs.insert(state.bundleIdentifier)
                     }
-                    if hasTrack {
-                        dedicatedTitles.insert(state.title)
-                    }
                 }
             }
         }
@@ -238,7 +234,6 @@ class MusicManager: ObservableObject {
             let hasTrack = !npState.title.isEmpty && npState.title != "I'm Handsome"
             if npState.isPlaying || hasTrack {
                 let isDuplicateBundle = dedicatedBundleIDs.contains(npState.bundleIdentifier)
-                let isDuplicateTitle = dedicatedTitles.contains(npState.title)
 
                 // Universal owns every app without an active dedicated source.
                 let sourceType: MediaControllerType
@@ -251,7 +246,7 @@ class MusicManager: ObservableObject {
                     sourceType = .nowPlaying
                 }
 
-                if !isDuplicateBundle && !isDuplicateTitle &&
+                if !isDuplicateBundle &&
                     (sourceType != .nowPlaying || Defaults[.enabledMediaControllers].contains(.nowPlaying)) {
                     let session = MediaSession(
                         type: sourceType,

@@ -21,9 +21,9 @@ class DynamicNotchXPCHelper: NSObject, DynamicNotchXPCHelperProtocol {
         "Mover y redimensionar",
     ]
 
-    private let windowQueue = DispatchQueue(label: "theboringteam.boringnotch.window-snap")
+    private let windowQueue = DispatchQueue(label: "app.dynamicnotch.window-snap")
     private let animationQueue = DispatchQueue(
-        label: "theboringteam.boringnotch.window-snap-animation",
+        label: "app.dynamicnotch.window-snap-animation",
         qos: .userInteractive,
         attributes: .concurrent
     )

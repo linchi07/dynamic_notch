@@ -268,6 +268,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        ExternalLiveActivityServer.shared.start()
         Task {
             await XPCHelperClient.shared.primeNativeWindowLayoutShortcuts()
         }

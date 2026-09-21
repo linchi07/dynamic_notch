@@ -42,6 +42,9 @@ struct SettingsView: View {
                 NavigationLink(value: "Battery") {
                     Label("Battery", systemImage: "battery.100.bolt")
                 }
+                NavigationLink(value: "External Apps") {
+                    Label("External Apps", systemImage: "app.connected.to.app.below.fill")
+                }
 //                NavigationLink(value: "Downloads") {
 //                    Label("Downloads", systemImage: "square.and.arrow.down")
 //                }
@@ -80,6 +83,8 @@ struct SettingsView: View {
                     HUD()
                 case "Battery":
                     Charge()
+                case "External Apps":
+                    ExternalActivitySettings()
                 case "Shelf":
                     Shelf()
                 case "Shortcuts":
@@ -128,6 +133,46 @@ struct SettingsView: View {
     }
 }
 
+private struct ExternalActivitySettings: View {
+    @ObservedObject private var permissions = ExternalActivityPermissions.shared
+
+    var body: some View {
+        Form {
+            Section {
+                if permissions.decisions.isEmpty {
+                    Text("No app has requested access yet.")
+                        .foregroundStyle(.secondary)
+                }
+                ForEach(permissions.decisions.keys.sorted(), id: \.self) { identity in
+                    Toggle(isOn: Binding(
+                        get: { permissions.isAllowed(identity) },
+                        set: { permissions.setAllowed($0, for: identity) }
+                    )) {
+                        VStack(alignment: .leading) {
+                            Text(identity.components(separatedBy: "|").first ?? identity)
+                            Text(identity.components(separatedBy: "|").last ?? "")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            } header: {
+                Text("Live Activity access")
+            } footer: {
+                Text("The first request asks for permission. Disconnecting an app automatically ends its activities; revoking access ends them immediately.")
+            }
+            Section {
+                Text(ExternalLiveActivityServer.shared.socketPath)
+                    .textSelection(.enabled)
+                    .font(.caption.monospaced())
+            } header: {
+                Text("Local socket")
+            }
+        }
+        .navigationTitle("External Apps")
+    }
+}
+
 struct GeneralSettings: View {
     @ObservedObject var coordinator = BoringViewCoordinator.shared
 
@@ -161,7 +206,7 @@ struct Charge: View {
                     Text("Show battery percentage")
                 }
                 Defaults.Toggle(key: .showPowerStatusNotifications) {
-                    Text("Show power status notifications")
+                    Text("Show power status alerts")
                 }
             } header: {
                 Text("General")
@@ -302,7 +347,7 @@ struct HUD: View {
                 }
             } footer: {
                 if hudReplacement {
-                    Text("The same iOS-style floating bar is used in every notch and notification state. Its vertical position follows the current visible content automatically.")
+                    Text("The same iOS-style floating bar is used in every notch and alert state. Its vertical position follows the current visible content automatically.")
                 }
             }
             Section {
