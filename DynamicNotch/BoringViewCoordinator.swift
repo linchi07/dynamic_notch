@@ -10,7 +10,7 @@ import Combine
 import Defaults
 import SwiftUI
 
-enum SneakContentType {
+enum SneakContentType: Equatable {
     case brightness
     case volume
     case backlight

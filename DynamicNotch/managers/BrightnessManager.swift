@@ -15,6 +15,7 @@ final class BrightnessManager: ObservableObject {
 	private let visibleDuration: TimeInterval = 1.2
 	private let client = XPCHelperClient.shared
 	private var pendingRelativeDelta: Float = 0
+	private var pendingBoundaryFeedback = false
 	private var pendingAbsoluteValue: Float?
 	private var updateTask: Task<Void, Never>?
 
@@ -30,8 +31,12 @@ final class BrightnessManager: ObservableObject {
 		}
 	}
 
-	@MainActor func setRelative(delta: Float) {
+	@MainActor func setRelative(delta: Float, isHolding: Bool = false) {
 		pendingRelativeDelta += delta
+		pendingBoundaryFeedback = pendingBoundaryFeedback || isHolding
+		if isHolding {
+			NotificationCenter.default.post(name: .notchMediaKeyDidRepeat, object: SneakContentType.brightness)
+		}
 		startUpdateLoop()
 	}
 
@@ -43,6 +48,7 @@ final class BrightnessManager: ObservableObject {
 			// relative input arriving afterwards is applied on top of this value.
 			self.pendingAbsoluteValue = clamped
 			self.pendingRelativeDelta = 0
+			self.pendingBoundaryFeedback = false
 			self.startUpdateLoop()
 		}
 	}
@@ -71,10 +77,12 @@ final class BrightnessManager: ObservableObject {
 
 			let absolute = pendingAbsoluteValue
 			let delta = pendingRelativeDelta
+			let allowsBoundaryFeedback = pendingBoundaryFeedback
 			guard absolute != nil || delta != 0 else { break }
 
 			pendingAbsoluteValue = nil
 			pendingRelativeDelta = 0
+			pendingBoundaryFeedback = false
 			let starting = absolute ?? current
 			let target = max(0, min(1, starting + delta))
 
@@ -88,7 +96,11 @@ final class BrightnessManager: ObservableObject {
 						type: .brightness,
 						value: CGFloat(target)
 					)
-					notifyBoundaryHit(starting: starting, target: target, delta: delta)
+					notifyBoundaryHit(
+						starting: starting,
+						delta: delta,
+						isHolding: allowsBoundaryFeedback
+					)
 				}
 			} else {
 				hasAuthoritativeCurrent = false
@@ -102,10 +114,11 @@ final class BrightnessManager: ObservableObject {
 	}
 
 	@MainActor
-	private func notifyBoundaryHit(starting: Float, target: Float, delta: Float) {
-		if (starting >= 0.999 || target >= 0.999) && delta > 0 {
+	private func notifyBoundaryHit(starting: Float, delta: Float, isHolding: Bool) {
+		guard isHolding else { return }
+		if starting >= 0.999 && delta > 0 {
 			NotificationCenter.default.post(name: .notchBoundaryHit, object: true)
-		} else if (starting <= 0.001 || target <= 0.001) && delta < 0 {
+		} else if starting <= 0.001 && delta < 0 {
 			NotificationCenter.default.post(name: .notchBoundaryHit, object: false)
 		}
 	}
@@ -132,6 +145,7 @@ final class KeyboardBacklightManager: ObservableObject {
 	private let visibleDuration: TimeInterval = 1.2
 	private let client = XPCHelperClient.shared
 	private var pendingRelativeDelta: Float = 0
+	private var pendingBoundaryFeedback = false
 	private var pendingAbsoluteValue: Float?
 	private var updateTask: Task<Void, Never>?
 
@@ -147,8 +161,12 @@ final class KeyboardBacklightManager: ObservableObject {
 		}
 	}
 
-	@MainActor func setRelative(delta: Float) {
+	@MainActor func setRelative(delta: Float, isHolding: Bool = false) {
 		pendingRelativeDelta += delta
+		pendingBoundaryFeedback = pendingBoundaryFeedback || isHolding
+		if isHolding {
+			NotificationCenter.default.post(name: .notchMediaKeyDidRepeat, object: SneakContentType.backlight)
+		}
 		startUpdateLoop()
 	}
 
@@ -158,6 +176,7 @@ final class KeyboardBacklightManager: ObservableObject {
 			guard let self else { return }
 			self.pendingAbsoluteValue = clamped
 			self.pendingRelativeDelta = 0
+			self.pendingBoundaryFeedback = false
 			self.startUpdateLoop()
 		}
 	}
@@ -186,10 +205,12 @@ final class KeyboardBacklightManager: ObservableObject {
 
 			let absolute = pendingAbsoluteValue
 			let delta = pendingRelativeDelta
+			let allowsBoundaryFeedback = pendingBoundaryFeedback
 			guard absolute != nil || delta != 0 else { break }
 
 			pendingAbsoluteValue = nil
 			pendingRelativeDelta = 0
+			pendingBoundaryFeedback = false
 			let starting = absolute ?? current
 			let target = max(0, min(1, starting + delta))
 
@@ -203,7 +224,11 @@ final class KeyboardBacklightManager: ObservableObject {
 						type: .backlight,
 						value: CGFloat(target)
 					)
-					notifyBoundaryHit(starting: starting, target: target, delta: delta)
+					notifyBoundaryHit(
+						starting: starting,
+						delta: delta,
+						isHolding: allowsBoundaryFeedback
+					)
 				}
 			} else {
 				hasAuthoritativeCurrent = false
@@ -217,10 +242,11 @@ final class KeyboardBacklightManager: ObservableObject {
 	}
 
 	@MainActor
-	private func notifyBoundaryHit(starting: Float, target: Float, delta: Float) {
-		if (starting >= 0.999 || target >= 0.999) && delta > 0 {
+	private func notifyBoundaryHit(starting: Float, delta: Float, isHolding: Bool) {
+		guard isHolding else { return }
+		if starting >= 0.999 && delta > 0 {
 			NotificationCenter.default.post(name: .notchBoundaryHit, object: true)
-		} else if (starting <= 0.001 || target <= 0.001) && delta < 0 {
+		} else if starting <= 0.001 && delta < 0 {
 			NotificationCenter.default.post(name: .notchBoundaryHit, object: false)
 		}
 	}

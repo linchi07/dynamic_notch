@@ -16,48 +16,61 @@ struct MediaSessionSwitcherView: View {
     @ObservedObject var musicManager = MusicManager.shared
 
     var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 6) {
+        ScrollView(.vertical, showsIndicators: false) {
+            VStack(spacing: 3) {
                 ForEach(musicManager.availableSessions) { session in
-                    let isSelected = session.type == musicManager.selectedSessionType
-                    Button {
-                        withAnimation(.smooth(duration: 0.2)) {
+                    MediaSessionButton(
+                        session: session,
+                        isSelected: session.type == musicManager.selectedSessionType
+                    ) {
+                        withAnimation(.easeInOut(duration: 0.18)) {
                             musicManager.selectSession(type: session.type)
                         }
-                    } label: {
-                        HStack(spacing: 4) {
-                            if session.isPlaying {
-                                Circle()
-                                    .fill(Color.green)
-                                    .frame(width: 5, height: 5)
-                            } else {
-                                Circle()
-                                    .fill(Color.gray.opacity(0.6))
-                                    .frame(width: 5, height: 5)
-                            }
-
-                            Text(session.displayName)
-                                .font(.system(size: 10, weight: isSelected ? .semibold : .medium))
-                                .foregroundColor(isSelected ? .white : .secondary)
-                                .lineLimit(1)
-                        }
-                        .padding(.horizontal, 7)
-                        .padding(.vertical, 3)
-                        .background(
-                            Capsule()
-                                .fill(isSelected ? Color.white.opacity(0.22) : Color.white.opacity(0.07))
-                        )
-                        .overlay(
-                            Capsule()
-                                .stroke(isSelected ? Color.white.opacity(0.3) : Color.clear, lineWidth: 0.5)
-                        )
                     }
-                    .buttonStyle(PlainButtonStyle())
                 }
             }
-            .padding(.horizontal, 2)
+            .padding(.vertical, 3)
         }
-        .frame(height: 18)
+        .scrollBounceBehavior(.basedOnSize)
+        .frame(width: 30, height: 86)
+        .background(Color.white.opacity(0.07), in: Capsule())
+        .overlay(Capsule().stroke(Color.white.opacity(0.08), lineWidth: 0.5))
+        .clipShape(Capsule())
+    }
+}
+
+private struct MediaSessionButton: View {
+    let session: MediaSession
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            ZStack(alignment: .bottomTrailing) {
+                AppIcon(for: session.bundleIdentifier ?? "com.apple.Music")
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(width: 17, height: 17)
+                    .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+
+                Circle()
+                    .fill(session.isPlaying ? Color.green : Color.gray.opacity(0.7))
+                    .frame(width: 5, height: 5)
+                    .overlay(Circle().stroke(Color.black.opacity(0.8), lineWidth: 1))
+                    .offset(x: 1, y: 1)
+            }
+            .frame(width: 24, height: 24)
+            .background(isSelected ? Color.white.opacity(0.20) : Color.clear)
+            .clipShape(Circle())
+            .overlay(
+                Circle()
+                    .stroke(isSelected ? Color.white.opacity(0.28) : Color.clear, lineWidth: 0.5)
+            )
+            .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .help(session.displayName)
+        .accessibilityLabel(session.displayName)
     }
 }
 
@@ -66,22 +79,20 @@ struct MusicPlayerView: View {
     @ObservedObject var musicManager = MusicManager.shared
 
     var body: some View {
-        VStack(alignment: .leading, spacing: musicManager.availableSessions.count > 1 ? 4 : 0) {
+        HStack(spacing: 12) {
+            AlbumArtView(vm: vm)
+                .frame(width: 86, height: 86)
+
+            MusicControlsView()
+                .drawingGroup()
+                .compositingGroup()
+
             if musicManager.availableSessions.count > 1 {
                 MediaSessionSwitcherView()
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-            }
-
-            HStack(spacing: 12) {
-                AlbumArtView(vm: vm)
-                    .frame(
-                        width: musicManager.availableSessions.count > 1 ? 74 : 86,
-                        height: musicManager.availableSessions.count > 1 ? 74 : 86
-                    )
-                MusicControlsView().drawingGroup().compositingGroup()
+                    .transition(.opacity.combined(with: .move(edge: .trailing)))
             }
         }
-        .frame(height: NOTCH_PANEL_CONTAINER_HEIGHT)
+        .frame(height: NOTCH_PANEL_CONTAINER_HEIGHT, alignment: .center)
     }
 }
 
@@ -141,6 +152,7 @@ struct AlbumArtView: View {
             .foregroundColor(Color.black)
             .opacity(musicManager.isPlaying ? 0 : 0.8)
             .blur(radius: 50)
+            .allowsHitTesting(false)
     }
                 
 
@@ -166,8 +178,9 @@ struct AlbumArtView: View {
             AppIcon(for: musicManager.bundleIdentifier ?? "com.apple.Music")
                 .resizable()
                 .aspectRatio(contentMode: .fill)
-                .frame(width: 30, height: 30)
-                .offset(x: 10, y: 10)
+                .frame(width: 24, height: 24)
+                .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
+                .padding(4)
                 .transition(.scale.combined(with: .opacity))
                 .zIndex(2)
         }

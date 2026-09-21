@@ -50,19 +50,22 @@ enum FloatingPopupStyle {
         .interactiveSpring(response: 0.38, dampingFraction: 0.86, blendDuration: 0.08)
     }
 
-    /// Fluid slider physics with inertia: slight launch delay followed by vigorous acceleration
-    static var fluidSliderSpring: Animation {
-        .interpolatingSpring(mass: 0.85, stiffness: 135, damping: 14.5)
+    /// Compact transition used when a held key changes the bar thickness.
+    static var sizeSpring: Animation {
+        .spring(response: 0.24, dampingFraction: 0.90)
     }
 
-    /// Responsive bouncy spring for boundary collisions and rubber-banding
-    static var bounceSpring: Animation {
-        .interpolatingSpring(mass: 0.5, stiffness: 220, damping: 12)
+    /// Firm boundary compression with only a small amount of rubber-band travel.
+    static var boundarySpring: Animation {
+        .spring(response: 0.22, dampingFraction: 0.88)
     }
 
-    /// High-impact elastic bounce for releasing boundary tension (BOING effect)
-    static var strongBounceSpring: Animation {
-        .interpolatingSpring(mass: 0.45, stiffness: 340, damping: 9.5)
+    static var releaseSpring: Animation {
+        .spring(response: 0.30, dampingFraction: 0.86)
+    }
+
+    static var dragSpring: Animation {
+        .interactiveSpring(response: 0.24, dampingFraction: 0.86)
     }
 
     static var transition: AnyTransition {
