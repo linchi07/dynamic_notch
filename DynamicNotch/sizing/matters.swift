@@ -22,7 +22,7 @@ let ALBUM_ART_CORNER_RADIUS_OPENED: CGFloat = OPEN_NOTCH_BOTTOM_CORNER_RADIUS - 
 let ALBUM_ART_CORNER_RADIUS_CLOSED: CGFloat = 4.0
 
 /// 展开状态下面板容器的固定高度（Home/Shelf 等面板统一固定在此高度）
-let NOTCH_PANEL_CONTAINER_HEIGHT: CGFloat = 98
+let NOTCH_PANEL_CONTAINER_HEIGHT: CGFloat = 130
 
 let downloadSneakSize: CGSize = .init(width: 65, height: 1)
 let batterySneakSize: CGSize = .init(width: 160, height: 1)
@@ -30,7 +30,7 @@ let batterySneakSize: CGSize = .init(width: 160, height: 1)
 let shadowPadding: CGFloat = 20
 /// Extra transparent window space used by HUDs that appear below an expanded notch.
 let floatingOverlaySpace: CGFloat = 64
-let openNotchSize: CGSize = .init(width: 460, height: 176)
+let openNotchSize: CGSize = .init(width: 460, height: 218)
 let windowSize: CGSize = .init(
     width: openNotchSize.width,
     height: openNotchSize.height + shadowPadding + floatingOverlaySpace

@@ -84,6 +84,11 @@ class MusicManager: ObservableObject {
 
     // MARK: - Initialization
     init() {
+        if !UserDefaults.standard.bool(forKey: "didInitializeSneakPeekV2") {
+            Defaults[.enableSneakPeek] = true
+            UserDefaults.standard.set(true, forKey: "didInitializeSneakPeekV2")
+        }
+
         // Listen for changes to the controller preference
         NotificationCenter.default.publisher(for: Notification.Name.mediaControllerChanged)
             .sink { [weak self] _ in
@@ -349,12 +354,13 @@ class MusicManager: ObservableObject {
                 self.updateIdleState(state: state.isPlaying)
             }
 
-            if state.isPlaying && !state.title.isEmpty && !state.artist.isEmpty {
-                self.updateSneakPeek(title: state.title, artist: state.artist)
+            if state.isPlaying && !state.title.isEmpty && state.title != "I'm Handsome" {
+                self.updateSneakPeek(title: state.title, artist: state.artist, isPlaying: state.isPlaying)
             }
         }
 
-        // Check for changes in track metadata using last artwork change values
+        // Check for changes in track metadata
+        let trackChanged = !state.title.isEmpty && state.title != "I'm Handsome" && (state.title != self.songTitle || state.artist != self.artistName)
         let titleChanged = state.title != self.lastArtworkTitle
         let artistChanged = state.artist != self.lastArtworkArtist
         let albumChanged = state.album != self.lastArtworkAlbum
@@ -362,7 +368,7 @@ class MusicManager: ObservableObject {
 
         // Check for artwork changes
         let artworkChanged = state.artwork != nil && state.artwork != self.artworkData
-        let hasContentChange = titleChanged || artistChanged || albumChanged || artworkChanged || bundleChanged
+        let hasContentChange = trackChanged || titleChanged || artistChanged || albumChanged || artworkChanged || bundleChanged
 
         // Handle artwork and visual transitions for changed content
         if hasContentChange {
@@ -388,17 +394,15 @@ class MusicManager: ObservableObject {
             }
             self.artworkData = state.artwork
 
-            if artworkChanged || state.artwork == nil {
-                // Update last artwork change values
-                self.lastArtworkTitle = state.title
-                self.lastArtworkArtist = state.artist
-                self.lastArtworkAlbum = state.album
-                self.lastArtworkBundleIdentifier = state.bundleIdentifier
-            }
+            // Update last artwork change values
+            self.lastArtworkTitle = state.title
+            self.lastArtworkArtist = state.artist
+            self.lastArtworkAlbum = state.album
+            self.lastArtworkBundleIdentifier = state.bundleIdentifier
 
-            // Only update sneak peek if there's actual content and something changed
-            if !state.title.isEmpty && !state.artist.isEmpty && state.isPlaying {
-                self.updateSneakPeek(title: state.title, artist: state.artist, customImage: latestArtworkImage)
+            // Post sneak peek alert on content or track change
+            if !state.title.isEmpty && state.title != "I'm Handsome" && state.isPlaying {
+                self.updateSneakPeek(title: state.title, artist: state.artist, customImage: latestArtworkImage, isPlaying: state.isPlaying)
             }
 
             // Fetch lyrics on content change
@@ -776,8 +780,9 @@ class MusicManager: ObservableObject {
 
     private static let MUSIC_ACTIVITY_ID = "music.playback"
 
-    private func updateSneakPeek(title: String, artist: String, customImage: NSImage? = nil) {
-        guard isPlaying && Defaults[.enableSneakPeek] else { return }
+    private func updateSneakPeek(title: String, artist: String, customImage: NSImage? = nil, isPlaying: Bool? = nil) {
+        let effectivePlaying = isPlaying ?? self.isPlaying
+        guard effectivePlaying && Defaults[.enableSneakPeek] else { return }
         let image = customImage ?? (usingAppIconForArtwork ? nil : self.albumArt)
         coordinator.postNotification(
             title: title,

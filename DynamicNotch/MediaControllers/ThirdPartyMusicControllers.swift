@@ -25,7 +25,7 @@ enum MediaAppHelper {
         "com.apple.Music": "Apple Music",
         "com.spotify.client": "Spotify",
         "com.netease.163music": "网易云音乐",
-        "com.tencent.QQMusicMac": "QQ 音乐",
+        "com.tencent.QQMusicMac": "QQ音乐",
         "com.apple.podcasts": "播客",
         "com.apple.Safari": "Safari",
         "com.google.Chrome": "Google Chrome",

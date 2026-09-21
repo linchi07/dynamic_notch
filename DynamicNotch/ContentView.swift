@@ -104,7 +104,7 @@ struct ContentView: View {
             chinWidth = NotchLayoutMetrics.activeWidth(
                 physicalNotchWidth: vm.closedNotchSize.width,
                 notchHeight: vm.effectiveClosedNotchHeight,
-                outerPadding: notchOuterPadding
+                outerPadding: NotchLayoutMetrics.effectiveOuterPadding(notchOuterPadding)
             )
         } else if vm.notchState == .closed
             && (!musicManager.isPlaying && musicManager.isPlayerIdle) && Defaults[.showNotHumanFace]

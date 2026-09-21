@@ -387,16 +387,19 @@ struct Media: View {
         Form {
             Section {
                 Toggle(isOn: sourceEnabled(.nowPlaying)) {
-                    Label("Universal", systemImage: "play.rectangle.on.rectangle")
+                    Label(LocalizedStringKey("Universal"), systemImage: "play.rectangle.on.rectangle")
                 }
                 ForEach([MediaControllerType.appleMusic, .spotify, .youtubeMusic, .neteaseMusic, .qqMusic]) { source in
-                    Toggle(source.rawValue, isOn: sourceEnabled(source))
+                    Toggle(source.displayNameKey, isOn: sourceEnabled(source))
                 }
             } header: {
                 Text("Playback sources")
             }
 
             Section {
+                Defaults.Toggle(key: .enableSneakPeek) {
+                    Text("Enable sneak peek on track changes")
+                }
                 HStack {
                     Stepper(value: $waitInterval, in: 0...10, step: 1) {
                         HStack {

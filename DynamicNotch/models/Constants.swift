@@ -48,6 +48,40 @@ enum MediaControllerType: String, CaseIterable, Identifiable, Defaults.Serializa
     case youtubeMusic = "YouTube Music"
     
     var id: String { self.rawValue }
+
+    var displayName: String {
+        switch self {
+        case .nowPlaying:
+            return String(localized: "Universal")
+        case .appleMusic:
+            return String(localized: "Apple Music")
+        case .spotify:
+            return String(localized: "Spotify")
+        case .youtubeMusic:
+            return String(localized: "YouTube Music")
+        case .neteaseMusic:
+            return String(localized: "NetEase Music")
+        case .qqMusic:
+            return String(localized: "QQ Music")
+        }
+    }
+
+    var displayNameKey: LocalizedStringKey {
+        switch self {
+        case .nowPlaying:
+            return "Universal"
+        case .appleMusic:
+            return "Apple Music"
+        case .spotify:
+            return "Spotify"
+        case .youtubeMusic:
+            return "YouTube Music"
+        case .neteaseMusic:
+            return "NetEase Music"
+        case .qqMusic:
+            return "QQ Music"
+        }
+    }
 }
 
 
@@ -79,7 +113,7 @@ extension Defaults.Keys {
     static let enableHaptics = Key<Bool>("enableHaptics", default: true)
     static let openNotchOnHover = Key<Bool>("openNotchOnHover", default: true)
     static let extendHoverArea = Key<Bool>("extendHoverArea", default: false)
-    static let notchOuterPadding = Key<CGFloat>("notchOuterPadding", default: 8)
+    static let notchOuterPadding = Key<CGFloat>("notchOuterPadding", default: 16)
     //static let openLastTabByDefault = Key<Bool>("openLastTabByDefault", default: false)
     static let showOnLockScreen = Key<Bool>("showOnLockScreen", default: false)
     static let hideFromScreenRecording = Key<Bool>("hideFromScreenRecording", default: false)
@@ -112,7 +146,7 @@ extension Defaults.Keys {
     
     // MARK: Media playback
     static let coloredSpectrogram = Key<Bool>("coloredSpectrogram", default: true)
-    static let enableSneakPeek = Key<Bool>("enableSneakPeek", default: false)
+    static let enableSneakPeek = Key<Bool>("enableSneakPeek", default: true)
     static let waitInterval = Key<Double>("waitInterval", default: 3)
     static let showShuffleAndRepeat = Key<Bool>("showShuffleAndRepeat", default: false)
     static let enableLyrics = Key<Bool>("enableLyrics", default: false)

@@ -146,10 +146,8 @@ struct FloatingNotificationContainer<Content: View>: View {
             }
             .onChange(of: updateTrigger) { oldVal, newVal in
                 guard oldVal != nil, oldVal != newVal else { return }
-                if isPresented && (phase == .fullyExpanded || phase == .ejectedStage1) {
-                    if let duration = autoDismissAfter {
-                        scheduleAutoDismiss(after: duration)
-                    }
+                if isPresented {
+                    startTwoStageEjection()
                 }
             }
     }

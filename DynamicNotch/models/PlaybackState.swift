@@ -76,9 +76,9 @@ struct MediaSession: Identifiable, Equatable {
                let name = app.localizedName, !name.isEmpty {
                 return name
             }
-            return "Now Playing"
+            return String(localized: "Universal")
         }
-        return type.rawValue
+        return type.displayName
     }
 }
 

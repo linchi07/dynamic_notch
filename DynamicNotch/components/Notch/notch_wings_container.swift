@@ -21,10 +21,14 @@ struct NotchWingsContainer: View {
         NotchLayoutMetrics.visualSize(for: vm.effectiveClosedNotchHeight)
     }
 
+    private var effectiveOuterPadding: CGFloat {
+        NotchLayoutMetrics.effectiveOuterPadding(outerPadding)
+    }
+
     private var wingWidth: CGFloat {
         NotchLayoutMetrics.wingWidth(
             for: vm.effectiveClosedNotchHeight,
-            outerPadding: outerPadding
+            outerPadding: effectiveOuterPadding
         )
     }
 
@@ -45,7 +49,7 @@ struct NotchWingsContainer: View {
             width: NotchLayoutMetrics.activeWidth(
                 physicalNotchWidth: vm.closedNotchSize.width,
                 notchHeight: vm.effectiveClosedNotchHeight,
-                outerPadding: outerPadding
+                outerPadding: effectiveOuterPadding
             ),
             height: vm.effectiveClosedNotchHeight
         )
@@ -78,7 +82,7 @@ struct NotchWingsContainer: View {
             if let item {
                 activityVisual(item)
                     .frame(width: visualSize, height: visualSize)
-                    .padding(edge.outerPaddingEdge, outerPadding)
+                    .padding(edge.outerPaddingEdge, effectiveOuterPadding)
                     .padding(edge.innerPaddingEdge, NotchLayoutMetrics.innerPadding)
                     .accessibilityLabel(item.accessibilityLabel)
             }

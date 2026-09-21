@@ -197,12 +197,16 @@ enum NotchLayoutMetrics {
     static let minimumVisualSize: CGFloat = 16
     static let innerPadding: CGFloat = 2
 
+    static func effectiveOuterPadding(_ outerPadding: CGFloat) -> CGFloat {
+        max(16, outerPadding)
+    }
+
     static func visualSize(for notchHeight: CGFloat) -> CGFloat {
         max(minimumVisualSize, notchHeight - 12)
     }
 
     static func wingWidth(for notchHeight: CGFloat, outerPadding: CGFloat) -> CGFloat {
-        visualSize(for: notchHeight) + outerPadding + innerPadding
+        visualSize(for: notchHeight) + effectiveOuterPadding(outerPadding) + innerPadding
     }
 
     static func activeWidth(

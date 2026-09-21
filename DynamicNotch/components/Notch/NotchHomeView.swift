@@ -203,7 +203,7 @@ struct MusicControlsView: View {
                 musicSlider
             }
         }
-        .frame(height: Defaults[.enableLyrics] ? 58 : 52)
+        .frame(height: Defaults[.enableLyrics] ? 72 : 58)
         .padding(.leading, 5)
     }
 
