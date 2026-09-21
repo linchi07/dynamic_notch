@@ -127,12 +127,12 @@ final class ExternalLiveActivityServer: @unchecked Sendable {
         guard getpeereid(fd, &uid, &gid) == 0, uid == getuid() else { return }
         var pid: pid_t = 0
         var length = socklen_t(MemoryLayout<pid_t>.size)
-        guard getsockopt(fd, SOL_LOCAL, LOCAL_PEERPID, &pid, &length) == 0,
-              let app = NSRunningApplication(processIdentifier: pid),
-              let bundleURL = app.bundleURL,
-              let bundleID = app.bundleIdentifier else { return }
-        let identity = "\(bundleID)|\(bundleURL.path)"
-        let name = app.localizedName ?? bundleID
+        guard getsockopt(fd, SOL_LOCAL, LOCAL_PEERPID, &pid, &length) == 0 else { return }
+        let app = NSRunningApplication(processIdentifier: pid)
+        let bundleID = app?.bundleIdentifier ?? "cli.terminal"
+        let bundleURLPath = app?.bundleURL?.path ?? "/bin/cli"
+        let identity = "\(bundleID)|\(bundleURLPath)"
+        let name = app?.localizedName ?? "Terminal/CLI"
         lock.lock()
         let prefix = "external.\(UUID().uuidString)."
         ownedActivities[fd] = (identity, prefix, [])
