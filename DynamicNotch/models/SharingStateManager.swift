@@ -10,7 +10,7 @@ import Combine
 import Foundation
 
 extension Notification.Name {
-	static let sharingDidFinish = Notification.Name("com.boringNotch.sharingDidFinish")
+	static let sharingDidFinish = Notification.Name("app.dynamicnotch.sharingDidFinish")
 }
 
 @MainActor
@@ -154,4 +154,3 @@ final class SharingLifecycleDelegate: NSObject, NSSharingServiceDelegate, NSShar
 		finishIfNeeded()
 	}
 }
-

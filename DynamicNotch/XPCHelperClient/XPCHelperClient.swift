@@ -5,7 +5,7 @@ import Cocoa
 final class XPCHelperClient: NSObject, @unchecked Sendable {
     nonisolated static let shared = XPCHelperClient()
     
-    private let serviceName = "theboringteam.boringnotch.dev.DynamicNotchXPCHelper"
+    private let serviceName = "app.dynamicnotch.dev.DynamicNotchXPCHelper"
     
     private var remoteService: RemoteXPCService<DynamicNotchXPCHelperProtocol>?
     private var connection: NSXPCConnection?

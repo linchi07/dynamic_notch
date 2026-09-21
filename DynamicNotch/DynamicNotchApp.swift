@@ -150,7 +150,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
         detector.onMouseDown = { [weak self] point, modifiers in
             Task { @MainActor in
-                guard Defaults[.enableWindowSnapping] else { return }
+                guard Defaults[.enableWindowSnapping],
+                      await XPCHelperClient.shared.isAccessibilityAuthorized() else { return }
                 self?.windowSnapController.beginDrag(at: point, modifiers: modifiers)
             }
         }

@@ -14,19 +14,19 @@ struct NotchPanelContainer: View {
     @State private var visiblePage: NotchViews?
     @State private var programmaticDestination: NotchViews?
 
-    private let pages: [NotchViews] = [.home, .shelf, .scratchpad]
+    private var pages: [NotchViews] { TabRegistry.entries.map(\.view) }
 
     var body: some View {
         Group {
             if coordinator.currentView == .dropLanding {
-                DropLandingView()
+                TabRegistry.content(for: .dropLanding)
                     .transition(.opacity)
             } else {
                 GeometryReader { proxy in
                     ScrollView(.horizontal) {
                         LazyHStack(spacing: 0) {
                             ForEach(pages) { page in
-                                panelComponent(for: page)
+                                TabRegistry.content(for: page)
                                     .frame(
                                         width: proxy.size.width,
                                         height: proxy.size.height
@@ -83,18 +83,4 @@ struct NotchPanelContainer: View {
         .mask(Rectangle())
     }
 
-    /// 各功能面板的统一插拔注册处
-    @ViewBuilder
-    private func panelComponent(for view: NotchViews) -> some View {
-        switch view {
-        case .home:
-            NotchHomeView()
-        case .shelf:
-            ShelfView()
-        case .scratchpad:
-            ScratchpadPanelView()
-        case .dropLanding:
-            EmptyView()
-        }
-    }
 }

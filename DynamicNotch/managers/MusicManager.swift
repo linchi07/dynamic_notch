@@ -21,9 +21,9 @@ class MusicManager: ObservableObject {
     private var controllerCancellables: [MediaControllerType: Set<AnyCancellable>] = [:]
     private var debounceIdleTask: Task<Void, Never>?
 
-    // Helper to check if macOS has removed support for NowPlayingController
+    // The system media adapter is attempted directly. A failed capability
+    // probe must not silently disable Universal for Safari and other players.
     public private(set) var isNowPlayingDeprecated: Bool = false
-    private let mediaChecker = MediaChecker()
 
     // Multi-controller management
     private var controllers: [MediaControllerType: any MediaControllerProtocol] = [:]
@@ -35,7 +35,10 @@ class MusicManager: ObservableObject {
 
     // Active controller computed property
     var activeController: (any MediaControllerProtocol)? {
-        controllers[selectedSessionType] ?? controllers.values.first
+        if selectedSessionType == .qqMusic || selectedSessionType == .neteaseMusic {
+            return controllers[.nowPlaying]
+        }
+        return controllers[selectedSessionType] ?? controllers.values.first
     }
 
     // Published properties for UI
@@ -97,26 +100,7 @@ class MusicManager: ObservableObject {
             }
             .store(in: &cancellables)
 
-        // Listen for changes to dynamic media app filter
-        NotificationCenter.default.publisher(for: Notification.Name("mediaAppFilterChanged"))
-            .sink { [weak self] _ in
-                DispatchQueue.main.async {
-                    self?.refreshAllSessions()
-                }
-            }
-            .store(in: &cancellables)
-
-        // Initialize deprecation check asynchronously
         Task { @MainActor in
-            do {
-                self.isNowPlayingDeprecated = try await self.mediaChecker.checkDeprecationStatus()
-                print("Deprecation check completed: \(self.isNowPlayingDeprecated)")
-            } catch {
-                print("Failed to check deprecation status: \(error). Defaulting to false.")
-                self.isNowPlayingDeprecated = false
-            }
-            
-            // Initialize controllers based on preferences
             self.setupControllersFromPreferences()
         }
     }
@@ -139,11 +123,19 @@ class MusicManager: ObservableObject {
     // MARK: - Setup & Controller Management
     @MainActor
     func setupControllersFromPreferences() {
-        var enabledTypes = Defaults[.enabledMediaControllers]
-
-        if isNowPlayingDeprecated {
-            enabledTypes.removeAll { $0 == .nowPlaying }
+        if !UserDefaults.standard.bool(forKey: "didEnableUniversalPlaybackV2") {
+            var migrated = Defaults[.enabledMediaControllers]
+            if !migrated.contains(.nowPlaying) {
+                migrated.insert(.nowPlaying, at: 0)
+                Defaults[.enabledMediaControllers] = migrated
+            }
+            UserDefaults.standard.set(true, forKey: "didEnableUniversalPlaybackV2")
         }
+        let selectedTypes = Defaults[.enabledMediaControllers]
+        let needsUniversalBackend = selectedTypes.contains(.qqMusic) || selectedTypes.contains(.neteaseMusic)
+        let enabledTypes = needsUniversalBackend
+            ? Array(Set(selectedTypes).union([.nowPlaying]))
+            : selectedTypes
 
         // 1. Remove controllers that are no longer enabled
         for (type, _) in controllers where !enabledTypes.contains(type) {
@@ -154,7 +146,7 @@ class MusicManager: ObservableObject {
         }
 
         // 2. Instantiate and observe new controllers
-        for type in enabledTypes {
+        for type in enabledTypes where type != .qqMusic && type != .neteaseMusic {
             if controllers[type] == nil {
                 if let controller = instantiateController(for: type) {
                     controllers[type] = controller
@@ -177,7 +169,6 @@ class MusicManager: ObservableObject {
     private func instantiateController(for type: MediaControllerType) -> (any MediaControllerProtocol)? {
         switch type {
         case .nowPlaying:
-            guard !self.isNowPlayingDeprecated else { return nil }
             return NowPlayingController()
         case .appleMusic:
             return AppleMusicController()
@@ -203,20 +194,13 @@ class MusicManager: ObservableObject {
         var sessions: [MediaSession] = []
 
         // 1. Collect dedicated music app sessions
-        let dedicatedTypes: [MediaControllerType] = [.appleMusic, .spotify, .qqMusic, .neteaseMusic, .youtubeMusic]
+        let dedicatedTypes: [MediaControllerType] = [.appleMusic, .spotify, .youtubeMusic]
         var dedicatedBundleIDs: Set<String> = []
         var dedicatedTitles: Set<String> = []
 
         for type in dedicatedTypes {
             guard let controller = controllers[type], controller.isActive() else { continue }
             if let state = sessionStates[type] {
-                if !state.bundleIdentifier.isEmpty {
-                    MediaAppHelper.registerDiscoveredApp(state.bundleIdentifier)
-                }
-
-                // App filter check
-                guard MediaAppHelper.isAppEnabled(state.bundleIdentifier) else { continue }
-
                 let hasTrack = !state.title.isEmpty && state.title != "I'm Handsome"
                 if state.isPlaying || hasTrack {
                     let session = MediaSession(
@@ -251,39 +235,43 @@ class MusicManager: ObservableObject {
         // 2. Now Playing session with dynamic app filtering and deduplication
         if let npController = controllers[.nowPlaying], npController.isActive(),
            let npState = sessionStates[.nowPlaying] {
-            if !npState.bundleIdentifier.isEmpty {
-                MediaAppHelper.registerDiscoveredApp(npState.bundleIdentifier)
-            }
+            let hasTrack = !npState.title.isEmpty && npState.title != "I'm Handsome"
+            if npState.isPlaying || hasTrack {
+                let isDuplicateBundle = dedicatedBundleIDs.contains(npState.bundleIdentifier)
+                let isDuplicateTitle = dedicatedTitles.contains(npState.title)
 
-            // App filter check
-            if MediaAppHelper.isAppEnabled(npState.bundleIdentifier) {
-                let hasTrack = !npState.title.isEmpty && npState.title != "I'm Handsome"
-                if npState.isPlaying || hasTrack {
-                    let isDuplicateBundle = dedicatedBundleIDs.contains(npState.bundleIdentifier)
-                    let isDuplicateTitle = dedicatedTitles.contains(npState.title)
+                // Universal owns every app without an active dedicated source.
+                let sourceType: MediaControllerType
+                switch npState.bundleIdentifier {
+                case "com.netease.163music" where Defaults[.enabledMediaControllers].contains(.neteaseMusic):
+                    sourceType = .neteaseMusic
+                case "com.tencent.QQMusicMac" where Defaults[.enabledMediaControllers].contains(.qqMusic):
+                    sourceType = .qqMusic
+                default:
+                    sourceType = .nowPlaying
+                }
 
-                    // If not duplicated with a dedicated music app, add as distinct session
-                    if !isDuplicateBundle && !isDuplicateTitle {
-                        let session = MediaSession(
-                            type: .nowPlaying,
-                            bundleIdentifier: npState.bundleIdentifier,
-                            title: npState.title,
-                            artist: npState.artist,
-                            album: npState.album,
-                            artwork: npState.artwork,
-                            isPlaying: npState.isPlaying,
-                            currentTime: npState.currentTime,
-                            duration: npState.duration,
-                            playbackRate: npState.playbackRate,
-                            isShuffled: npState.isShuffled,
-                            repeatMode: npState.repeatMode,
-                            volume: npState.volume,
-                            isFavorite: npState.isFavorite,
-                            genre: npState.genre,
-                            lastUpdated: npState.lastUpdated
-                        )
-                        sessions.append(session)
-                    }
+                if !isDuplicateBundle && !isDuplicateTitle &&
+                    (sourceType != .nowPlaying || Defaults[.enabledMediaControllers].contains(.nowPlaying)) {
+                    let session = MediaSession(
+                        type: sourceType,
+                        bundleIdentifier: npState.bundleIdentifier,
+                        title: npState.title,
+                        artist: npState.artist,
+                        album: npState.album,
+                        artwork: npState.artwork,
+                        isPlaying: npState.isPlaying,
+                        currentTime: npState.currentTime,
+                        duration: npState.duration,
+                        playbackRate: npState.playbackRate,
+                        isShuffled: npState.isShuffled,
+                        repeatMode: npState.repeatMode,
+                        volume: npState.volume,
+                        isFavorite: npState.isFavorite,
+                        genre: npState.genre,
+                        lastUpdated: npState.lastUpdated
+                    )
+                    sessions.append(session)
                 }
             }
         }
@@ -305,6 +293,7 @@ class MusicManager: ObservableObject {
                     self.updateIdleState(state: false)
                 }
             }
+            LiveActivityManager.shared.end("music.playback")
             return
         }
 
@@ -342,7 +331,9 @@ class MusicManager: ObservableObject {
 
     @MainActor
     private func syncActiveSessionProperties() {
-        if let state = sessionStates[selectedSessionType] {
+        let stateType: MediaControllerType = (selectedSessionType == .qqMusic || selectedSessionType == .neteaseMusic)
+            ? .nowPlaying : selectedSessionType
+        if let state = sessionStates[stateType] {
             updateFromPlaybackState(state)
         } else if let controller = controllers[selectedSessionType] {
             Task {
@@ -363,9 +354,6 @@ class MusicManager: ObservableObject {
                 self.updateIdleState(state: state.isPlaying)
             }
 
-            if state.isPlaying && !state.title.isEmpty && !state.artist.isEmpty {
-                self.updateSneakPeek(title: state.title, artist: state.artist)
-            }
         }
 
         // Check for changes in track metadata using last artwork change values
@@ -411,9 +399,6 @@ class MusicManager: ObservableObject {
             }
 
             // Only update sneak peek if there's actual content and something changed
-            if !state.title.isEmpty && !state.artist.isEmpty && state.isPlaying {
-                self.updateSneakPeek(title: state.title, artist: state.artist, customImage: latestArtworkImage)
-            }
 
             // Fetch lyrics on content change
             self.fetchLyricsIfAvailable(bundleIdentifier: state.bundleIdentifier, title: state.title, artist: state.artist)
@@ -476,6 +461,36 @@ class MusicManager: ObservableObject {
         }
         
         self.timestampDate = state.lastUpdated
+        updateLiveActivity()
+    }
+
+    @MainActor
+    private func updateLiveActivity() {
+        guard BoringViewCoordinator.shared.musicLiveActivityEnabled,
+              isPlaying || !isPlayerIdle,
+              !songTitle.isEmpty,
+              songTitle != "I'm Handsome" else {
+            LiveActivityManager.shared.end("music.playback")
+            return
+        }
+        let tint = Defaults[.coloredSpectrogram]
+            ? Color(nsColor: avgColor).ensureMinimumBrightness(factor: 0.6)
+            : Color.gray
+        let albumItem = NotchActivityItem(
+            visual: .customImage(image: albumArt),
+            accessibilityLabel: songTitle,
+            heroId: NotchHeroIdentifier.MUSIC_ARTWORK.rawValue
+        )
+        LiveActivityManager.shared.register(NotchLiveActivity(
+            id: "music.playback",
+            leading: albumItem,
+            trailing: NotchActivityItem(
+                visual: Defaults[.useMusicVisualizer] ? .audioVisualizer : .system(name: "waveform"),
+                tintColor: tint,
+                accessibilityLabel: isPlaying ? "Playing" : "Paused"
+            ),
+            minimalPresentation: albumItem
+        ))
     }
 
     func toggleFavoriteTrack() {
@@ -748,7 +763,6 @@ class MusicManager: ObservableObject {
                 self.calculateAverageColor()
             }
         }
-        coordinator.updateActiveNotificationImage(newAlbumArt)
     }
 
     // MARK: - Playback Position Estimation
@@ -767,25 +781,6 @@ class MusicManager: ObservableObject {
                     self?.avgColor = color ?? .white
                 }
             }
-        }
-    }
-
-    private static let MUSIC_ACTIVITY_ID = "music.playback"
-
-    private func updateSneakPeek(title: String, artist: String, customImage: NSImage? = nil) {
-        if isPlaying && Defaults[.enableSneakPeek] {
-            let image = customImage ?? (usingAppIconForArtwork ? nil : self.albumArt)
-            coordinator.postNotification(
-                title: title,
-                message: artist,
-                customImage: image,
-                iconName: "music.note",
-                iconColor: .pink,
-                iconBackground: Color.pink.opacity(0.18),
-                category: .activityUpdate,
-                activityId: Self.MUSIC_ACTIVITY_ID,
-                duration: 3.0
-            )
         }
     }
 

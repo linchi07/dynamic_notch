@@ -47,10 +47,7 @@ class BoringViewCoordinator: ObservableObject {
     }
     private var lastContentView: NotchViews = .home
     @Published var helloAnimationRunning: Bool = false
-    @Published var isNotificationPresented: Bool = false
-    @Published var displayMode: NotchDisplayMode = .idle
     @Published var activeCombo: NotchComboActivity? = nil
-    private(set) var stateBeforeNotification: NotchDisplayMode = .idle
     private var comboTask: Task<Void, Never>?
     private var sneakPeekDispatch: DispatchWorkItem?
     private var hudEnableTask: Task<Void, Never>?
@@ -60,58 +57,27 @@ class BoringViewCoordinator: ObservableObject {
         currentView = lastContentView
     }
 
-    private func setDisplayMode(_ mode: NotchDisplayMode) {
-        withAnimation(.smooth(duration: 0.3)) {
-            self.displayMode = mode
-        }
-    }
-
     func clearDisplayMode() {
         comboTask?.cancel()
         comboTask = nil
-        isNotificationPresented = false
-        stateBeforeNotification = .idle
-        withAnimation(.smooth(duration: 0.3)) {
-            self.displayMode = .idle
-            self.activeCombo = nil
-        }
+        LiveActivityManager.shared.clearPreview()
+        LiveActivityManager.shared.dismissAlert()
+        activeCombo = nil
     }
 
     func setActiveState(_ state: NotchActiveState) {
         comboTask?.cancel()
         comboTask = nil
         activeCombo = nil
-        isNotificationPresented = false
-        stateBeforeNotification = .idle
-        setDisplayMode(.active(state))
+        LiveActivityManager.shared.replacePreview(with: state)
     }
 
     var activeNotification: FloatingNotificationItem? {
-        guard case .notification(let item) = displayMode else { return nil }
-        return item
+        LiveActivityManager.shared.activeAlert
     }
 
     func postNotificationItem(_ item: FloatingNotificationItem) {
-        let isAlreadyShowingNotification: Bool
-        switch displayMode {
-        case .notification:
-            isAlreadyShowingNotification = true
-        case .active:
-            stateBeforeNotification = displayMode
-            isAlreadyShowingNotification = false
-        case .idle:
-            stateBeforeNotification = .idle
-            isAlreadyShowingNotification = false
-        }
-
-        if isAlreadyShowingNotification {
-            displayMode = .notification(item)
-        } else {
-            withAnimation(.smooth(duration: 0.24)) {
-                displayMode = .notification(item)
-            }
-        }
-        self.isNotificationPresented = true
+        LiveActivityManager.shared.postAlert(item)
     }
 
     func startComboActivity(_ combo: NotchComboActivity) {
@@ -128,18 +94,14 @@ class BoringViewCoordinator: ObservableObject {
             try? await Task.sleep(for: .milliseconds(250))
             guard !Task.isCancelled else { return }
 
-            withAnimation(.smooth(duration: 0.32)) {
-                self.displayMode = .active(combo.activeState)
-            }
+            LiveActivityManager.shared.replacePreview(with: combo.activeState)
         }
     }
 
     func finishComboActivity(completionNotification: FloatingNotificationItem? = nil) {
         comboTask?.cancel()
         let notification = completionNotification ?? activeCombo?.completionNotification
-        withAnimation(.smooth(duration: 0.28)) {
-            self.displayMode = .idle
-        }
+        LiveActivityManager.shared.clearPreview()
 
         if let completion = notification {
             comboTask = Task { @MainActor in
@@ -182,9 +144,9 @@ class BoringViewCoordinator: ObservableObject {
 
     /// 热更新当前活跃通知中的图片（用于切歌时封面异步加载完成后的即时同步）
     func updateActiveNotificationImage(_ image: NSImage) {
-        guard case .notification(var item) = displayMode else { return }
+        guard var item = LiveActivityManager.shared.activeAlert else { return }
         item.updateImage(image)
-        self.displayMode = .notification(item)
+        LiveActivityManager.shared.postAlert(item)
     }
 
     func postBatteryNotification(
@@ -208,15 +170,11 @@ class BoringViewCoordinator: ObservableObject {
     }
 
     func dismissNotification() {
-        self.isNotificationPresented = false
+        LiveActivityManager.shared.dismissAlert()
     }
 
     func notificationDidDismiss() {
-        guard case .notification = displayMode else { return }
-        withAnimation(.smooth(duration: 0.24)) {
-            displayMode = stateBeforeNotification
-        }
-        stateBeforeNotification = .idle
+        LiveActivityManager.shared.alertDidDismiss()
     }
 
     @AppStorage("firstLaunch") var firstLaunch: Bool = true

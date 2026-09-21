@@ -15,18 +15,30 @@ struct TabModel: Identifiable {
     var id: NotchViews { view }
 }
 
-let tabs = [
-    TabModel(label: "Home", icon: "waveform", view: .home),
-    TabModel(label: "Shelf", icon: "tray.fill", view: .shelf),
-    TabModel(label: "Notes", icon: "note.text", view: .scratchpad)
-]
+enum TabRegistry {
+    static let entries = [
+        TabModel(label: "Home", icon: "waveform", view: .home),
+        TabModel(label: "Shelf", icon: "tray.fill", view: .shelf),
+        TabModel(label: "Notes", icon: "note.text", view: .scratchpad)
+    ]
+
+    @ViewBuilder
+    static func content(for view: NotchViews) -> some View {
+        switch view {
+        case .home: NotchHomeView()
+        case .shelf: ShelfView()
+        case .scratchpad: ScratchpadPanelView()
+        case .dropLanding: DropLandingView()
+        }
+    }
+}
 
 struct TabSelectionView: View {
     @ObservedObject var coordinator = BoringViewCoordinator.shared
     @Namespace var animation
     var body: some View {
         HStack(spacing: 0) {
-            ForEach(tabs) { tab in
+            ForEach(TabRegistry.entries) { tab in
                 TabButton(label: tab.label, icon: tab.icon, selected: coordinator.currentView == tab.view) {
                     withAnimation(.smooth(duration: 0.28)) {
                         coordinator.currentView = tab.view

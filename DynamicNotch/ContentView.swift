@@ -19,6 +19,7 @@ struct ContentView: View {
     @ObservedObject var webcamManager = WebcamManager.shared
 
     @ObservedObject var coordinator = BoringViewCoordinator.shared
+    @ObservedObject private var liveActivities = LiveActivityManager.shared
     @ObservedObject var musicManager = MusicManager.shared
     @ObservedObject private var shelfState = ShelfStateViewModel.shared
     @ObservedObject private var scratchpadState = ScratchpadViewModel.shared
@@ -53,10 +54,10 @@ struct ContentView: View {
 
     private var floatingHUDOffsetY: CGFloat {
         let notificationBottom = floatingNotificationOffsetY + 30
-        let anchorBottom = coordinator.isNotificationPresented
+        let anchorBottom = liveActivities.isAlertPresented
             ? max(notchBottomY, notificationBottom)
             : notchBottomY
-        let spacing: CGFloat = coordinator.isNotificationPresented
+        let spacing: CGFloat = liveActivities.isAlertPresented
             ? 8
             : (vm.notchState == .open ? 16 : 8)
         return anchorBottom + spacing
@@ -70,79 +71,8 @@ struct ContentView: View {
     private let extendedHoverPadding: CGFloat = 30
     private let zeroHeightHoverPadding: CGFloat = 10
 
-    private var shouldShowMusicActivity: Bool {
-        vm.notchState == .closed
-            && (musicManager.isPlaying || !musicManager.isPlayerIdle)
-            && coordinator.musicLiveActivityEnabled
-            && !vm.hideOnClosed
-    }
-
-    private var musicActiveState: NotchActiveState {
-        let tint = Defaults[.coloredSpectrogram]
-            ? Color(nsColor: musicManager.avgColor).ensureMinimumBrightness(factor: 0.6)
-            : Color.gray
-        let trailingVisual: NotchActivityVisual = useMusicVisualizer
-            ? .audioVisualizer
-            : .system(name: "waveform")
-
-        return NotchActiveState(
-            activity: NotchLiveActivity(
-                id: "music.playback",
-                leading: NotchActivityItem(
-                    visual: .customImage(image: musicManager.albumArt),
-                    accessibilityLabel: musicManager.songTitle,
-                    heroId: NotchHeroIdentifier.MUSIC_ARTWORK.rawValue
-                ),
-                trailing: NotchActivityItem(
-                    visual: trailingVisual,
-                    tintColor: tint,
-                    accessibilityLabel: musicManager.isPlaying ? "Playing" : "Paused"
-                )
-            )
-        )
-    }
-
-    /// 获取当前生效的常驻持续活动状态（用于通知打断检测）
-    private var activeStateForInterruptionCheck: NotchActiveState? {
-        if case .active(let state) = coordinator.displayMode {
-            return state
-        }
-        if case .active(let priorState) = coordinator.stateBeforeNotification {
-            return priorState
-        }
-        if shouldShowMusicActivity {
-            return musicActiveState
-        }
-        return nil
-    }
-
     private var effectiveDisplayMode: NotchDisplayMode {
-        switch coordinator.displayMode {
-        case .idle:
-            if let active = activeStateForInterruptionCheck {
-                return .active(active)
-            }
-            return .idle
-
-        case .active(let state):
-            return .active(state)
-
-        case .notification(let item):
-            if let active = activeStateForInterruptionCheck {
-                // 仅当通知为持续活动自身的更新事件（如切歌）且匹配当前活动 ID 时，才打断当前活动收起翅膀
-                let isCurrentActivityUpdate = item.category == .activityUpdate
-                    && item.activityId != nil
-                    && active.activities.contains(where: { $0.id == item.activityId })
-
-                if isCurrentActivityUpdate {
-                    return .notification(item)
-                } else {
-                    // 系统事件（如电池警告）或非当前活动的通知，不打断持续活动，刘海翅膀保持显示
-                    return .active(active)
-                }
-            }
-            return .notification(item)
-        }
+        liveActivities.displayMode
     }
 
     private var shouldShowBottomNavigation: Bool {
@@ -200,12 +130,12 @@ struct ContentView: View {
                 .zIndex(0)
             }
 
-            if let notification = coordinator.activeNotification {
+            if let notification = liveActivities.activeAlert {
                 let contentWidth: CGFloat = notification.isBattery ? 246 : 224
                 let contentHeight: CGFloat = 30
 
                 FloatingNotificationContainer(
-                    isPresented: $coordinator.isNotificationPresented,
+                    isPresented: $liveActivities.isAlertPresented,
                     autoDismissAfter: notification.duration,
                     updateTrigger: notification.id,
                     onDismiss: {
@@ -472,7 +402,7 @@ struct ContentView: View {
     }
 
     private func doOpen() {
-        if coordinator.isNotificationPresented {
+        if liveActivities.isAlertPresented {
             coordinator.dismissNotification()
         }
         withAnimation(NOTCH_OPEN_SPRING) {

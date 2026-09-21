@@ -131,20 +131,10 @@ struct SettingsView: View {
 struct GeneralSettings: View {
     @ObservedObject var coordinator = BoringViewCoordinator.shared
 
-    @Default(.enableWindowSnapping) var enableWindowSnapping
-    @Default(.enableWindowSnapGhostAnimation) var enableWindowSnapGhostAnimation
-
     var body: some View {
         Form {
             Section {
                 LaunchAtLogin.Toggle("Launch at login")
-                Defaults.Toggle(key: .enableWindowSnapping) {
-                    Text("Show window layouts when dragging to the top")
-                }
-                Defaults.Toggle(key: .enableWindowSnapGhostAnimation) {
-                    Text("Experimental window snap animation (Frosted glass)")
-                }
-                .disabled(!enableWindowSnapping)
             } header: {
                 Text("System features")
             }
@@ -157,11 +147,6 @@ struct GeneralSettings: View {
         }
         .accentColor(.effectiveAccent)
         .navigationTitle("General")
-        .onChange(of: enableWindowSnapGhostAnimation) {
-            if !enableWindowSnapGhostAnimation {
-                WindowSnapGhostAnimator.shared.dismiss()
-            }
-        }
     }
 }
 
@@ -275,6 +260,8 @@ struct Charge: View {
 struct HUD: View {
     @EnvironmentObject var vm: BoringViewModel
     @Default(.hudReplacement) var hudReplacement
+    @Default(.enableWindowSnapping) private var enableWindowSnapping
+    @Default(.enableWindowSnapGhostAnimation) private var enableWindowSnapGhostAnimation
     @ObservedObject var coordinator = BoringViewCoordinator.shared
     @State private var accessibilityAuthorized = false
     
@@ -318,6 +305,21 @@ struct HUD: View {
                     Text("The same iOS-style floating bar is used in every notch and notification state. Its vertical position follows the current visible content automatically.")
                 }
             }
+            Section {
+                Defaults.Toggle(key: .enableWindowSnapping) {
+                    Text("Show window layouts when dragging to the top")
+                }
+                .disabled(!accessibilityAuthorized)
+
+                Defaults.Toggle(key: .enableWindowSnapGhostAnimation) {
+                    Text("Experimental window snap animation (Frosted glass)")
+                }
+                .disabled(!accessibilityAuthorized || !enableWindowSnapping)
+            } header: {
+                Text("Window layouts")
+            } footer: {
+                Text("Window layouts require Accessibility access and never appear without it.")
+            }
         }
         .accentColor(.effectiveAccent)
         .navigationTitle("HUDs")
@@ -335,6 +337,9 @@ struct HUD: View {
                 accessibilityAuthorized = granted
             }
         }
+        .onChange(of: enableWindowSnapGhostAnimation) {
+            if !enableWindowSnapGhostAnimation { WindowSnapGhostAnimator.shared.dismiss() }
+        }
     }
 }
 
@@ -342,8 +347,6 @@ struct Media: View {
     @Default(.waitInterval) var waitInterval
     @Default(.mediaController) var mediaController
     @Default(.enabledMediaControllers) var enabledMediaControllers
-    @Default(.enabledMediaAppBundleIDs) var enabledMediaAppBundleIDs
-    @Default(.discoveredMediaAppBundleIDs) var discoveredMediaAppBundleIDs
     @ObservedObject var musicManager = MusicManager.shared
     @ObservedObject var coordinator = BoringViewCoordinator.shared
     @Default(.hideNotchOption) var hideNotchOption
@@ -355,9 +358,7 @@ struct Media: View {
                 Toggle(isOn: sourceEnabled(.nowPlaying)) {
                     Label("Universal", systemImage: "play.rectangle.on.rectangle")
                 }
-                .disabled(musicManager.isNowPlayingDeprecated)
-
-                ForEach([MediaControllerType.appleMusic, .spotify, .youtubeMusic]) { source in
+                ForEach([MediaControllerType.appleMusic, .spotify, .youtubeMusic, .neteaseMusic, .qqMusic]) { source in
                     Toggle(source.rawValue, isOn: sourceEnabled(source))
                 }
             } header: {
@@ -369,73 +370,6 @@ struct Media: View {
             }
 
             Section {
-                let mediaApps = MediaAppHelper.getAllMediaApps()
-                ForEach(mediaApps) { app in
-                    Toggle(isOn: Binding(
-                        get: {
-                            enabledMediaAppBundleIDs.contains(app.bundleIdentifier)
-                        },
-                        set: { isEnabled in
-                            var updated = enabledMediaAppBundleIDs
-                            if isEnabled {
-                                if !updated.contains(app.bundleIdentifier) {
-                                    updated.append(app.bundleIdentifier)
-                                }
-                            } else {
-                                updated.removeAll { $0 == app.bundleIdentifier }
-                            }
-                            enabledMediaAppBundleIDs = updated
-                            NotificationCenter.default.post(
-                                name: Notification.Name("mediaAppFilterChanged"),
-                                object: nil
-                            )
-                        }
-                    )) {
-                        HStack(spacing: 8) {
-                            if let icon = app.icon {
-                                Image(nsImage: icon)
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fit)
-                                    .frame(width: 20, height: 20)
-                                    .cornerRadius(4)
-                            } else {
-                                Image(systemName: "music.note")
-                                    .font(.system(size: 13))
-                                    .frame(width: 20, height: 20)
-                                    .foregroundStyle(.secondary)
-                            }
-
-                            Text(app.displayName)
-                                .font(.body)
-
-                            Spacer()
-
-                            if app.bundleIdentifier == musicManager.bundleIdentifier && musicManager.isPlaying {
-                                Text("播放中")
-                                    .font(.system(size: 10, weight: .semibold))
-                                    .foregroundStyle(.green)
-                                    .padding(.horizontal, 6)
-                                    .padding(.vertical, 2)
-                                    .background(Color.green.opacity(0.15))
-                                    .clipShape(Capsule())
-                            } else if app.isRunning {
-                                Circle()
-                                    .fill(Color.secondary.opacity(0.4))
-                                    .frame(width: 6, height: 6)
-                            }
-                        }
-                    }
-                }
-            } header: {
-                Text("受监控的媒体应用")
-            } footer: {
-                Text("根据当前访问系统媒体控制的所有应用动态构建。开启开关的应用在播放时会触发刘海屏展开与频谱图显示；未开启的应用（如网页视频）将被静默忽略，不打扰听歌体验。")
-                    .foregroundStyle(.secondary)
-                    .font(.caption)
-            }
-            
-            Section {
-                Toggle("Show notification on playback changes", isOn: $enableSneakPeek)
                 HStack {
                     Stepper(value: $waitInterval, in: 0...10, step: 1) {
                         HStack {

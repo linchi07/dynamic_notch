@@ -1145,7 +1145,7 @@
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 2.7.3;
-				PRODUCT_BUNDLE_IDENTIFIER = theboringteam.boringnotch.dev.DynamicNotchXPCHelper;
+				PRODUCT_BUNDLE_IDENTIFIER = app.dynamicnotch.dev.DynamicNotchXPCHelper;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SKIP_INSTALL = YES;
@@ -1170,7 +1170,7 @@
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 2.7.3;
-				PRODUCT_BUNDLE_IDENTIFIER = theboringteam.boringnotch.dev.DynamicNotchXPCHelper;
+				PRODUCT_BUNDLE_IDENTIFIER = app.dynamicnotch.dev.DynamicNotchXPCHelper;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SKIP_INSTALL = YES;
@@ -1342,7 +1342,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 2.7.3;
-				PRODUCT_BUNDLE_IDENTIFIER = theboringteam.boringnotch.dev;
+				PRODUCT_BUNDLE_IDENTIFIER = app.dynamicnotch.dev;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -1393,7 +1393,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 2.7.3;
-				PRODUCT_BUNDLE_IDENTIFIER = theboringteam.boringnotch.dev;
+				PRODUCT_BUNDLE_IDENTIFIER = app.dynamicnotch.dev;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
