@@ -14569,6 +14569,9 @@
         }
       }
     },
+    "External Apps" : {
+
+    },
     "Favorite" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -18740,6 +18743,12 @@
     "linchi" : {
 
     },
+    "Live Activity access" : {
+
+    },
+    "Local socket" : {
+
+    },
     "Lottie JSON URL" : {
       "localizations" : {
         "ar" : {
@@ -22113,6 +22122,9 @@
           }
         }
       }
+    },
+    "No app has requested access yet." : {
+
     },
     "No Compatible Apps Found" : {
       "extractionState" : "manual",
@@ -25612,6 +25624,9 @@
           }
         }
       }
+    },
+    "Playback sources" : {
+
     },
     "Player tinting" : {
       "extractionState" : "manual",
@@ -31016,6 +31031,7 @@
       }
     },
     "Show notification on playback changes" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -31353,6 +31369,9 @@
         }
       }
     },
+    "Show power status alerts" : {
+
+    },
     "Show power status icons" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -31467,6 +31486,7 @@
       }
     },
     "Show power status notifications" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -33044,6 +33064,9 @@
     "Switch playback source" : {
 
     },
+    "Switch to %@" : {
+
+    },
     "System" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -33397,6 +33420,9 @@
         }
       }
     },
+    "The first request asks for permission. Disconnecting an app automatically ends its activities; revoking access ends them immediately." : {
+
+    },
     "The menu bar icon stays visible while automatic notch hiding is enabled, so Settings and Quit remain accessible." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -33510,7 +33536,11 @@
         }
       }
     },
+    "The same iOS-style floating bar is used in every notch and alert state. Its vertical position follows the current visible content automatically." : {
+
+    },
     "The same iOS-style floating bar is used in every notch and notification state. Its vertical position follows the current visible content automatically." : {
+      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -34762,6 +34792,12 @@
           }
         }
       }
+    },
+    "Universal" : {
+
+    },
+    "Universal reads the app currently playing through macOS media controls. Dedicated sources can be enabled separately. The playback switcher shows the actual app icon." : {
+
     },
     "Unlock advanced features and improve your experience. Upgrade now for more customizations!" : {
       "localizations" : {
@@ -36562,6 +36598,12 @@
         }
       }
     },
+    "Window layouts" : {
+
+    },
+    "Window layouts require Accessibility access and never appear without it." : {
+
+    },
     "Works with most media apps, including browsers, to detect what's playing. Note: This may be removed in a future macOS version." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -37491,9 +37533,6 @@
     "发射自定义模拟通知" : {
 
     },
-    "受监控的媒体应用" : {
-
-    },
     "已接入电源 (isPluggedIn)" : {
 
     },
@@ -37509,13 +37548,7 @@
     "提示：“喜欢 (Favorite)”仅 Apple Music 支持；“音量”仅 Apple Music 与 Spotify 支持应用内独立调节；其余控制项通用支持所有播放器与网页。" : {
 
     },
-    "播放中" : {
-
-    },
     "显示时长: %@s" : {
-
-    },
-    "根据当前访问系统媒体控制的所有应用动态构建。开启开关的应用在播放时会触发刘海屏展开与频谱图显示；未开启的应用（如网页视频）将被静默忽略，不打扰听歌体验。" : {
 
     },
     "模拟电量: %lld%%" : {
