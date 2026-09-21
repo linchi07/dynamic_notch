@@ -57,7 +57,7 @@ enum MusicPlayerImageSizes {
         return .zero
     }
 
-    var notchWidth: CGFloat = 185
+    var notchWidth: CGFloat = 190
 
     if let leftWidth = screen.auxiliaryTopLeftArea?.width,
        let rightWidth = screen.auxiliaryTopRightArea?.width

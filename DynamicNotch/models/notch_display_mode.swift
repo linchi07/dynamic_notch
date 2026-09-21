@@ -146,13 +146,6 @@ final class LiveActivityManager: ObservableObject {
     }
 
     func postAlert(_ alert: FloatingNotificationItem) {
-        // Playback is already visible as a Live Activity: source changes and
-        // track updates update that activity rather than creating another popup.
-        if alert.category == .activityUpdate,
-           alert.activityId == "music.playback",
-           activities.contains(where: { $0.id == "music.playback" }) {
-            return
-        }
         activeAlert = alert
         isAlertPresented = true
     }

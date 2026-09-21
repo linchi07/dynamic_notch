@@ -349,6 +349,9 @@ class MusicManager: ObservableObject {
                 self.updateIdleState(state: state.isPlaying)
             }
 
+            if state.isPlaying && !state.title.isEmpty && !state.artist.isEmpty {
+                self.updateSneakPeek(title: state.title, artist: state.artist)
+            }
         }
 
         // Check for changes in track metadata using last artwork change values
@@ -394,6 +397,9 @@ class MusicManager: ObservableObject {
             }
 
             // Only update sneak peek if there's actual content and something changed
+            if !state.title.isEmpty && !state.artist.isEmpty && state.isPlaying {
+                self.updateSneakPeek(title: state.title, artist: state.artist, customImage: latestArtworkImage)
+            }
 
             // Fetch lyrics on content change
             self.fetchLyricsIfAvailable(bundleIdentifier: state.bundleIdentifier, title: state.title, artist: state.artist)
@@ -765,6 +771,25 @@ class MusicManager: ObservableObject {
                 self.calculateAverageColor()
             }
         }
+        coordinator.updateActiveNotificationImage(newAlbumArt)
+    }
+
+    private static let MUSIC_ACTIVITY_ID = "music.playback"
+
+    private func updateSneakPeek(title: String, artist: String, customImage: NSImage? = nil) {
+        guard isPlaying && Defaults[.enableSneakPeek] else { return }
+        let image = customImage ?? (usingAppIconForArtwork ? nil : self.albumArt)
+        coordinator.postNotification(
+            title: title,
+            message: artist,
+            customImage: image,
+            iconName: "music.note",
+            iconColor: .pink,
+            iconBackground: Color.pink.opacity(0.18),
+            category: .activityUpdate,
+            activityId: Self.MUSIC_ACTIVITY_ID,
+            duration: 3.0
+        )
     }
 
     // MARK: - Playback Position Estimation

@@ -7,7 +7,6 @@
 
 import AVFoundation
 import Defaults
-import KeyboardShortcuts
 import LaunchAtLogin
 import Sparkle
 import SwiftUI
@@ -51,9 +50,6 @@ struct SettingsView: View {
                 NavigationLink(value: "Shelf") {
                     Label("Shelf", systemImage: "books.vertical")
                 }
-                NavigationLink(value: "Shortcuts") {
-                    Label("Shortcuts", systemImage: "keyboard")
-                }
                 // NavigationLink(value: "Extensions") {
                 //     Label("Extensions", systemImage: "puzzlepiece.extension")
                 // }
@@ -87,8 +83,6 @@ struct SettingsView: View {
                     ExternalActivitySettings()
                 case "Shelf":
                     Shelf()
-                case "Shortcuts":
-                    Shortcuts()
                 case "Extensions":
                     GeneralSettings()
                 case "Developer":
@@ -158,8 +152,6 @@ private struct ExternalActivitySettings: View {
                 }
             } header: {
                 Text("Live Activity access")
-            } footer: {
-                Text("The first request asks for permission. Disconnecting an app automatically ends its activities; revoking access ends them immediately.")
             }
             Section {
                 Text(ExternalLiveActivityServer.shared.socketPath)
@@ -345,10 +337,6 @@ struct HUD: View {
                     }
                     .padding(.top, 6)
                 }
-            } footer: {
-                if hudReplacement {
-                    Text("The same iOS-style floating bar is used in every notch and alert state. Its vertical position follows the current visible content automatically.")
-                }
             }
             Section {
                 Defaults.Toggle(key: .enableWindowSnapping) {
@@ -362,8 +350,6 @@ struct HUD: View {
                 .disabled(!accessibilityAuthorized || !enableWindowSnapping)
             } header: {
                 Text("Window layouts")
-            } footer: {
-                Text("Window layouts require Accessibility access and never appear without it.")
             }
         }
         .accentColor(.effectiveAccent)
@@ -408,10 +394,6 @@ struct Media: View {
                 }
             } header: {
                 Text("Playback sources")
-            } footer: {
-                Text("Universal reads the app currently playing through macOS media controls. Dedicated sources can be enabled separately. The playback switcher shows the actual app icon.")
-                    .foregroundStyle(.secondary)
-                    .font(.caption)
             }
 
             Section {
@@ -446,10 +428,6 @@ struct Media: View {
                 MusicSlotConfigurationView()
             } header: {
                 Text("Media controls")
-            }  footer: {
-                Text("Customize which controls appear in the music player. Volume expands when active.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
             }
         }
         .accentColor(.effectiveAccent)
@@ -658,10 +636,6 @@ struct Shelf: View {
                 HStack {
                     Text("Quick Share")
                 }
-            } footer: {
-                Text("Choose which service to use when sharing files from the shelf. Click the shelf button to select files, or drag files onto it to share immediately.")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
             }
         }
         .accentColor(.effectiveAccent)
@@ -1050,31 +1024,6 @@ struct Appearance: View {
     }
 }
 
-
-
-struct Shortcuts: View {
-    var body: some View {
-        Form {
-            Section {
-                KeyboardShortcuts.Recorder("Toggle Sneak Peek:", name: .toggleSneakPeek)
-            } header: {
-                Text("Media")
-            } footer: {
-                Text(
-                    "Sneak Peek shows the media title and artist under the notch for a few seconds."
-                )
-                .multilineTextAlignment(.trailing)
-                .foregroundStyle(.secondary)
-                .font(.caption)
-            }
-            Section {
-                KeyboardShortcuts.Recorder("Toggle Notch Open:", name: .toggleNotchOpen)
-            }
-        }
-        .accentColor(.effectiveAccent)
-        .navigationTitle("Shortcuts")
-    }
-}
 
 func proFeatureBadge() -> some View {
     Text("Upgrade to Pro")

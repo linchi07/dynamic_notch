@@ -6,7 +6,6 @@
 //
 
 import Defaults
-import KeyboardShortcuts
 import Sparkle
 import SwiftUI
 
@@ -53,7 +52,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var quickShareService = QuickShareService.shared
     var whatsNewWindow: NSWindow?
     var timer: Timer?
-    var closeNotchTask: Task<Void, Never>?
 
     private var onboardingWindowController: NSWindowController?
     private var screenLockedObserver: Any?
@@ -310,49 +308,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 
-        KeyboardShortcuts.onKeyDown(for: .toggleSneakPeek) { [weak self] in
-            guard let self else { return }
-            coordinator.postNotification(
-                title: MusicManager.shared.songTitle,
-                message: MusicManager.shared.artistName,
-                customImage: MusicManager.shared.albumArt,
-                iconName: "music.note",
-                iconColor: .pink,
-                iconBackground: Color.pink.opacity(0.18),
-                category: .activityUpdate,
-                activityId: "music.playback",
-                duration: 3.0
-            )
-        }
-
-        KeyboardShortcuts.onKeyDown(for: .toggleNotchOpen) { [weak self] in
-            Task { [weak self] in
-                guard let self, self.window?.isVisible == true else { return }
-
-                self.closeNotchTask?.cancel()
-                self.closeNotchTask = nil
-
-                switch self.vm.notchState {
-                case .closed:
-                    await MainActor.run {
-                        self.vm.open()
-                    }
-
-                    self.closeNotchTask = Task { [weak viewModel = self.vm] in
-                        do {
-                            try await Task.sleep(for: .seconds(3))
-                            await MainActor.run {
-                                viewModel?.close()
-                            }
-                        } catch { }
-                    }
-                case .open:
-                    await MainActor.run {
-                        self.vm.close()
-                    }
-                }
-            }
-        }
 
         refreshNotchWindow(changeAlpha: true)
 
