@@ -28,11 +28,11 @@ struct TabSelectionView: View {
         HStack(spacing: 0) {
             ForEach(tabs) { tab in
                 TabButton(label: tab.label, icon: tab.icon, selected: coordinator.currentView == tab.view) {
-                    withAnimation(.easeInOut(duration: 0.22)) {
+                    withAnimation(.smooth(duration: 0.28)) {
                         coordinator.currentView = tab.view
                     }
                 }
-                .frame(width: 34, height: 18)
+                .frame(height: 18)
                 .foregroundStyle(tab.view == coordinator.currentView ? .white : .gray)
                 .background {
                     if tab.view == coordinator.currentView {
@@ -42,14 +42,11 @@ struct TabSelectionView: View {
                     }
                 }
                 .accessibilityLabel(tab.label)
-                .accessibilityAddTraits(tab.view == coordinator.currentView ? .isSelected : [])
             }
         }
-        .padding(1)
+        .padding(2)
         .background(Capsule().fill(Color.white.opacity(0.07)))
         .clipShape(Capsule())
-        .contentShape(Capsule())
-        .zIndex(3)
     }
 }
 

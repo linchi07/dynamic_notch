@@ -283,27 +283,19 @@ final class MediaKeyInterceptor {
         case .brightnessUp, .keyboardBrightnessUp:
             // Single tap = 1/16; Holding = 1/100 (4.0s full traversal)
             let delta = (isHolding ? (2.5 / 100.0) : step) / stepDivisor
-            adjustBrightness(
-                delta: delta,
-                keyboard: keyType == .keyboardBrightnessUp || command,
-                isHolding: isHolding
-            )
+            adjustBrightness(delta: delta, keyboard: keyType == .keyboardBrightnessUp || command)
         case .brightnessDown, .keyboardBrightnessDown:
             let delta = -((isHolding ? (2.5 / 100.0) : step) / stepDivisor)
-            adjustBrightness(
-                delta: delta,
-                keyboard: keyType == .keyboardBrightnessDown || command,
-                isHolding: isHolding
-            )
+            adjustBrightness(delta: delta, keyboard: keyType == .keyboardBrightnessDown || command)
         }
     }
     
-    private func adjustBrightness(delta: Float, keyboard: Bool, isHolding: Bool) {
+    private func adjustBrightness(delta: Float, keyboard: Bool) {
         Task { @MainActor in
             if keyboard {
-                KeyboardBacklightManager.shared.setRelative(delta: delta, isHolding: isHolding)
+                KeyboardBacklightManager.shared.setRelative(delta: delta)
             } else {
-                BrightnessManager.shared.setRelative(delta: delta, isHolding: isHolding)
+                BrightnessManager.shared.setRelative(delta: delta)
             }
         }
     }

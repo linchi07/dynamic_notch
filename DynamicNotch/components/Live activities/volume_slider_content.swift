@@ -19,7 +19,7 @@ struct VolumeSliderContent: View {
     // Visual Constants (Compact iOS-style proportions)
     private static let CONTENT_WIDTH: CGFloat = 200
     private static let EXPANDED_HEIGHT: CGFloat = 30
-    private static let NARROWED_HEIGHT: CGFloat = 9
+    private static let NARROWED_HEIGHT: CGFloat = 12
     private static let DRAG_NORMAL_WIDTH: CGFloat = 208
     private static let DRAG_NORMAL_HEIGHT: CGFloat = 34
     private static let DRAG_BOUNDARY_WIDTH: CGFloat = 216
@@ -31,6 +31,7 @@ struct VolumeSliderContent: View {
     @State private var isDraggingAtBoundary: Bool = false
     @State private var isRapidAdjusting: Bool = false
     @State private var isHoldingAtBoundary: Bool = false
+    @State private var lastValueChangeTime: TimeInterval = 0
     @State private var rapidResetTask: Task<Void, Never>?
     @State private var boundaryReleaseTask: Task<Void, Never>?
     @State private var hasTriggeredDragHaptic: Bool = false
@@ -57,14 +58,13 @@ struct VolumeSliderContent: View {
         return Self.EXPANDED_HEIGHT
     }
 
-    // Boundary holding compresses the already-narrow key-adjustment bar to an
-    // iOS-like hairline while preserving a usable hit area in the outer view.
+    // Effective height: 34 for normal drag, 38 for drag at boundary, 9.8 for key boundary hold, 12 for narrow, 30 for rest
     private var effectiveHeight: CGFloat {
         if isDragging {
             return isDraggingAtBoundary ? Self.DRAG_BOUNDARY_HEIGHT : Self.DRAG_NORMAL_HEIGHT
         }
         if isHoldingAtBoundary {
-            return baseHeight * 0.72
+            return baseHeight * 0.82
         }
         return baseHeight
     }
@@ -73,6 +73,10 @@ struct VolumeSliderContent: View {
         let clampedValue = max(0, min(1, value))
         let liveWidth = effectiveWidth
         let liveHeight = effectiveHeight
+
+        let isFull = clampedValue >= 0.999
+        let isZero = clampedValue <= 0.001
+        let progressWidth = isFull ? liveWidth : (isZero ? 0 : max(0, min(liveWidth, liveWidth * clampedValue)))
 
         ZStack(alignment: .leading) {
             // 1. Base Layer (Unfilled): Light gray icon and label over the frosted background
@@ -86,12 +90,13 @@ struct VolumeSliderContent: View {
             .opacity(isRapidAdjusting && !isDragging ? 0.0 : 1.0)
             .animation(.easeInOut(duration: 0.16), value: isRapidAdjusting)
 
-            // Keep the active layer at the exact same size as the base and reveal
-            // it with a transform. This makes both layers move/resize as one
-            // composited surface when the notch or a notification changes anchor.
+            // 2. Active Progress Fill: Pure white slider that fills from the left
             ZStack(alignment: .leading) {
-                Color.white
+                Rectangle()
+                    .fill(Color.white)
+                    .frame(width: progressWidth, height: liveHeight)
 
+                // Foreground content over white fill (Dark gray for sharp readability)
                 HStack(spacing: 8) {
                     leadingIcon(color: Color(white: 0.16), cutoutColor: Color.white)
                     Spacer()
@@ -102,17 +107,11 @@ struct VolumeSliderContent: View {
                 .opacity(isRapidAdjusting && !isDragging ? 0.0 : 1.0)
                 .animation(.easeInOut(duration: 0.16), value: isRapidAdjusting)
             }
-            .frame(width: liveWidth, height: liveHeight)
-            .mask(alignment: .leading) {
-                Rectangle()
-                    .scaleEffect(x: clampedValue, anchor: .leading)
-            }
-            // Progress itself must never overshoot at 0% or 100%; the surrounding
-            // bar handles boundary feedback independently.
-            .animation(isDragging ? nil : .easeOut(duration: 0.09), value: clampedValue)
+            .frame(width: progressWidth, height: liveHeight, alignment: .leading)
+            .clipped()
+            .animation(isDragging ? nil : FloatingPopupStyle.fluidSliderSpring, value: clampedValue)
         }
         .frame(width: liveWidth, height: liveHeight)
-        .compositingGroup()
         .contentShape(Rectangle())
         .gesture(
             DragGesture(minimumDistance: 0)
@@ -123,16 +122,12 @@ struct VolumeSliderContent: View {
                     handleDragEnded()
                 }
         )
-        .animation(FloatingPopupStyle.sizeSpring, value: isRapidAdjusting)
-        .animation(FloatingPopupStyle.boundarySpring, value: isHoldingAtBoundary)
-        .animation(FloatingPopupStyle.dragSpring, value: isDragging)
-        .animation(FloatingPopupStyle.dragSpring, value: isDraggingAtBoundary)
-        .onReceive(NotificationCenter.default.publisher(for: .notchMediaKeyDidRepeat)) { notification in
-            guard let repeatedType = notification.object as? SneakContentType,
-                  repeatedType == type,
-                  !isDragging
-            else { return }
-            handleContinuousKeyPress()
+        .animation(FloatingPopupStyle.fluidSliderSpring, value: isRapidAdjusting)
+        .animation(isHoldingAtBoundary ? FloatingPopupStyle.bounceSpring : FloatingPopupStyle.strongBounceSpring, value: isHoldingAtBoundary)
+        .animation(isDragging ? .interactiveSpring(response: 0.25, dampingFraction: 0.78) : FloatingPopupStyle.strongBounceSpring, value: isDragging)
+        .animation(.interactiveSpring(response: 0.25, dampingFraction: 0.78), value: isDraggingAtBoundary)
+        .onChange(of: value) { oldValue, newValue in
+            handleValueChange(oldValue: oldValue, newValue: newValue)
         }
         .onReceive(NotificationCenter.default.publisher(for: .notchBoundaryHit)) { notification in
             let isTop = (notification.object as? Bool) ?? (value >= 0.5)
@@ -141,34 +136,47 @@ struct VolumeSliderContent: View {
         .onReceive(NotificationCenter.default.publisher(for: .notchMediaKeyDidRelease)) { _ in
             handleKeyRelease()
         }
-        .onDisappear {
-            rapidResetTask?.cancel()
-            boundaryReleaseTask?.cancel()
-        }
     }
 
-    private func handleContinuousKeyPress() {
-        rapidResetTask?.cancel()
-        if !isRapidAdjusting {
-            withAnimation(FloatingPopupStyle.sizeSpring) {
+    private func handleValueChange(oldValue: CGFloat, newValue: CGFloat) {
+        guard !isDragging else { return }
+
+        let now = Date().timeIntervalSince1970
+        let timeDelta = now - lastValueChangeTime
+        lastValueChangeTime = now
+
+        // Check boundary impact backup
+        if newValue >= 0.999 && oldValue >= 0.90 {
+            handleBoundaryHit(isTop: true)
+        } else if newValue <= 0.001 && oldValue <= 0.10 {
+            handleBoundaryHit(isTop: false)
+        }
+
+        // Acceleration detection: rapid consecutive keystrokes or holding (< 340ms)
+        if timeDelta < 0.34 {
+            withAnimation(FloatingPopupStyle.fluidSliderSpring) {
                 isRapidAdjusting = true
             }
+        }
+
+        // If not holding at boundary, schedule delayed expand
+        if !isHoldingAtBoundary {
+            scheduleRapidReset(delayMs: 750)
         }
     }
 
     private func handleBoundaryHit(isTop: Bool) {
-        let isAtReportedBoundary = isTop ? value >= 0.999 : value <= 0.001
-        guard !isDragging, isAtReportedBoundary else { return }
+        guard !isDragging else { return }
 
         if !isHoldingAtBoundary {
-            withAnimation(FloatingPopupStyle.boundarySpring) {
+            withAnimation(FloatingPopupStyle.bounceSpring) {
                 isHoldingAtBoundary = true
             }
             triggerHapticFeedback()
         }
 
         if !isRapidAdjusting {
-            withAnimation(FloatingPopupStyle.sizeSpring) {
+            withAnimation(FloatingPopupStyle.fluidSliderSpring) {
                 isRapidAdjusting = true
             }
         }
@@ -193,9 +201,10 @@ struct VolumeSliderContent: View {
     }
 
     private func releaseBoundaryHold() {
-        withAnimation(FloatingPopupStyle.releaseSpring) {
+        withAnimation(FloatingPopupStyle.strongBounceSpring) {
             isHoldingAtBoundary = false
         }
+        triggerHapticFeedback()
     }
 
     private func scheduleRapidReset(delayMs: Int = 750) {
@@ -203,7 +212,7 @@ struct VolumeSliderContent: View {
         rapidResetTask = Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(delayMs))
             guard !Task.isCancelled else { return }
-            withAnimation(FloatingPopupStyle.releaseSpring) {
+            withAnimation(.spring(response: 0.42, dampingFraction: 0.82)) {
                 isRapidAdjusting = false
             }
         }
@@ -227,14 +236,14 @@ struct VolumeSliderContent: View {
         }
 
         if !isDragging {
-            withAnimation(FloatingPopupStyle.dragSpring) {
+            withAnimation(.interactiveSpring(response: 0.25, dampingFraction: 0.78)) {
                 isDragging = true
                 isDraggingAtBoundary = nextAtBoundary
             }
             isRapidAdjusting = false
             rapidResetTask?.cancel()
         } else if isDraggingAtBoundary != nextAtBoundary {
-            withAnimation(FloatingPopupStyle.dragSpring) {
+            withAnimation(.interactiveSpring(response: 0.25, dampingFraction: 0.78)) {
                 isDraggingAtBoundary = nextAtBoundary
             }
         }
@@ -248,7 +257,7 @@ struct VolumeSliderContent: View {
     }
 
     private func handleDragEnded() {
-        withAnimation(FloatingPopupStyle.releaseSpring) {
+        withAnimation(FloatingPopupStyle.strongBounceSpring) {
             isDragging = false
             isDraggingAtBoundary = false
         }
@@ -305,7 +314,7 @@ struct VolumeSliderContent: View {
             }
         }
         .foregroundStyle(color)
-        .animation(isDragging ? nil : .easeOut(duration: 0.09), value: value)
+        .animation(isDragging ? nil : FloatingPopupStyle.fluidSliderSpring, value: value)
     }
 
     private func updateValue(_ newValue: CGFloat) {

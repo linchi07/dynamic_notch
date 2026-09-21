@@ -387,8 +387,8 @@ struct ContentView: View {
 
     @ViewBuilder
     func NotchLayout() -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading) {
+            VStack(alignment: .leading) {
                 if coordinator.helloAnimationRunning {
                     Spacer()
                     HelloAnimation(onFinish: {
@@ -421,7 +421,7 @@ struct ContentView: View {
                     if shouldShowBottomNavigation {
                         Spacer(minLength: 0)
                         TabSelectionView()
-                            .padding(.bottom, 0)
+                            .padding(.bottom, 2)
                             .transition(.move(edge: .bottom).combined(with: .opacity))
                     }
                 }

@@ -2151,9 +2151,6 @@
         }
       }
     },
-    "Active Media Sources" : {
-
-    },
     "Active 外侧留白" : {
 
     },
@@ -28881,9 +28878,6 @@
         }
       }
     },
-    "Select media players to monitor concurrently. When multiple players are active (e.g. web browser video + Apple Music), you can switch between them in the Notch." : {
-
-    },
     "Select the music source you want to use. You can change this later in the app settings." : {
       "localizations" : {
         "ar" : {
@@ -34766,9 +34760,6 @@
         }
       }
     },
-    "Universal" : {
-
-    },
     "Unlock advanced features and improve your experience. Upgrade now for more customizations!" : {
       "localizations" : {
         "ar" : {
@@ -37497,6 +37488,9 @@
     "发射自定义模拟通知" : {
 
     },
+    "受监控的媒体应用" : {
+
+    },
     "已接入电源 (isPluggedIn)" : {
 
     },
@@ -37509,7 +37503,16 @@
     "恢复 Idle" : {
 
     },
+    "提示：“喜欢 (Favorite)”仅 Apple Music 支持；“音量”仅 Apple Music 与 Spotify 支持应用内独立调节；其余控制项通用支持所有播放器与网页。" : {
+
+    },
+    "播放中" : {
+
+    },
     "显示时长: %@s" : {
+
+    },
+    "根据当前访问系统媒体控制的所有应用动态构建。开启开关的应用在播放时会触发刘海屏展开与频谱图显示；未开启的应用（如网页视频）将被静默忽略，不打扰听歌体验。" : {
 
     },
     "模拟电量: %lld%%" : {
