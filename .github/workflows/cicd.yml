@@ -1,47 +1,59 @@
-name: Build for macOS
+name: Build
+
+# Compile smoke test only. This workflow deliberately holds no secrets and never
+# signs anything, so it is safe to run on pull requests from forks: fork PRs do
+# not receive repository secrets, and there is nothing here to steal.
+#
+# Releases live in release.yml and are manual-dispatch only.
 
 on:
   push:
     branches:
-      - '*'
+      - main
   pull_request:
     branches:
-      - '*'
+      - main
+  workflow_dispatch:
 
-# https://stackoverflow.com/a/72408109/6942800
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
-# Least-privilege: only needs to read code for building.
+# Least-privilege: only needs to read the code.
 permissions:
   contents: read
 
+env:
+  PROJECT: DynamicNotch.xcodeproj
+  SCHEME: DynamicNotch
+
 jobs:
   build:
-    name: Build Boring Notch
-    strategy:
-      matrix:
-        platform:
-          - macOS
-        xcode:
-          - ^16
-        scheme:
-          - boringNotch
-    # macos-latest now resolves to macos-26, which does not ship Xcode 16.
-    # Keep this legacy main-branch build on an image with the requested toolchain.
+    name: Compile DynamicNotch
+    # Pinned to macos-15 on purpose: macos-latest resolves to macos-26, which does
+    # not ship the Xcode 16 toolchain this project is built and released with.
     runs-on: macos-15
     steps:
-    - name: Code Checkout
-      # TODO: pin to immutable SHA
-      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-    - # TODO: pin to immutable SHA
-      uses: mxcl/xcodebuild@d3ee9b419c1be9a988086c58fe0988f32d99cfc5 # v3.6.0
-      with:
-        xcode: ${{ matrix.xcode }}
-        platform: ${{ matrix.platform }}
-        scheme: ${{ matrix.scheme }}
-        action: build
-        verbosity: xcpretty
-        upload-logs: always
-        configuration: release
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Show toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+
+      - name: Resolve Swift packages
+        run: xcodebuild -resolvePackageDependencies -project "$PROJECT"
+
+      - name: Build (unsigned)
+        run: |
+          xcodebuild build \
+            -project "$PROJECT" \
+            -scheme "$SCHEME" \
+            -configuration Release \
+            -destination 'platform=macOS' \
+            -skipPackagePluginValidation \
+            -skipMacroValidation \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            -quiet

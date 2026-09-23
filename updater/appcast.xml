@@ -7,22 +7,25 @@
       https://linchi07.github.io/dynamic_notch/appcast.xml
 
   The app's SUFeedURL points at the primary entry point
-  (https://notch.wejoinnwk.com/appcast.xml), which can either serve a copy of
-  this file directly or 302-redirect here.
+  (https://notch.wejoinnwk.com/appcast.xml), which should serve this same file
+  from Cloudflare Pages (build output directory: updater).
 
-  Do NOT hand-edit the <enclosure> values. Generate them from the signed DMG:
+  DO NOT HAND-EDIT THE item ELEMENTS. Every enclosure needs the exact byte
+  length of the DMG and the EdDSA signature over those exact bytes; a mismatch
+  makes every client reject the update silently. Items are appended by
+  .github/workflows/release.yml through scripts/update_appcast.py - run that
+  script with no arguments to see its full option list.
 
-    1. Build + export the signed DMG (Configuration/dmg/create_dmg.sh).
-    2. Sign it with the EdDSA private key stored in your keychain:
-         ./DerivedData/SourcePackages/artifacts/sparkle/Sparkle/bin/sign_update \
-             path/to/DynamicNotch-1.2.dmg
-       -> prints sparkle:edSignature and the byte length.
-    3. Paste the printed signature + length into the <enclosure> below and
-       upload the DMG to the URL in <enclosure url="...">.
+  The script is safe to re-run: an item with the same sparkle:version is
+  replaced rather than duplicated, and it refuses to write a feed whose
+  enclosure signature is still a placeholder.
 
   The EdDSA public key that verifies these signatures lives in
-  DynamicNotch/Info.plist under SUPublicEDKey. Keep the private key safe - if it
+  DynamicNotch/Info.plist under SUPublicEDKey. Keep the private key safe: if it
   is lost you cannot ship updates to existing installs.
+
+  NOTE: XML comments may not contain a double hyphen, so option names are
+  spelled out in prose here rather than pasted as a command line.
 -->
 <rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
     <channel>
@@ -30,28 +33,5 @@
         <link>https://github.com/linchi07/dynamic_notch</link>
         <description>DynamicNotch release feed</description>
         <language>en</language>
-        <item>
-            <title>1.2</title>
-            <pubDate>Wed, 23 Sep 2026 02:36:04 +0000</pubDate>
-            <link>https://github.com/linchi07/dynamic_notch/releases</link>
-            <sparkle:version>1</sparkle:version>
-            <sparkle:shortVersionString>1.2</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[
-<h2>DynamicNotch 1.2</h2>
-<ul>
-    <li>Localized the External Apps settings page and the launch-at-login toggle</li>
-    <li>Added a link to the official website</li>
-    <li>Switched to DynamicNotch's own update feed</li>
-</ul>
-]]></description>
-            <enclosure
-                url="https://notch.wejoinnwk.com/downloads/DynamicNotch-1.2.dmg"
-                sparkle:version="1"
-                sparkle:shortVersionString="1.2"
-                length="0"
-                type="application/octet-stream"
-                sparkle:edSignature="TODO_REPLACE_WITH_sign_update_OUTPUT" />
-        </item>
     </channel>
 </rss>
