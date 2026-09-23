@@ -46,7 +46,7 @@ class BoringViewCoordinator: ObservableObject {
         }
     }
     private var lastContentView: NotchViews = .home
-    @Published var helloAnimationRunning: Bool = false
+    @Published var isNotchOpen: Bool = false
     @Published var activeCombo: NotchComboActivity? = nil
     private var comboTask: Task<Void, Never>?
     private var sneakPeekDispatch: DispatchWorkItem?
@@ -250,8 +250,6 @@ class BoringViewCoordinator: ObservableObject {
             }
 
         Task { @MainActor in
-            helloAnimationRunning = firstLaunch
-
             if Defaults[.hudReplacement] {
                 let authorized = await XPCHelperClient.shared.isAccessibilityAuthorized()
                 if !authorized {

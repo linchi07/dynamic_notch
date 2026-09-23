@@ -105,15 +105,16 @@ enum OptionKeyAction: String, CaseIterable, Identifiable, Defaults.Serializable 
 
 extension Defaults.Keys {
     // MARK: General
+    // 这个可以删掉了，不需要在menubar显示icon。设置项已经删除，但是这里没有弄干净。
     static let menubarIcon = Key<Bool>("menubarIcon", default: false)
-    static let releaseName = Key<String>("releaseName", default: "Flying Rabbit 🐇🪽")
+    static let releaseName = Key<String>("releaseName", default: "Arena")
     
     // MARK: Behavior
     static let minimumHoverDuration = Key<TimeInterval>("minimumHoverDuration", default: 0.2)
     static let enableHaptics = Key<Bool>("enableHaptics", default: true)
     static let openNotchOnHover = Key<Bool>("openNotchOnHover", default: true)
     static let extendHoverArea = Key<Bool>("extendHoverArea", default: false)
-    static let notchOuterPadding = Key<CGFloat>("notchOuterPadding", default: 16)
+    static let notchOuterPadding = Key<CGFloat>("notchOuterPadding", default: 10)
     //static let openLastTabByDefault = Key<Bool>("openLastTabByDefault", default: false)
     static let showOnLockScreen = Key<Bool>("showOnLockScreen", default: false)
     static let hideFromScreenRecording = Key<Bool>("hideFromScreenRecording", default: false)

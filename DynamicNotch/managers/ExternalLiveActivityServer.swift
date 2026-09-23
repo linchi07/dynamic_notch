@@ -27,11 +27,16 @@ final class ExternalActivityPermissions: ObservableObject {
         if let decision = decisions[identity] { return decision }
         NSApp.activate(ignoringOtherApps: true)
         let alert = NSAlert()
-        alert.messageText = "Allow \(appName) to use DynamicNotch Live Activities?"
-        alert.informativeText = "This app can display activities and alerts in the notch.\n\n\(identity)"
+        alert.messageText = String(
+            format: NSLocalizedString("Allow %@ to use DynamicNotch Live Activities?", comment: ""),
+            appName
+        )
+        alert.informativeText = NSLocalizedString(
+            "This app can display activities and alerts in the notch.", comment: ""
+        ) + "\n\n\(identity)"
         alert.alertStyle = .informational
-        alert.addButton(withTitle: "Allow")
-        alert.addButton(withTitle: "Don't Allow")
+        alert.addButton(withTitle: NSLocalizedString("Allow", comment: ""))
+        alert.addButton(withTitle: NSLocalizedString("Don't Allow", comment: ""))
         let allowed = alert.runModal() == .alertFirstButtonReturn
         setAllowed(allowed, for: identity)
         return allowed

@@ -1,0 +1,2422 @@
+/* ==========================================================================
+   Dynamic Notch - Apple Style Live Activity Stylesheet
+   ========================================================================== */
+
+:root {
+  --COLOR_BG_BASE: #000000;
+  --COLOR_BG_ELEVATED: #0a0a0a;
+  --COLOR_BG_CARD: rgba(18, 18, 20, 0.75);
+  --COLOR_BG_CARD_HOVER: rgba(28, 28, 32, 0.9);
+
+  --COLOR_ACCENT_PURPLE: #9d4edd;
+  --COLOR_ACCENT_GLOW: rgba(168, 85, 247, 0.45);
+  --COLOR_ACCENT_LIGHT: #e0aaff;
+  --COLOR_ACCENT_PINK: #c77dff;
+  --COLOR_ACCENT_GREEN: #34c759;
+  --COLOR_ACCENT_CYAN: #38bdf8;
+
+  --COLOR_TEXT_PRIMARY: #f5f5f7;
+  --COLOR_TEXT_SECONDARY: #a1a1a6;
+  --COLOR_TEXT_MUTED: #6e6e73;
+
+  --BORDER_LIGHT: rgba(255, 255, 255, 0.08);
+  --BORDER_ACTIVE: rgba(192, 132, 252, 0.55);
+  --BORDER_CARD: rgba(255, 255, 255, 0.06);
+
+  --FONT_MAIN: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Plus Jakarta Sans", "Segoe UI", Roboto, sans-serif;
+  --FONT_MONO: "SF Mono", Menlo, Monaco, Consolas, monospace;
+
+  --SPRING_EASING: cubic-bezier(0.16, 1, 0.3, 1);
+  --TRANSITION_SMOOTH: 0.45s var(--SPRING_EASING);
+}
+
+/* 基础重置 - 注意：绝不可以在 html/body 上加 overflow-x: hidden，避免破坏 CSS sticky！ */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  background-color: #000000;
+  color: var(--COLOR_TEXT_PRIMARY);
+  font-family: var(--FONT_MAIN);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  min-height: 100vh;
+  position: relative;
+  line-height: 1.6;
+  background-color: #000000;
+}
+
+/* ==========================================================================
+   全局苹果发布会柔光弥散光晕 (关闭大面积泛紫光晕，保持纯净黑底)
+   ========================================================================== */
+.ambient-glow {
+  display: none;
+}
+
+/* ==========================================================================
+   顶部极简毛玻璃导航栏 (纯黑毛玻璃背景 + 保持高亮紫强调)
+   ========================================================================== */
+.site-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 56px;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--BORDER_LIGHT);
+  transition: background-color 0.3s ease;
+}
+
+.site-header.scrolled {
+  background: rgba(0, 0, 0, 0.92);
+  border-bottom-color: rgba(255, 255, 255, 0.12);
+}
+
+/* 导航栏语言选择器 (支持多达 17 种内置语言) */
+.lang-selector-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  padding: 4px 10px;
+  gap: 6px;
+  margin-left: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.lang-selector-wrap:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(192, 132, 252, 0.5);
+}
+
+.lang-globe-icon {
+  color: var(--COLOR_TEXT_SECONDARY);
+  flex-shrink: 0;
+}
+
+.lang-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--FONT_MAIN);
+  cursor: pointer;
+  outline: none;
+  padding-right: 14px;
+}
+
+.lang-select option {
+  background: #121216;
+  color: #ffffff;
+}
+
+.lang-chevron-icon {
+  position: absolute;
+  right: 8px;
+  pointer-events: none;
+  color: var(--COLOR_TEXT_MUTED);
+  transition: transform 0.2s ease;
+}
+
+.nav-container {
+  max-width: 1240px;
+  margin: 0 auto;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: var(--COLOR_TEXT_PRIMARY);
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.brand-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.35);
+}
+
+.brand-name {
+  font-weight: 700;
+  background: linear-gradient(180deg, #ffffff 0%, #d4d4d8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.nav-menu {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.nav-link {
+  font-size: 14px;
+  color: var(--COLOR_TEXT_SECONDARY);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.nav-link:hover {
+  color: var(--COLOR_TEXT_PRIMARY);
+}
+
+.nav-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  background: #ffffff;
+  color: #000000;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.25s ease;
+  box-shadow: 0 0 18px rgba(255, 255, 255, 0.25);
+}
+
+.nav-btn-primary:hover {
+  background: #f0f0f5;
+  transform: translateY(-1px);
+}
+
+/* 首屏文案先出现，刘海画面在其下方自然接入页面。 */
+.hero-section {
+  position: relative;
+  min-height: max(100vh, 760px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: clamp(96px, 8vw, 132px) 24px 34px;
+  text-align: center;
+  z-index: 2;
+  isolation: isolate;
+  background: #050507;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 860px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 36px;
+  will-change: transform, opacity;
+  transition: transform 0.1s ease-out, opacity 0.1s ease-out;
+}
+
+.hero-content > * {
+  animation: heroTextEnter 0.85s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.hero-badge { animation-delay: 0.08s; }
+.hero-title { animation-delay: 0.2s; }
+.hero-subtitle { animation-delay: 0.34s; }
+.hero-actions { animation-delay: 0.48s; }
+
+@keyframes heroTextEnter {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  margin-bottom: 20px;
+  backdrop-filter: blur(8px);
+}
+
+.badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--COLOR_ACCENT_PINK);
+  box-shadow: none;
+}
+
+.badge-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--COLOR_ACCENT_LIGHT);
+  letter-spacing: 0.3px;
+}
+
+.hero-title {
+  font-size: clamp(40px, 6.5vw, 76px);
+  line-height: 1.08;
+  font-weight: 700;
+  letter-spacing: -1.5px;
+  margin-bottom: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.title-intro {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.title-highlight {
+  background: linear-gradient(135deg, #f5d0fe 0%, #d8b4fe 30%, #c084fc 70%, #9333ea 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: none;
+}
+
+.hero-subtitle {
+  font-size: clamp(16px, 2.1vw, 21px);
+  color: var(--COLOR_TEXT_SECONDARY);
+  max-width: 680px;
+  margin-bottom: 34px;
+  line-height: 1.55;
+}
+
+.hero-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.btn-download {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 26px;
+  background: #ffffff;
+  color: #000000;
+  border-radius: 999px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 14px;
+  box-shadow: 0 0 35px rgba(255, 255, 255, 0.25);
+  transition: all 0.3s ease;
+}
+
+.btn-download:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 45px rgba(255, 255, 255, 0.4);
+}
+
+.btn-subtext {
+  font-size: 12px;
+  color: #666;
+  padding-left: 6px;
+  border-left: 1px solid rgba(0, 0, 0, 0.15);
+}
+
+.btn-github {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 24px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: var(--COLOR_TEXT_PRIMARY);
+  border-radius: 999px;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 14px;
+  backdrop-filter: blur(12px);
+  transition: all 0.3s ease;
+}
+
+.btn-github:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+.btn-badge {
+  font-size: 11px;
+  background: rgba(168, 85, 247, 0.25);
+  color: var(--COLOR_ACCENT_LIGHT);
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+/* ==========================================================================
+   首屏专属：1:1 严格复刻官方渲染图巨幅流光刘海特写 (只在首屏展示)
+   ========================================================================== */
+.hero-notch-reveal-stage {
+  position: relative;
+  flex: none;
+  width: 100vw;
+  height: calc(100vw * 754 / 2086);
+  margin-top: clamp(-150px, -7vw, -50px);
+  transform-origin: top left;
+  pointer-events: none;
+  z-index: 0;
+  will-change: transform, opacity;
+}
+
+.hero-notch-contour-wrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+}
+
+.notch-contour-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: hidden;
+}
+
+.notch-screen-fill {
+  fill: url(#notchScreenGlow);
+}
+
+.notch-black-fill {
+  fill: #030305;
+}
+
+.notch-base-path {
+  fill: none;
+  stroke: url(#notchEdgeLight);
+  stroke-width: 2.6px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.notch-glow-underlay {
+  fill: none;
+  stroke: url(#notchEdgeLight);
+  stroke-width: 17px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: url(#neonBlur);
+  opacity: 0.9;
+}
+
+.notch-flow-beam {
+  fill: none;
+  stroke: #ffffff;
+  stroke-width: 2px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 80 4000;
+  animation: beamCircuitFlow 8s linear infinite;
+  opacity: 0.42;
+  filter: drop-shadow(0 0 6px #e879f9);
+}
+
+@keyframes beamCircuitFlow {
+  to { stroke-dashoffset: -4080; }
+}
+
+/* 首屏滚动探索指示器 */
+.scroll-indicator {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  margin-bottom: 24px;
+  opacity: 0.75;
+  transition: opacity 0.3s ease;
+}
+
+.mouse-scroll-wheel {
+  width: 20px;
+  height: 32px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-radius: 10px;
+  display: flex;
+  justify-content: center;
+  padding-top: 5px;
+}
+
+.wheel-dot {
+  width: 4px;
+  height: 7px;
+  background-color: #ffffff;
+  border-radius: 2px;
+  animation: wheelScroll 1.6s infinite ease-in-out;
+}
+
+@keyframes wheelScroll {
+  0% { transform: translateY(0); opacity: 1; }
+  100% { transform: translateY(10px); opacity: 0; }
+}
+
+.scroll-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--COLOR_TEXT_SECONDARY);
+  letter-spacing: 0.2px;
+}
+
+/* ==========================================================================
+   核心联动展示区 (支持首屏居中至左侧演播台连续空间位移动效)
+   ========================================================================== */
+.interactive-showcase {
+  position: relative;
+  z-index: 10;
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 0 24px 80px;
+}
+
+.showcase-container {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 50px;
+  align-items: start;
+}
+
+/* 左侧固定栏 (Sticky Column) */
+.stage-sticky-col {
+  position: -webkit-sticky;
+  position: sticky;
+  top: 76px;
+  height: calc(100vh - 90px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  z-index: 20;
+}
+
+/* 模拟 MacBook 屏幕框架 (支持从屏幕居中向左平滑入座的空间变换) */
+.macbook-screen-mockup {
+  position: relative;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  aspect-ratio: 16 / 10.2;
+  background: #000000;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 
+    0 30px 80px -15px rgba(0, 0, 0, 0.95),
+    0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 0 50px rgba(147, 51, 234, 0.2);
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+  will-change: opacity;
+}
+
+/* 右侧故事卡片列 (支持滚动初期渐显)
+   节奏锁定: 卡片高 = 左侧刘海演播台高 (100vh - 90px)，列间距 = 90px，
+   于是「卡片 + 间距」正好等于一屏高度，任何视口下都只会完整呈现一个栏目。 */
+.story-scroll-col {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 90px;
+  padding: 76px 0 90px;
+  will-change: transform, opacity;
+  transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+}
+
+/* 屏幕顶端原生刘海挂载区 */
+.notch-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 30;
+}
+
+/* 柔光溢彩光晕 */
+.island-glow-halo {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 440px;
+  height: 100px;
+  background: radial-gradient(circle, rgba(168, 85, 247, 0.45) 0%, rgba(126, 34, 206, 0.18) 50%, transparent 75%);
+  filter: blur(30px);
+  pointer-events: none;
+  z-index: -1;
+  opacity: 0.85;
+  transition: all 0.45s ease;
+}
+
+/* ==========================================================================
+   模拟刘海核心组件实体 (Notch Island Entity)
+   ========================================================================== */
+.notch-island {
+  position: relative;
+  background: #000000;
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow: hidden;
+  box-shadow: 
+    0 0 0 1px rgba(255, 255, 255, 0.14),
+    0 8px 25px rgba(0, 0, 0, 0.85),
+    0 0 35px rgba(168, 85, 247, 0.4);
+  transition: 
+    width 0.45s var(--SPRING_EASING),
+    height 0.45s var(--SPRING_EASING),
+    border-radius 0.45s var(--SPRING_EASING),
+    box-shadow 0.35s ease;
+  user-select: none;
+}
+
+/* --------------------------------------------------------------------------
+   展开态专属顶部状态栏: BoringHeader.swift
+   -------------------------------------------------------------------------- */
+.boring-header-bar {
+  width: 100%;
+  height: 34px;
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+  opacity: 0;
+  transform: translateY(-8px);
+  pointer-events: none;
+  transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+}
+
+.header-leading-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.header-btn {
+  width: 26px;
+  height: 26px;
+  background: #121216;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #a1a1a6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.header-btn:hover {
+  background: #1c1c22;
+  color: #ffffff;
+}
+
+.header-physical-notch-mask {
+  width: 185px;
+  height: 34px;
+  background: #000000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+
+
+
+
+.header-trailing-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.boring-battery-widget {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.battery-pct-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #d1d1d6;
+}
+
+.mini-battery-shell {
+  position: relative;
+  width: 22px;
+  height: 11px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 3px;
+  padding: 1px;
+}
+
+.mini-battery-fill {
+  height: 100%;
+  background: #34c759;
+  border-radius: 1.5px;
+}
+
+.mini-battery-cap {
+  position: absolute;
+  right: -3px;
+  top: 3px;
+  width: 2px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.45);
+  border-radius: 0 1px 1px 0;
+}
+
+/* --------------------------------------------------------------------------
+   视图面板通用层
+   -------------------------------------------------------------------------- */
+.notch-view-panel {
+  width: 100%;
+  flex: 1;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: scale(0.96);
+  transition: opacity 0.25s ease, transform 0.3s var(--SPRING_EASING);
+  overflow: hidden;
+}
+
+/* --------------------------------------------------------------------------
+   各形态类状态机 (State Matrix - 严格符合 7 大 Live Activity 真实尺寸)
+   -------------------------------------------------------------------------- */
+
+/* 0. 原生空刘海 (State: Empty - 185x34px 静默物理硬件刘海) */
+.notch-island.state-empty {
+  width: 185px;
+  height: 34px;
+  border-radius: 0 0 14px 14px;
+  box-shadow: 
+    0 0 0 1px rgba(255, 255, 255, 0.1),
+    0 4px 16px rgba(0, 0, 0, 0.8),
+    0 0 25px rgba(168, 85, 247, 0.25);
+}
+.notch-island.state-empty .view-empty {
+  display: flex;
+  opacity: 1;
+  animation: appViewFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* 1. 紧凑双翼 (State: Wings - 音乐播放与频谱跳动) */
+.notch-island.state-wings {
+  width: 280px;
+  height: 34px;
+  border-radius: 0 0 14px 14px;
+  box-shadow: 
+    0 0 0 1px rgba(255, 255, 255, 0.12),
+    0 4px 20px rgba(0, 0, 0, 0.8),
+    0 0 35px rgba(168, 85, 247, 0.4);
+}
+.notch-island.state-wings .view-wings {
+  display: flex;
+  opacity: 1;
+  pointer-events: auto;
+  animation: appViewFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.notch-island.state-wings .wing-leading {
+  animation: appWingSlideLeft 0.42s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.notch-island.state-wings .wing-trailing {
+  animation: appWingSlideRight 0.42s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* 2. 展开媒体岛 (State: Expanded - 460x180px 沉浸控制中枢) */
+.notch-island.state-expanded {
+  width: 460px;
+  height: 180px;
+  border-radius: 0 0 28px 28px;
+  box-shadow: 
+    0 0 0 1px rgba(192, 132, 252, 0.35),
+    0 16px 48px rgba(0, 0, 0, 0.95),
+    0 0 55px rgba(168, 85, 247, 0.45);
+}
+.notch-island.state-expanded .boring-header-bar {
+  display: flex;
+  opacity: 1;
+  pointer-events: auto;
+  animation: appViewFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.notch-island.state-expanded .view-expanded {
+  display: flex;
+  opacity: 1;
+  pointer-events: auto;
+  animation: appViewExpandSpring 0.42s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* 3. 切歌悬浮胶囊状态 (State: Sneak - 280x34px 刘海双翼保持音乐播放 + 下方浮现切歌胶囊) */
+.notch-island.state-sneak {
+  width: 280px;
+  height: 34px;
+  border-radius: 0 0 14px 14px;
+  box-shadow: 
+    0 0 0 1px rgba(56, 189, 248, 0.35),
+    0 6px 20px rgba(0, 0, 0, 0.8),
+    0 0 35px rgba(56, 189, 248, 0.3);
+}
+.notch-island.state-sneak .view-wings {
+  display: flex;
+  opacity: 1;
+  pointer-events: auto;
+  animation: appViewFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.notch-island.state-sneak ~ .floating-popups-layer .sneak-peek-track-capsule {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* 4. 独立音量调节 HUD (State: Volume - 280x34px 刘海双翼保持音乐播放 + 下方浮现 iOS 反色音量条) */
+.notch-island.state-volume {
+  width: 280px;
+  height: 34px;
+  border-radius: 0 0 14px 14px;
+  box-shadow: 
+    0 0 0 1px rgba(255, 255, 255, 0.18),
+    0 6px 20px rgba(0, 0, 0, 0.8),
+    0 0 35px rgba(255, 255, 255, 0.2);
+}
+.notch-island.state-volume .view-wings {
+  display: flex;
+  opacity: 1;
+  pointer-events: auto;
+  animation: appViewFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.notch-island.state-volume ~ .floating-popups-layer .floating-hud-bar {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* 5. 独立快充 HUD 状态 (State: Charging - 280x34px 刘海双翼保持音乐播放 + 下方浮现 MagSafe 快充条) */
+.notch-island.state-charging {
+  width: 280px;
+  height: 34px;
+  border-radius: 0 0 14px 14px;
+  box-shadow: 
+    0 0 0 1px rgba(52, 199, 89, 0.4),
+    0 6px 20px rgba(0, 0, 0, 0.8),
+    0 0 35px rgba(52, 199, 89, 0.35);
+}
+.notch-island.state-charging .view-wings {
+  display: flex;
+  opacity: 1;
+  pointer-events: auto;
+  animation: appViewFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.notch-island.state-charging ~ .floating-popups-layer .battery-notification-popup {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* 兼容别名 (State: HUD) */
+.notch-island.state-hud {
+  width: 280px;
+  height: 34px;
+  border-radius: 0 0 14px 14px;
+  box-shadow: 
+    0 0 0 1px rgba(52, 199, 89, 0.4),
+    0 6px 20px rgba(0, 0, 0, 0.8),
+    0 0 35px rgba(52, 199, 89, 0.35);
+}
+.notch-island.state-hud .view-wings {
+  display: flex;
+  opacity: 1;
+}
+.notch-island.state-hud ~ .floating-popups-layer .battery-notification-popup,
+.notch-island.state-hud ~ .floating-popups-layer .floating-hud-bar {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* 6. Unix Socket 实时活动 (State: Socket - 440x78px) */
+.notch-island.state-socket {
+  width: 440px;
+  height: 78px;
+  border-radius: 0 0 22px 22px;
+  box-shadow: 
+    0 0 0 1px rgba(56, 189, 248, 0.4),
+    0 10px 30px rgba(0, 0, 0, 0.9),
+    0 0 45px rgba(56, 189, 248, 0.35);
+}
+.notch-island.state-socket .boring-header-bar,
+.notch-island.state-socket .view-socket {
+  display: flex;
+  opacity: 1;
+  pointer-events: auto;
+  animation: appViewExpandSpring 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* 7. Windows 风格顶边分屏吸附状态 (State: Snap - 280x34px 刘海双翼 + 顶边悬浮分屏面板与幽灵窗口) */
+.notch-island.state-snap {
+  width: 280px;
+  height: 34px;
+  border-radius: 0 0 14px 14px;
+  box-shadow: 
+    0 0 0 1px rgba(56, 189, 248, 0.4),
+    0 6px 20px rgba(0, 0, 0, 0.8),
+    0 0 35px rgba(56, 189, 248, 0.35);
+}
+.notch-island.state-snap .view-wings {
+  display: flex;
+  opacity: 1;
+  pointer-events: auto;
+  animation: appViewFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.notch-island.state-snap ~ .floating-popups-layer .window-snap-overlay {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* --------------------------------------------------------------------------
+   具体视图 0: 原生空刘海 (view-empty) - 默认隐藏绝不占位，激活时 185px 物理镜头微光
+   -------------------------------------------------------------------------- */
+.view-empty {
+  width: 100%;
+  height: 34px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  box-sizing: border-box;
+}
+
+
+
+/* --------------------------------------------------------------------------
+   App 风格流体物理动效关键帧 (App-like Spring Motion Keyframes)
+   -------------------------------------------------------------------------- */
+@keyframes appViewFadeIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes appWingSlideLeft {
+  0% {
+    opacity: 0;
+    transform: translateX(18px) scale(0.85);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes appWingSlideRight {
+  0% {
+    opacity: 0;
+    transform: translateX(-18px) scale(0.85);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes appViewExpandSpring {
+  0% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+
+
+/* --------------------------------------------------------------------------
+   具体视图 1: 紧凑双翼 (view-wings) - 185px 物理刘海 + iOS 6 柱声学物理波形
+   -------------------------------------------------------------------------- */
+.wings-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  box-sizing: border-box;
+}
+
+.wing-leading {
+  display: flex;
+  align-items: center;
+}
+
+.wing-mini-art {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  object-fit: cover;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+}
+
+.wing-center-notch {
+  width: 185px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+
+.wing-trailing {
+  display: flex;
+  align-items: center;
+}
+
+/* iOS 原版声学频谱：从垂直中心对称向上下两端脉动跳跃 */
+.wing-audio-spectrum {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2.2px;
+  height: 16px;
+}
+
+.spectrum-bar {
+  width: 2.2px;
+  height: 13px;
+  background: linear-gradient(180deg, #d8b4fe 0%, #38bdf8 100%);
+  border-radius: 999px;
+  transform-origin: center center;
+  will-change: transform;
+}
+
+/* 6 柱物理谐波中心对称脉冲动效 */
+.spectrum-bar.sp-1 { animation: eqCenterPulse1 0.72s infinite ease-in-out; }
+.spectrum-bar.sp-2 { animation: eqCenterPulse2 0.84s infinite ease-in-out 0.12s; }
+.spectrum-bar.sp-3 { animation: eqCenterPulse3 0.64s infinite ease-in-out 0.05s; }
+.spectrum-bar.sp-4 { animation: eqCenterPulse4 0.92s infinite ease-in-out 0.16s; }
+.spectrum-bar.sp-5 { animation: eqCenterPulse5 0.76s infinite ease-in-out 0.22s; }
+.spectrum-bar.sp-6 { animation: eqCenterPulse6 0.8s infinite ease-in-out 0.1s; }
+
+@keyframes eqCenterPulse1 {
+  0%, 100% { transform: scaleY(0.22); }
+  35% { transform: scaleY(0.85); }
+  65% { transform: scaleY(0.42); }
+  85% { transform: scaleY(0.68); }
+}
+
+@keyframes eqCenterPulse2 {
+  0%, 100% { transform: scaleY(0.28); }
+  30% { transform: scaleY(1.0); }
+  60% { transform: scaleY(0.48); }
+  80% { transform: scaleY(0.78); }
+}
+
+@keyframes eqCenterPulse3 {
+  0%, 100% { transform: scaleY(0.18); }
+  45% { transform: scaleY(0.95); }
+  75% { transform: scaleY(0.38); }
+}
+
+@keyframes eqCenterPulse4 {
+  0%, 100% { transform: scaleY(0.32); }
+  25% { transform: scaleY(0.88); }
+  65% { transform: scaleY(0.32); }
+  88% { transform: scaleY(0.75); }
+}
+
+@keyframes eqCenterPulse5 {
+  0%, 100% { transform: scaleY(0.22); }
+  42% { transform: scaleY(0.98); }
+  72% { transform: scaleY(0.5); }
+}
+
+@keyframes eqCenterPulse6 {
+  0%, 100% { transform: scaleY(0.25); }
+  48% { transform: scaleY(0.82); }
+  76% { transform: scaleY(0.4); }
+}
+
+/* --------------------------------------------------------------------------
+   具体视图 2: 展开媒体岛 (view-expanded - NOTCH_PANEL_CONTAINER_HEIGHT = 103px)
+   -------------------------------------------------------------------------- */
+.music-player-view {
+  width: 100%;
+  height: 103px;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 14px;
+  box-sizing: border-box;
+}
+
+.album-art-container {
+  position: relative;
+  width: 86px;
+  height: 86px;
+  flex-shrink: 0;
+}
+
+.album-art-glow-bg {
+  position: absolute;
+  inset: -6px;
+  background: radial-gradient(circle, rgba(168, 85, 247, 0.6) 0%, transparent 70%);
+  filter: blur(16px);
+  border-radius: 16px;
+}
+
+.album-art-box {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.75);
+}
+
+.album-art-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.music-app-overlay {
+  position: absolute;
+  right: 5px;
+  bottom: 5px;
+  width: 22px;
+  height: 22px;
+  background: #000000;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
+}
+
+.music-controls-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 86px;
+  overflow: hidden;
+}
+
+.song-info-header {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.song-title-marquee {
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
+.artist-name-marquee {
+  font-size: 11px;
+  font-weight: 500;
+  color: #a1a1a6;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
+.lyrics-timeline-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  color: #8e8e93;
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lyrics-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #c084fc;
+  flex-shrink: 0;
+}
+
+.music-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 1px 0;
+}
+
+.time-stamp {
+  font-size: 9px;
+  color: #8e8e93;
+  font-family: var(--FONT_MONO);
+}
+
+.custom-slider-track {
+  position: relative;
+  flex: 1;
+  height: 3.5px;
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 2px;
+}
+
+.custom-slider-fill {
+  height: 100%;
+  background: #ffffff;
+  border-radius: 2px;
+}
+
+.custom-slider-thumb {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 7px;
+  height: 7px;
+  background: #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 0 4px rgba(255, 255, 255, 0.8);
+}
+
+.slot-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 220px;
+}
+
+.slot-btn {
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px;
+  border-radius: 4px;
+  transition: transform 0.15s;
+}
+
+.slot-btn:hover {
+  transform: scale(1.15);
+}
+
+.slot-btn.active-tint {
+  color: #c084fc;
+}
+
+.btn-play-main {
+  background: rgba(255, 255, 255, 0.14);
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+}
+
+.media-session-pill {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 0.5px solid rgba(255, 255, 255, 0.14);
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  color: #d1d1d6;
+  align-self: center;
+}
+
+.session-indicator-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #1db954;
+}
+
+/* --------------------------------------------------------------------------
+   具体视图 3: Unix Socket 实时活动卡片 (view-socket)
+   -------------------------------------------------------------------------- */
+.socket-activity-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 18px;
+}
+
+.socket-icon-circle {
+  width: 34px;
+  height: 34px;
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #38bdf8;
+}
+
+.socket-meta-info {
+  display: flex;
+  flex-direction: column;
+  margin-left: 12px;
+  flex: 1;
+}
+
+.socket-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.socket-detail {
+  font-size: 10px;
+  color: #a1a1a6;
+}
+
+.socket-badge {
+  font-size: 9px;
+  padding: 3px 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #e0aaff;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+/* --------------------------------------------------------------------------
+   浮动弹窗层: Sneak Peek 切歌悬浮胶囊 & 电池快充 HUD (下沉排列，完全不遮挡时钟)
+   -------------------------------------------------------------------------- */
+.floating-popups-layer {
+  position: absolute;
+  top: 44px;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+  z-index: 40;
+}
+
+/* 切歌悬浮胶囊 (Unified Track Alert Capsule: 224x30px) */
+.sneak-peek-track-capsule {
+  width: 224px;
+  height: 30px;
+  background: rgba(18, 16, 26, 0.94);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 15px;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  gap: 8px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.85), 0 0 20px rgba(56, 189, 248, 0.2);
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: all 0.35s var(--SPRING_EASING);
+  box-sizing: border-box;
+}
+
+.capsule-artwork-mini {
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.capsule-artwork-mini img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.capsule-track-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+}
+
+.capsule-track-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.15;
+}
+
+.capsule-track-sub {
+  font-size: 9px;
+  color: #8e8e93;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.15;
+}
+
+.capsule-right-badge {
+  display: flex;
+  align-items: center;
+}
+
+.capsule-now-pill {
+  font-size: 9.5px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+  padding: 1.5px 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+}
+
+/* 电池 MagSafe 快充弹窗 (BatteryNotificationPopup: 246x30px - Uneven 填充与高精截断线) */
+.battery-notification-popup {
+  width: 246px;
+  height: 30px;
+  background: #000000;
+  border: 0.8px solid rgba(52, 199, 89, 0.28);
+  border-radius: 15px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.85);
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: all 0.35s var(--SPRING_EASING);
+  box-sizing: border-box;
+}
+
+/* 绿色电量渐变背景填充层 (UnevenRoundedRectangle 效果) */
+.battery-uneven-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background: rgba(52, 199, 89, 0.35);
+  border-radius: 15px 0 0 15px;
+  pointer-events: none;
+}
+
+/* 截断微光分割线 */
+.battery-fill-demarcation {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(52, 199, 89, 0.75);
+  pointer-events: none;
+}
+
+.battery-content-row {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  box-sizing: border-box;
+}
+
+.battery-popup-text {
+  font-size: 11px;
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: -0.1px;
+}
+
+.battery-popup-accessory {
+  display: flex;
+  align-items: center;
+}
+
+.bolt-pulsing {
+  animation: pulseDot 1.6s infinite alternate;
+}
+
+/* 浮动音量调节条 (VolumeSliderContent: 200x30px - iOS 反色遮罩填充) */
+.floating-hud-bar {
+  width: 200px;
+  height: 30px;
+  background: rgba(45, 45, 50, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.85);
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: all 0.35s var(--SPRING_EASING);
+  box-sizing: border-box;
+}
+
+/* 底层未填充 (灰阶内容) */
+.hud-base-layer {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  color: rgba(255, 255, 255, 0.7);
+  box-sizing: border-box;
+}
+
+.hud-pct-label {
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--FONT_MONO);
+}
+
+/* 纯白滑块遮罩填充层 */
+.hud-fill-mask {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+/* 滑块覆盖内容 (反色对比深灰) */
+.hud-fill-content {
+  width: 200px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  color: #1c1c1e;
+  box-sizing: border-box;
+}
+
+.hud-pct-label-dark {
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--FONT_MONO);
+}
+
+/* Windows 11 风格顶边分屏悬浮选择器 (WindowSnapOverlayView: 350x78px) */
+.window-snap-overlay {
+  width: 350px;
+  background: linear-gradient(180deg, rgba(24, 22, 30, 0.94) 0%, rgba(10, 10, 14, 0.96) 100%);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 14px;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: 
+    0 12px 32px rgba(0, 0, 0, 0.9),
+    0 0 24px rgba(56, 189, 248, 0.2);
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: all 0.35s var(--SPRING_EASING);
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+.snap-overlay-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2px;
+}
+
+.snap-mode-title {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.snap-shift-badge {
+  font-size: 9px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.65);
+  background: rgba(255, 255, 255, 0.1);
+  padding: 2px 6px;
+  border-radius: 999px;
+  border: 0.5px solid rgba(255, 255, 255, 0.14);
+}
+
+.snap-layouts-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.snap-layout-card {
+  position: relative;
+  flex: 1;
+  height: 42px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 0.5px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  overflow: hidden;
+  transition: transform 0.18s, border-color 0.18s;
+}
+
+.snap-layout-card:hover {
+  border-color: rgba(255, 255, 255, 0.35);
+  transform: scale(1.03);
+}
+
+.snap-slot {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.22);
+  border: 0.5px solid rgba(255, 255, 255, 0.16);
+  border-radius: 3px;
+  transition: all 0.15s ease;
+}
+
+.snap-slot.slot-active {
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+  border-color: #ffffff;
+}
+
+/* 幽灵吸附对齐框 (WindowSnapGhostCanvasView - 磨砂玻璃替身) */
+.ghost-snap-guide {
+  position: absolute;
+  left: 14px;
+  top: 48px;
+  width: calc(50% - 20px);
+  bottom: 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1.5px dashed rgba(56, 189, 248, 0.5);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), inset 0 0 20px rgba(56, 189, 248, 0.08);
+  opacity: 0;
+  transform: scale(0.94);
+  transition: all 0.35s var(--SPRING_EASING);
+  pointer-events: none;
+  z-index: 25;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.macbook-screen-mockup:has(.state-snap) .ghost-snap-guide,
+.macbook-screen-mockup.state-snap .ghost-snap-guide {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.ghost-window-canvas {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.ghost-app-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ghost-app-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  background: rgba(56, 189, 248, 0.2);
+  color: #38bdf8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+}
+
+.ghost-app-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: -0.1px;
+}
+
+.ghost-split-indicator {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(0, 0, 0, 0.45);
+  padding: 3px 8px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border: 0.5px solid rgba(255, 255, 255, 0.15);
+}
+
+/* ==========================================================================
+   模拟桌面环境壁纸与控制面板 (优化布局，彻底解决重叠冲突)
+   ========================================================================== */
+.mockup-desktop-area {
+  flex: 1;
+  position: relative;
+  background: #000000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.desktop-wallpaper {
+  position: absolute;
+  inset: 0;
+  background: #000000;
+}
+
+/* 桌面时钟：放置在下半区 (74% 垂直位置)，展开刘海时自动优雅减淡 */
+.desktop-center-clock {
+  position: absolute;
+  left: 50%;
+  top: 74%;
+  transform: translate(-50%, -50%);
+  font-size: 38px;
+  font-weight: 200;
+  color: rgba(255, 255, 255, 0.28);
+  letter-spacing: -1px;
+  transition: opacity 0.35s ease;
+  user-select: none;
+}
+
+.notch-island.state-expanded ~ .mockup-desktop-area .desktop-center-clock {
+  opacity: 0.12;
+}
+
+
+/* ==========================================================================
+   右侧滚动叙事故事卡片序列
+   ========================================================================== */
+.story-scroll-col {
+  display: flex;
+  flex-direction: column;
+  gap: 90px;
+  padding: 76px 0 90px;
+}
+
+/* 单卡 = 单屏：高度与左侧 .stage-sticky-col 的 calc(100vh - 90px) 完全等高，
+   配合 90px 列间距，卡片节距恒等于 100vh —— 长窗口下也不会再露出下一个栏目。 */
+.feature-story-card {
+  height: calc(100vh - 90px);
+  min-height: 560px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 36px 30px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: all 0.35s ease;
+}
+
+.feature-story-card.active-card {
+  background: rgba(147, 51, 234, 0.07);
+  border-color: var(--BORDER_ACTIVE);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6), 0 0 35px rgba(168, 85, 247, 0.2);
+}
+
+.story-badge-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.story-step-index {
+  font-size: 11px;
+  font-weight: 800;
+  color: #000;
+  background: #ffffff;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.story-category {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  color: var(--COLOR_ACCENT_LIGHT);
+  text-transform: uppercase;
+}
+
+.story-title {
+  font-size: clamp(30px, 3.6vw, 46px);
+  line-height: 1.15;
+  font-weight: 700;
+  letter-spacing: -0.8px;
+  color: #ffffff;
+  margin-bottom: 18px;
+}
+
+.story-desc {
+  font-size: 16px;
+  line-height: 1.65;
+  color: var(--COLOR_TEXT_SECONDARY);
+  margin-bottom: 24px;
+  max-width: 520px;
+}
+
+.feature-points-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 520px;
+  margin-bottom: 24px;
+}
+
+.feature-points-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 14px;
+  color: #d1d1d6;
+  line-height: 1.45;
+}
+
+.check-svg {
+  width: 16px;
+  height: 16px;
+  color: var(--COLOR_ACCENT_PINK);
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+
+.story-card-footer {
+  margin-top: 4px;
+}
+
+.story-hint {
+  font-size: 12px;
+  color: var(--COLOR_ACCENT_LIGHT);
+  background: rgba(168, 85, 247, 0.1);
+  border: 1px dashed rgba(168, 85, 247, 0.3);
+  padding: 5px 12px;
+  border-radius: 999px;
+  display: inline-block;
+}
+
+/* ==========================================================================
+   Bento Grid 哲学矩阵
+   ========================================================================== */
+.features-grid-section {
+  max-width: 1200px;
+  margin: 100px auto 80px;
+  padding: 0 24px;
+}
+
+.section-header {
+  text-align: center;
+  max-width: 720px;
+  margin: 0 auto 50px;
+}
+
+.sub-heading {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--COLOR_ACCENT_LIGHT);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  display: block;
+}
+
+.main-heading {
+  font-size: clamp(32px, 4.2vw, 48px);
+  font-weight: 700;
+  letter-spacing: -1px;
+  line-height: 1.15;
+  margin-bottom: 16px;
+  background: linear-gradient(180deg, #ffffff 0%, #cfcfd4 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.section-desc {
+  font-size: 17px;
+  color: var(--COLOR_TEXT_SECONDARY);
+  line-height: 1.5;
+}
+
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.bento-card {
+  position: relative;
+  background: var(--COLOR_BG_CARD);
+  border: 1px solid var(--BORDER_CARD);
+  border-radius: 22px;
+  padding: 34px 28px;
+  overflow: hidden;
+  backdrop-filter: blur(16px);
+  transition: all 0.35s ease;
+}
+
+.bento-card:hover {
+  background: var(--COLOR_BG_CARD_HOVER);
+  border-color: var(--BORDER_ACTIVE);
+  transform: translateY(-3px);
+  box-shadow: 0 16px 35px rgba(0, 0, 0, 0.6), 0 0 25px rgba(168, 85, 247, 0.15);
+}
+
+.bento-card-large {
+  grid-column: span 2;
+}
+
+.bento-card-full {
+  grid-column: span 3;
+}
+
+.bento-glow {
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 160px;
+  height: 160px;
+  background: radial-gradient(circle, rgba(168, 85, 247, 0.2) 0%, transparent 70%);
+  filter: blur(28px);
+  pointer-events: none;
+}
+
+.bento-icon-wrap {
+  width: 44px;
+  height: 44px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--COLOR_ACCENT_LIGHT);
+  margin-bottom: 18px;
+}
+
+.bento-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 10px;
+}
+
+.bento-desc {
+  font-size: 14px;
+  color: var(--COLOR_TEXT_SECONDARY);
+  line-height: 1.6;
+}
+
+/* ==========================================================================
+   规格与下载安装
+   ========================================================================== */
+.specs-section {
+  max-width: 1200px;
+  margin: 60px auto 100px;
+  padding: 0 24px;
+}
+
+.specs-card {
+  background: rgba(12, 12, 14, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 28px;
+  padding: 45px 36px;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.8);
+}
+
+.specs-header {
+  text-align: center;
+  margin-bottom: 36px;
+}
+
+.specs-content-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+}
+
+.box-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 18px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--BORDER_LIGHT);
+}
+
+.req-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.req-list li {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  padding-bottom: 6px;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.05);
+}
+
+.req-label {
+  color: var(--COLOR_TEXT_SECONDARY);
+}
+
+.req-val {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.install-guide-text {
+  font-size: 13px;
+  color: var(--COLOR_TEXT_SECONDARY);
+  line-height: 1.6;
+  margin-bottom: 16px;
+}
+
+.install-guide-text code {
+  font-family: var(--FONT_MONO);
+  background: rgba(255, 255, 255, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--COLOR_ACCENT_LIGHT);
+}
+
+.direct-download-action-box {
+  margin-bottom: 18px;
+}
+
+.btn-direct-dmg {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.25) 0%, rgba(147, 51, 234, 0.15) 100%);
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  padding: 12px 20px;
+  border-radius: 12px;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.25s ease;
+}
+
+.btn-direct-dmg:hover {
+  background: rgba(168, 85, 247, 0.35);
+  border-color: rgba(192, 132, 252, 0.7);
+  transform: translateY(-2px);
+}
+
+.quarantine-tip {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+}
+
+.tip-icon {
+  font-size: 16px;
+}
+
+.tip-text {
+  font-size: 12px;
+  color: var(--COLOR_TEXT_SECONDARY);
+  line-height: 1.45;
+}
+
+.tip-text code {
+  font-family: var(--FONT_MONO);
+  background: rgba(255, 255, 255, 0.1);
+  padding: 2px 6px;
+  border-radius: 3px;
+  color: #a7f3d0;
+  font-size: 11px;
+}
+
+/* ==========================================================================
+   底部 CTA
+   ========================================================================== */
+.cta-download-section {
+  max-width: 1100px;
+  margin: 60px auto 90px;
+  padding: 0 24px;
+}
+
+.cta-inner-card {
+  position: relative;
+  background: linear-gradient(180deg, #0f0a1c 0%, #06040a 100%);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  border-radius: 32px;
+  padding: 60px 30px;
+  text-align: center;
+  overflow: hidden;
+  box-shadow: 0 0 70px rgba(147, 51, 234, 0.25);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.cta-glow-bg {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 500px;
+  height: 220px;
+  background: radial-gradient(ellipse at top, rgba(168, 85, 247, 0.45) 0%, transparent 70%);
+  filter: blur(45px);
+  pointer-events: none;
+}
+
+.cta-app-icon {
+  width: 76px;
+  height: 76px;
+  border-radius: 18px;
+  box-shadow: 0 0 30px rgba(168, 85, 247, 0.5);
+  margin-bottom: 20px;
+}
+
+.cta-title {
+  font-size: clamp(32px, 4.8vw, 52px);
+  font-weight: 700;
+  letter-spacing: -1px;
+  margin-bottom: 14px;
+  color: #ffffff;
+}
+
+.cta-desc {
+  font-size: 16px;
+  color: var(--COLOR_TEXT_SECONDARY);
+  max-width: 600px;
+  margin-bottom: 32px;
+  line-height: 1.5;
+}
+
+.cta-buttons-group {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 26px;
+}
+
+.cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 28px;
+  border-radius: 999px;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  text-align: left;
+}
+
+.cta-btn-primary {
+  background: #ffffff;
+  color: #000000;
+  box-shadow: 0 0 35px rgba(255, 255, 255, 0.25);
+}
+
+.cta-btn-primary:hover {
+  background: #f4f4f6;
+  transform: translateY(-2px);
+}
+
+.cta-btn-secondary {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+}
+
+.cta-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.14);
+  transform: translateY(-2px);
+}
+
+.cta-btn-text .main-txt {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.cta-btn-text .sub-txt {
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+.cta-release-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--COLOR_TEXT_MUTED);
+}
+
+.meta-separator {
+  opacity: 0.4;
+}
+
+/* ==========================================================================
+   页脚
+   ========================================================================== */
+.site-footer {
+  background: #020204;
+  border-top: 1px solid var(--BORDER_LIGHT);
+  padding: 50px 24px 35px;
+  color: var(--COLOR_TEXT_MUTED);
+  font-size: 12px;
+}
+
+.footer-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.footer-top-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 40px;
+  margin-bottom: 40px;
+}
+
+.footer-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.footer-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+}
+
+.footer-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.footer-tagline {
+  max-width: 320px;
+  line-height: 1.5;
+}
+
+.links-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--COLOR_TEXT_PRIMARY);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+
+.footer-links-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.footer-links-col a {
+  color: var(--COLOR_TEXT_MUTED);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.footer-links-col a:hover {
+  color: var(--COLOR_TEXT_PRIMARY);
+}
+
+.footer-bottom-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding-top: 20px;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.back-top-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--COLOR_TEXT_SECONDARY);
+  text-decoration: none;
+}
+
+.back-top-link:hover {
+  color: #ffffff;
+}
+
+/* ==========================================================================
+   响应式断点
+   ========================================================================== */
+@media (max-width: 1024px) {
+  .showcase-container {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+
+  .stage-sticky-col {
+    position: sticky;
+    top: 60px;
+    height: auto;
+    padding-bottom: 16px;
+    background: rgba(5, 5, 7, 0.9);
+    backdrop-filter: blur(20px);
+    z-index: 25;
+    border-radius: 0 0 20px 20px;
+  }
+
+  .macbook-screen-mockup {
+    max-width: 520px;
+  }
+
+  /* 单栏堆叠布局下演播台已不再吸顶满高，卡片回归内容自适应 */
+  .feature-story-card {
+    height: auto;
+    min-height: 65vh;
+  }
+
+  .bento-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .bento-card-large,
+  .bento-card-full {
+    grid-column: span 1;
+  }
+
+  .specs-content-row {
+    grid-template-columns: 1fr;
+  }
+
+  .footer-top-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .hero-section {
+    min-height: 680px;
+    padding-top: 96px;
+  }
+
+  .hero-content {
+    margin-bottom: 20px;
+  }
+
+  .hero-subtitle br {
+    display: none;
+  }
+
+  .hero-title {
+    font-size: 34px;
+  }
+
+  .hero-pill-frame {
+    width: 270px;
+    height: 52px;
+  }
+
+  .notch-island.state-expanded,
+  .notch-island.state-socket {
+    width: 330px;
+    height: 180px;
+  }
+
+  .state-pill-tabs {
+    display: none;
+  }
+
+  .nav-menu .nav-link:not(.github-nav-link) {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .hero-content > * { animation: none; }
+  .notch-flow-beam,
+  .wheel-dot { animation: none; }
+  .hero-notch-reveal-stage,
+  .hero-content,
+  .story-scroll-col { will-change: auto; }
+}

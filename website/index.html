@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dynamic Notch - 灵动自如的 macOS Live Activity 体验</title>
+  <meta name="description" content="Dynamic Notch 是专为 MacBook 物理刘海量身打造的开源应用。致敬开源社区，聚焦 Live Activity，集成 6 柱物理声学频谱、切歌悬浮胶囊、展开态媒体岛、原生快充 HUD 与 Unix Socket 实时活动。">
+  <link rel="icon" type="image/png" href="assets/app_icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="theme-dark">
+
+  <!-- 顶部极简毛玻璃导航栏 -->
+  <header class="site-header" id="siteHeader">
+    <div class="nav-container">
+      <a href="#hero" class="nav-brand">
+        <img src="assets/app_icon.png" alt="Dynamic Notch Icon" class="brand-icon">
+        <span class="brand-name">Dynamic Notch</span>
+      </a>
+      
+      <nav class="nav-menu">
+        <a href="#showcase" class="nav-link" data-i18n="nav.showcase">灵动展示</a>
+        <a href="#philosophy" class="nav-link" data-i18n="nav.philosophy">设计理念</a>
+        <a href="#specs" class="nav-link" data-i18n="nav.specs">下载与安装</a>
+        <a href="https://github.com/linchi07/dynamic_notch" target="_blank" rel="noreferrer" class="nav-link github-nav-link">
+          <svg class="icon-svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+          </svg>
+          <span>GitHub</span>
+        </a>
+        <a href="https://github.com/linchi07/dynamic_notch/releases/latest" target="_blank" rel="noreferrer" class="nav-btn-primary">
+          <span data-i18n="nav.download">下载体验</span>
+          <svg class="icon-arrow" viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M6 3l5 5-5 5"/>
+          </svg>
+        </a>
+        <div class="lang-selector-wrap" title="Switch Language / 切换语言">
+          <svg class="lang-globe-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="2" y1="12" x2="22" y2="12"></line>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+          </svg>
+          <select id="langSelect" class="lang-select" aria-label="Select Language">
+            <option value="zh-Hans">简体中文</option>
+            <option value="zh-Hant">繁體中文</option>
+            <option value="en">English</option>
+            <option value="ja">日本語</option>
+            <option value="ko">한국어</option>
+            <option value="de">Deutsch</option>
+            <option value="fr">Français</option>
+            <option value="es">Español</option>
+            <option value="it">Italiano</option>
+            <option value="ru">Русский</option>
+            <option value="pt-BR">Português (BR)</option>
+            <option value="tr">Türkçe</option>
+            <option value="pl">Polski</option>
+            <option value="uk">Українська</option>
+            <option value="ar">العربية</option>
+            <option value="cs">Čeština</option>
+            <option value="hu">Magyar</option>
+          </select>
+          <svg class="lang-chevron-icon" viewBox="0 0 16 16" width="9" height="9" fill="currentColor">
+            <path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/>
+          </svg>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Hero 首屏：居中震撼亮相 (复刻纯黑底色 + 霓虹紫辉光药丸刘海) -->
+  <section class="hero-section" id="hero">
+    <div class="hero-content">
+      <div class="hero-badge">
+        <span class="badge-dot"></span>
+        <span class="badge-text" data-i18n="hero.badge">致敬开源探索 &middot; 聚焦 Live Activity</span>
+      </div>
+      
+      <h1 class="hero-title">
+        <span class="title-intro" data-i18n="hero.titleIntro">Introducing</span>
+        <span class="title-highlight">Dynamic Notch</span>
+      </h1>
+      
+      <p class="hero-subtitle" data-i18n-html="hero.subtitle">
+        为 MacBook 内置物理刘海量身定制的灵动舞台。<br>
+        聚焦实时活动，追求更贴近苹果美学的细腻与纯粹。
+      </p>
+
+      <div class="hero-actions">
+        <a href="https://github.com/linchi07/dynamic_notch/releases/latest" target="_blank" rel="noreferrer" class="btn-download">
+          <svg class="apple-logo-svg" viewBox="0 0 170 170" width="18" height="18" fill="currentColor">
+            <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.69-3.08-7.7-7.94-12.04-14.58-6.19-9.5-10.96-20.46-14.3-32.88-3.35-12.42-5.02-23.77-5.02-34.05 0-14.93 3.65-27.17 10.95-36.71 7.3-9.54 16.51-14.44 27.63-14.7 4.9.12 10.42 1.34 16.56 3.67 6.13 2.33 10.22 3.56 12.27 3.69 1.76-.13 5.92-1.38 12.49-3.75 6.57-2.37 12.01-3.48 16.33-3.33 12.46.68 22.42 5.37 29.89 14.07-10.89 6.64-16.22 15.63-16 26.98.22 8.93 3.65 16.48 10.29 22.65 6.64 6.17 14.61 9.87 23.91 11.1-2.22 6.84-4.8 13.43-7.73 19.78zm-31.52-117.84c.11 2.39-.42 5.02-1.6 7.89-1.18 2.87-2.88 5.6-5.1 8.2-2.6 3.03-5.59 5.4-8.97 7.12-3.38 1.72-6.52 2.76-9.42 3.12-.33-2.17-.18-4.52.45-7.05.63-2.53 1.95-5.22 3.96-8.07 2.22-3.15 4.97-5.74 8.25-7.78 3.28-2.04 6.99-3.23 11.13-3.57.43.04.86.09 1.3.14z"/>
+          </svg>
+          <span data-i18n="hero.downloadBtn">下载 macOS DMG 安装包</span>
+          <span class="btn-subtext" data-i18n="hero.downloadSub">免费开源</span>
+        </a>
+        <a href="https://github.com/linchi07/dynamic_notch" target="_blank" rel="noreferrer" class="btn-github">
+          <svg class="icon-svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+          </svg>
+          <span data-i18n="hero.githubBtn">GitHub 仓库</span>
+          <span class="btn-badge">linchi07</span>
+        </a>
+      </div>
+    </div>
+    <!-- 首屏轮廓使用参考图的 2086 × 754 坐标，随视口等比缩放。 -->
+    <div class="hero-notch-reveal-stage" id="heroNotchRevealStage">
+      <div class="hero-notch-contour-wrap">
+        <svg class="notch-contour-svg" viewBox="0 0 2086 754" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+          <defs>
+            <radialGradient id="notchScreenGlow" cx="50%" cy="35%" r="67%">
+              <stop offset="0%" stop-color="#332153" />
+              <stop offset="45%" stop-color="#1a142d" />
+              <stop offset="100%" stop-color="#050507" />
+            </radialGradient>
+            <linearGradient id="notchEdgeLight" x1="0" y1="0" x2="2086" y2="0" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#8d4ac8" stop-opacity="0.05" />
+              <stop offset="27%" stop-color="#b260ef" stop-opacity="0.6" />
+              <stop offset="34%" stop-color="#f7c7ff" />
+              <stop offset="66%" stop-color="#f7c7ff" />
+              <stop offset="73%" stop-color="#b260ef" stop-opacity="0.6" />
+              <stop offset="100%" stop-color="#8d4ac8" stop-opacity="0.05" />
+            </linearGradient>
+            <filter id="neonBlur" x="-10%" y="-80%" width="120%" height="260%">
+              <feGaussianBlur stdDeviation="10" />
+            </filter>
+          </defs>
+          <path class="notch-screen-fill"
+            d="M 0,180 H 568 C 611,180 630,198 634,241 L 638,276 C 643,324 674,344 722,344 H 1328 C 1376,344 1407,324 1412,276 L 1415,241 C 1419,198 1438,180 1481,180 H 2086 V 754 H 0 Z" />
+          <!-- 黑色物理刘海从屏幕顶边向下伸出，和紫色屏幕共用同一条边界。 -->
+          <path class="notch-black-fill"
+            d="M 0,0 H 2086 V 180 H 1481 C 1438,180 1419,198 1415,241 L 1412,276 C 1407,324 1376,344 1328,344 H 722 C 674,344 643,324 638,276 L 634,241 C 630,198 611,180 568,180 H 0 Z" />
+          <path class="notch-glow-underlay"
+            d="M 0,180 H 568 C 611,180 630,198 634,241 L 638,276 C 643,324 674,344 722,344 H 1328 C 1376,344 1407,324 1412,276 L 1415,241 C 1419,198 1438,180 1481,180 H 2086" />
+          <path class="notch-base-path"
+            d="M 0,180 H 568 C 611,180 630,198 634,241 L 638,276 C 643,324 674,344 722,344 H 1328 C 1376,344 1407,324 1412,276 L 1415,241 C 1419,198 1438,180 1481,180 H 2086" />
+          <path class="notch-flow-beam"
+            d="M 0,180 H 568 C 611,180 630,198 634,241 L 638,276 C 643,324 674,344 722,344 H 1328 C 1376,344 1407,324 1412,276 L 1415,241 C 1419,198 1438,180 1481,180 H 2086" />
+        </svg>
+      </div>
+    </div>
+
+    <div class="scroll-indicator">
+      <div class="mouse-scroll-wheel">
+        <div class="wheel-dot"></div>
+      </div>
+      <span class="scroll-label" data-i18n="hero.scrollHint">向下滚动探索 &middot; 演播台平滑入座</span>
+    </div>
+  </section>
+
+  <!-- 核心交互区：左侧固定模拟刘海 ⇄ 右侧滚动实时联动 -->
+  <section class="interactive-showcase" id="showcase">
+    <div class="showcase-container">
+      
+      <!-- 左侧：Sticky 悬浮演播台（完全贴合 MacBook 顶部屏幕边框） -->
+      <div class="stage-sticky-col">
+        <div class="macbook-screen-mockup" id="macbookMockup">
+          
+          <!-- MacBook 物理屏幕顶边与刘海挂载区 -->
+          <div class="mockup-top-bezel">
+            <div class="notch-wrapper" id="dynamicNotchWrapper">
+              
+              <!-- 模拟刘海组件实体 (初始为空刘海 state-empty) -->
+              <div class="notch-island state-empty" id="dynamicNotchIsland" data-state="empty">
+                
+                <!-- 视图 0: 原生空刘海 (初始标题栏下方的纯净空刘海) -->
+                <div class="notch-view-panel view-empty" id="viewEmpty"></div>
+
+                <!-- 展开态专属顶部状态栏: BoringHeader.swift -->
+                <div class="boring-header-bar" id="boringHeaderBar">
+                  <div class="header-leading-status">
+                    <span class="header-btn" title="镜面自拍">
+                      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="2" y="5" width="15" height="14" rx="2"></rect>
+                        <polygon points="17,10 22,7 22,17 17,14"></polygon>
+                      </svg>
+                    </span>
+                    <span class="header-btn" title="偏好设置">
+                      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                      </svg>
+                    </span>
+                  </div>
+                  
+                  <!-- 物理刘海居中遮罩 (185px 物理尺寸: NotchShape) -->
+                  <div class="header-physical-notch-mask"></div>
+
+                  <!-- 右侧电池组件: BoringBatteryView.swift -->
+                  <div class="header-trailing-status">
+                    <div class="boring-battery-widget">
+                      <span class="battery-pct-label">92%</span>
+                      <div class="mini-battery-shell">
+                        <div class="mini-battery-fill" style="width: 92%;"></div>
+                        <span class="mini-battery-cap"></span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 视图 1: 紧凑双翼灵动活动 (NotchWingsContainer.swift: 音乐播放与频谱跳动) -->
+                <div class="notch-view-panel view-wings" id="viewWings">
+                  <div class="wings-container">
+                    <div class="wing wing-leading">
+                      <img src="https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=80&auto=format&fit=crop&q=80" alt="Mini Artwork" class="wing-mini-art">
+                    </div>
+                    <div class="wing-center-notch"></div>
+                    <div class="wing-trailing">
+                      <div class="wing-audio-spectrum" id="wingAudioSpectrum">
+                        <span class="spectrum-bar sp-1"></span>
+                        <span class="spectrum-bar sp-2"></span>
+                        <span class="spectrum-bar sp-3"></span>
+                        <span class="spectrum-bar sp-4"></span>
+                        <span class="spectrum-bar sp-5"></span>
+                        <span class="spectrum-bar sp-6"></span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 视图 2: 展开态媒体中心 (NotchHomeView.swift + MusicPlayerView.swift: 高度 103px) -->
+                <div class="notch-view-panel view-expanded" id="viewExpanded">
+                  <div class="music-player-view">
+                    <div class="album-art-container">
+                      <div class="album-art-glow-bg"></div>
+                      <div class="album-art-box">
+                        <img src="https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=180&auto=format&fit=crop&q=80" alt="Album Art" class="album-art-img">
+                        <div class="music-app-overlay">
+                          <svg viewBox="0 0 24 24" width="13" height="13" fill="#1DB954">
+                            <circle cx="12" cy="12" r="10" fill="#000"></circle>
+                            <path d="M17.5 10.8c-2.4-1.4-6.3-1.6-8.6-.9-.4.1-.8-.1-.9-.5-.1-.4.1-.8.5-.9 2.6-.8 7-.6 9.7 1 .3.2.5.6.3.9-.2.4-.6.5-1 .4zm-.3 2.7c-.3.4-.7.5-1.1.3-2-.1.2-5.1-.9-6.9-.4-.3-.1-.7.1-.9.3-.3.8-.1 1 .2 2.1 1.7 5.7 1.5 8 0 .4-.2.9-.1 1.1.3zm-.9 2.7c-.2.3-.6.4-.9.2-1.7-1-3.9-1.3-6.4-.7-.3.1-.6-.1-.7-.4-.1-.3.1-.6.4-.7 2.8-.6 5.2-.3 7.1.8.3.2.4.5.2.8z" fill="#1DB954"/>
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="music-controls-container">
+                      <div class="song-info-header">
+                        <div class="song-title-marquee">
+                          <span class="marquee-text">Blinding Lights</span>
+                        </div>
+                        <div class="artist-name-marquee">
+                          <span class="artist-text">The Weeknd &middot; After Hours</span>
+                        </div>
+                        <div class="lyrics-timeline-row">
+                          <span class="lyrics-dot"></span>
+                          <span class="lyrics-text">"I said, ooh, I'm blinded by the lights..."</span>
+                        </div>
+                      </div>
+
+                      <div class="music-slider-row">
+                        <span class="time-stamp">1:45</span>
+                        <div class="custom-slider-track">
+                          <div class="custom-slider-fill" style="width: 52%;"></div>
+                          <div class="custom-slider-thumb" style="left: 52%;"></div>
+                        </div>
+                        <span class="time-stamp">3:20</span>
+                      </div>
+
+                      <div class="slot-toolbar">
+                        <button class="slot-btn" title="随机播放">
+                          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="16 3 21 3 21 8"></polyline>
+                            <line x1="4" y1="20" x2="21" y2="3"></line>
+                            <polyline points="21 16 21 21 16 21"></polyline>
+                            <line x1="15" y1="15" x2="21" y2="21"></line>
+                          </svg>
+                        </button>
+                        <button class="slot-btn" title="上一曲">
+                          <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
+                            <polygon points="11,5 11,19 2,12"></polygon>
+                            <polygon points="22,5 22,19 13,12"></polygon>
+                          </svg>
+                        </button>
+                        <button class="slot-btn btn-play-main" id="btnMainPlay" title="播放或暂停">
+                          <svg class="icon-play-state" id="iconPlayState" viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                            <rect x="6" y="4" width="4" height="16" rx="1.5"></rect>
+                            <rect x="14" y="4" width="4" height="16" rx="1.5"></rect>
+                          </svg>
+                        </button>
+                        <button class="slot-btn" title="下一曲">
+                          <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
+                            <polygon points="2,5 2,19 11,12"></polygon>
+                            <polygon points="13,5 13,19 22,12"></polygon>
+                          </svg>
+                        </button>
+                        <button class="slot-btn active-tint" title="单曲循环">
+                          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="17 1 21 5 17 9"></polyline>
+                            <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                            <polyline points="7 23 3 19 7 15"></polyline>
+                            <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                          </svg>
+                        </button>
+                        <div class="slot-volume-wrap">
+                          <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
+                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="media-session-pill">
+                      <span class="session-indicator-dot"></span>
+                      <span>Spotify</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 视图 3: Unix Socket 实时活动展示 (ExternalLiveActivityServer.swift) -->
+                <div class="notch-view-panel view-socket" id="viewSocket">
+                  <div class="socket-activity-container">
+                    <div class="socket-icon-circle">
+                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="4 17 10 11 4 5"></polyline>
+                        <line x1="12" y1="19" x2="20" y2="19"></line>
+                      </svg>
+                    </div>
+                    <div class="socket-meta-info">
+                      <span class="socket-title">Xcode Build Succeeded</span>
+                      <span class="socket-detail">DynamicNotch (Debug) &middot; 4.2s</span>
+                    </div>
+                    <span class="socket-badge">Unix Socket</span>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- 刘海后置柔光溢彩光晕 -->
+              <div class="island-glow-halo" id="islandGlowHalo"></div>
+
+              <!-- 悬浮弹窗层: 切歌 Sneak Peek 胶囊、MagSafe 快充 HUD 与独立音量调节 HUD -->
+              <div class="floating-popups-layer" id="floatingPopupsLayer">
+                <!-- 切歌悬浮弹窗 (Unified Track Capsule: 224x30px) -->
+                <div class="sneak-peek-track-capsule" id="sneakPeekCapsule">
+                  <div class="capsule-artwork-mini">
+                    <img src="https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=60&auto=format&fit=crop&q=80" alt="Artwork">
+                  </div>
+                  <div class="capsule-track-info">
+                    <span class="capsule-track-title">Starboy</span>
+                    <span class="capsule-track-sub">The Weeknd &middot; Daft Punk</span>
+                  </div>
+                  <div class="capsule-right-badge">
+                    <span class="capsule-now-pill">Now</span>
+                  </div>
+                </div>
+
+                <!-- MagSafe 电池快充弹窗 (BatteryNotificationPopup: 246x30px 纯正 UNEVEN 填充与呼吸闪烁) -->
+                <div class="battery-notification-popup" id="batteryPopup">
+                  <!-- 比例背景填充层 -->
+                  <div class="battery-uneven-fill" style="width: 85%;"></div>
+                  <div class="battery-fill-demarcation" style="left: 85%;"></div>
+
+                  <div class="battery-content-row">
+                    <span class="battery-popup-text" data-i18n="stage.mockupBatteryCharging">正在充电 85% &middot; 35分钟充满</span>
+                    <div class="battery-popup-accessory">
+                      <svg class="bolt-pulsing" viewBox="0 0 24 24" width="13" height="13" fill="#34C759">
+                        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 浮动音量调节条 (VolumeSliderContent: 200x30px iOS 风格反色遮罩) -->
+                <div class="floating-hud-bar" id="floatingHudBar">
+                  <!-- 底层未填充 (灰阶) -->
+                  <div class="hud-base-layer">
+                    <svg class="hud-spk-icon" viewBox="0 0 24 24" width="13" height="13" fill="currentColor">
+                      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                      <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                    </svg>
+                    <span class="hud-pct-label" id="hudPctLabel">65%</span>
+                  </div>
+                  <!-- 纯白滑块遮罩填充层 (反转对比度) -->
+                  <div class="hud-fill-mask" id="hudFillMask" style="width: 65%;">
+                    <div class="hud-fill-content">
+                      <svg class="hud-spk-icon-dark" viewBox="0 0 24 24" width="13" height="13" fill="currentColor">
+                        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                        <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                      </svg>
+                      <span class="hud-pct-label-dark" id="hudPctLabelDark">65%</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Windows 风格顶边分屏悬浮选择器 (WindowSnapOverlayView: 5 种预设网格 + Shift 全局排布) -->
+                <div class="window-snap-overlay" id="windowSnapOverlay">
+                  <div class="snap-overlay-header">
+                    <div class="snap-mode-title">
+                      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="2" y="3" width="20" height="14" rx="2"></rect>
+                        <line x1="2" y1="9" x2="22" y2="9"></line>
+                      </svg>
+                      <span class="snap-mode-label" data-i18n="stage.snapCurrentWindow">当前窗口</span>
+                    </div>
+                    <div class="snap-shift-badge">
+                      <span data-i18n="stage.snapHoldShift">按住 Shift 平铺所有</span>
+                    </div>
+                  </div>
+                  <div class="snap-layouts-row">
+                    <!-- 预设 1: 左右对半 (Halves 1:1) -->
+                    <div class="snap-layout-card" title="Halves (1:1)">
+                      <div class="snap-slot slot-active" style="left: 3px; top: 3px; width: calc(50% - 4px); height: calc(100% - 6px);"></div>
+                      <div class="snap-slot" style="left: 50%; top: 3px; width: calc(50% - 3px); height: calc(100% - 6px);"></div>
+                    </div>
+                    <!-- 预设 2: 黄金分割 (Wide Left 2:1) -->
+                    <div class="snap-layout-card" title="Wide Left (2:1)">
+                      <div class="snap-slot" style="left: 3px; top: 3px; width: calc(66.6% - 4px); height: calc(100% - 6px);"></div>
+                      <div class="snap-slot" style="left: 66.6%; top: 3px; width: calc(33.3% - 3px); height: calc(100% - 6px);"></div>
+                    </div>
+                    <!-- 预设 3: 三等分 (Thirds 1:1:1) -->
+                    <div class="snap-layout-card" title="Thirds (1:1:1)">
+                      <div class="snap-slot" style="left: 3px; top: 3px; width: calc(33.3% - 4px); height: calc(100% - 6px);"></div>
+                      <div class="snap-slot" style="left: 33.3%; top: 3px; width: calc(33.3% - 3px); height: calc(100% - 6px);"></div>
+                      <div class="snap-slot" style="left: 66.6%; top: 3px; width: calc(33.3% - 3px); height: calc(100% - 6px);"></div>
+                    </div>
+                    <!-- 预设 4: 左一右二 (One-Two 1:2) -->
+                    <div class="snap-layout-card" title="One-Two (1:2)">
+                      <div class="snap-slot" style="left: 3px; top: 3px; width: calc(50% - 4px); height: calc(100% - 6px);"></div>
+                      <div class="snap-slot" style="left: 50%; top: 3px; width: calc(50% - 3px); height: calc(50% - 4px);"></div>
+                      <div class="snap-slot" style="left: 50%; top: 50%; width: calc(50% - 3px); height: calc(50% - 4px);"></div>
+                    </div>
+                    <!-- 预设 5: 四宫格 (Quarters 2x2) -->
+                    <div class="snap-layout-card" title="Quarters (2x2)">
+                      <div class="snap-slot" style="left: 3px; top: 3px; width: calc(50% - 4px); height: calc(50% - 4px);"></div>
+                      <div class="snap-slot" style="left: 50%; top: 3px; width: calc(50% - 3px); height: calc(50% - 4px);"></div>
+                      <div class="snap-slot" style="left: 3px; top: 50%; width: calc(50% - 4px); height: calc(50% - 4px);"></div>
+                      <div class="snap-slot" style="left: 50%; top: 50%; width: calc(50% - 3px); height: calc(50% - 4px);"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- 模拟桌面星空背景与时间 -->
+          <div class="mockup-desktop-area">
+            <div class="desktop-wallpaper">
+              <div class="wallpaper-stars"></div>
+              <div class="desktop-center-clock" id="desktopClock">09:41</div>
+            </div>
+
+            <!-- 幽灵吸附对齐框 (WindowSnapGhostCanvasView: 磨砂玻璃替身飞行动画) -->
+            <div class="ghost-snap-guide" id="ghostSnapGuide">
+              <div class="ghost-window-canvas">
+                <div class="ghost-app-header">
+                  <div class="ghost-app-icon">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="2" y="3" width="20" height="14" rx="2"></rect>
+                      <line x1="2" y1="9" x2="22" y2="9"></line>
+                    </svg>
+                  </div>
+                  <span class="ghost-app-name">Xcode</span>
+                </div>
+                <div class="ghost-split-indicator">
+                  <svg viewBox="0 0 16 16" width="11" height="11" fill="currentColor">
+                    <path d="M1 2.5A1.5 1.5 0 0 1 2.5 1h11A1.5 1.5 0 0 1 15 2.5v11a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 1 13.5v-11zM2.5 2a.5.5 0 0 0-.5.5v11a.5.5 0 0 0 .5.5h5V2h-5z"/>
+                  </svg>
+                  <span>50% Left Snap Slot</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- 右侧：随滚动持续翻阅的内容介绍卡片序列 -->
+      <div class="story-scroll-col" id="storyScrollCol">
+
+        <!-- 场景 1: 静默原生 · 空的刘海 (Empty / Idle Notch) -->
+        <article class="feature-story-card active-card" data-trigger-state="empty" id="storyEmpty">
+          <div class="story-badge-label">
+            <span class="story-step-index">01</span>
+            <span class="story-category" data-i18n="stories.empty.category">NATIVE IDLE NOTCH</span>
+          </div>
+          <h2 class="story-title" data-i18n-html="stories.empty.title">
+            静默于顶，<br>
+            未唤时本是纯粹之境。
+          </h2>
+          <p class="story-desc" data-i18n="stories.empty.desc">
+            无播放、无弹窗时，Dynamic Notch 彻底回归隐退。
+            展示为原生极简的物理黑曜石刘海轮廓，零多余图标与常驻翅膀，
+            宛若硬件本身，守护视线最纯净的心流宁静。
+          </p>
+          <ul class="feature-points-list">
+            <li>
+              <svg class="check-svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span data-i18n="stories.empty.p1">185&times;34 纯净物理规格，紧密贴合 MacBook 屏幕原厂轮廓</span>
+            </li>
+            <li>
+              <svg class="check-svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span data-i18n="stories.empty.p2">空闲时零视觉掠夺，不占菜单栏任何宝贵空间</span>
+            </li>
+            <li>
+              <svg class="check-svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span data-i18n="stories.empty.p3">休眠待机期系统负载归零，保持冰凉长续航</span>
+            </li>
+          </ul>
+          <div class="story-card-footer">
+            <span class="story-hint" data-i18n="stories.empty.hint">↓ 向下滚动，见证音乐响起时长出灵动双翼与跳动频谱</span>
+          </div>
+        </article>
+
+        <!-- 场景 2: 双翼轻展 · 音乐跃动 (Compact Wings) -->
+        <article class="feature-story-card" data-trigger-state="wings" id="storyWings">
+          <div class="story-badge-label">
+            <span class="story-step-index">02</span>
+            <span class="story-category" data-i18n="stories.wings.category">COMPACT WINGS LIVE ACTIVITY</span>
+          </div>
+          <h2 class="story-title" data-i18n-html="stories.wings.title">
+            旋律升起，<br>
+            双翼伴随波形律动。
+          </h2>
+          <p class="story-desc" data-i18n="stories.wings.desc">
+            当网易云音乐、Spotify 或 Apple Music 响起，刘海向左右灵动舒展出紧凑双翼：
+            左翼微缩专辑封面静候，右翼跳动着 iOS 同款 6 柱物理谐波频谱（Harmonic Physics Oscillation），
+            以充盈阻尼感的流体波形随节拍起伏。
+          </p>
+          <ul class="feature-points-list">
+            <li>
+              <svg class="check-svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span data-i18n="stories.wings.p1">左右双翼自然延伸，左翼 20&times;20 封面，右翼声学频谱</span>
+            </li>
+            <li>
+              <svg class="check-svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span data-i18n="stories.wings.p2">iOS-Aligned 6 柱声学波形，模拟真实流体阻尼谐波跳动</span>
+            </li>
+            <li>
+              <svg class="check-svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span data-i18n="stories.wings.p3">毫秒级 MediaRemote 监听，暂停时平滑回归静止</span>
+            </li>
+          </ul>
+        </article>
+
+        <!-- 场景 3: 展开态沉浸媒体岛 (Expanded Media Island) -->
+        <article class="feature-story-card" data-trigger-state="expanded" id="storyExpanded">
+          <div class="story-badge-label">
+            <span class="story-step-index">03</span>
+            <span class="story-category" data-i18n="stories.expanded.category">EXPANDED MEDIA ISLAND</span>
+          </div>
+          <h2 class="story-title" data-i18n-html="stories.expanded.title">
+            轻触展开，<br>
+            声色流动的媒体中枢。
+          </h2>
+          <p class="story-desc" data-i18n="stories.expanded.desc">
+            鼠标悬停或轻点刘海，瞬时展开为 460&times;180 沉浸媒体岛。
+            86&times;86 专辑封面投射动态弥散光晕，实时流动歌词，
+            精密的无级时间进度条与触控工具栏，带来沉浸式音乐盛宴。
+          </p>
+          <ul class="feature-points-list">
+            <li>
+              <svg class="check-svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span data-i18n="stories.expanded.p1">流光漫射背景算法，依据专辑封面色调动态映射</span>
+            </li>
+            <li>
+              <svg class="check-svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span data-i18n="stories.expanded.p2">实时歌词流与多播放器来源一键无缝切换</span>
+            </li>
+            <li>
+              <svg class="check-svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span data-i18n="stories.expanded.p3">顶部状态栏精确显示电池百分比与快速镜面自拍</span>
+            </li>
+          </ul>
+        </article>
+
+        <!-- 场景 4: 切歌悬浮胶囊 (Sneak Peek Track Capsule) -->
+        <article class="feature-story-card" data-trigger-state="sneak" id="storySneak">
+          <div class="story-badge-label">
+            <span class="story-step-index">04</span>
+            <span class="story-category" data-i18n="stories.sneak.category">SNEAK PEEK TRACK ALERT</span>
+          </div>
+          <h2 class="story-title" data-i18n-html="stories.sneak.title">
+            曲目更迭，<br>
+            水滴般自然垂落。
+          </h2>
+          <p class="story-desc" data-i18n="stories.sneak.desc">
+            每当后台切歌，刘海下方瞬间轻盈垂落出一枚 Unified Track Notification 胶囊：
+            清晰展现歌曲名、艺人与高清封面，停留片刻后优雅吸附收缩回刘海，
+            体验如同 iPhone 灵动岛通知般从容自如。
+          </p>
+          <ul class="feature-points-list">
+            <li>
+              <svg class="check-svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span data-i18n="stories.sneak.p1">统一曲目通知胶囊，在合适的位置短暂浮现，不打扰当前窗口</span>
+            </li>
+            <li>
+              <svg class="check-svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span data-i18n="stories.sneak.p2">毫秒级 MediaRemote 原生捕获，支持 Spotify、Apple Music 等</span>
+            </li>
+            <li>
+              <svg class="check-svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span data-i18n="stories.sneak.p3">模拟物理弹簧曲线（Interactive Spring），收放自如</span>
+            </li>
+          </ul>
+        </article>
+
+        <!-- 场景 5: 系统交互 · 音量无级 HUD (Volume Slider Content) -->
+        <article class="feature-story-card" data-trigger-state="volume" id="storyVolume">
+          <div class="story-badge-label">
+            <span class="story-step-index">05</span>
+            <span class="story-category" data-i18n="stories.volume.category">NATIVE VOLUME SLIDER HUD</span>
+          </div>
+          <h2 class="story-title" data-i18n-html="stories.volume.title">
+            音量流转，<br>
+            触控级无级调节。
+          </h2>
+          <p class="story-desc" data-i18n="stories.volume.desc">
+            按下音量增减键时，屏幕中央不再有遮挡视线的庞大方块。
+            一枚 200&times;30 磨砂触感胶囊于刘海正下方轻盈浮现：
+            纯白滑块自左向右遮罩充盈，覆盖文字反色对比分明，支持无级平滑拖拽与键盘连击加速。
+          </p>
+          <ul class="feature-points-list">
+            <li>
+              <svg class="check-svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span data-i18n="stories.volume.p1">iOS 同款反色遮罩滑块，白底反转墨色字符，锐利优雅</span>
+            </li>
+            <li>
+              <svg class="check-svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span data-i18n="stories.volume.p2">动态扬声器图标，静音瞬间无缝绘制对角线裁切动效</span>
+            </li>
+            <li>
+              <svg class="check-svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span data-i18n="stories.volume.p3">支持键盘连击智能压缩条形高度（8pt 紧凑条），松手弹性复原</span>
+            </li>
+          </ul>
+        </article>
+
+        <!-- 场景 6: 状态掌控 · MagSafe 快充 HUD (Battery Notification) -->
+        <article class="feature-story-card" data-trigger-state="charging" id="storyCharging">
+          <div class="story-badge-label">
+            <span class="story-step-index">06</span>
+            <span class="story-category" data-i18n="stories.charging.category">MAGSAFE CHARGING STATUS HUD</span>
+          </div>
+          <h2 class="story-title" data-i18n-html="stories.charging.title">
+            充能之间，<br>
+            精准预估快充时光。
+          </h2>
+          <p class="story-desc" data-i18n="stories.charging.desc">
+            吸附 MagSafe 磁吸线时，刘海下方垂落 246&times;30 电池胶囊。
+            基于 macOS 内部权威能耗算法，以 Uneven 比例渐变绿色精准呈现电量与充满倒计时，
+            伴随无晕影的 Apple 绿呼吸脉冲闪电。
+          </p>
+          <ul class="feature-points-list">
+            <li>
+              <svg class="check-svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span data-i18n="stories.charging.p1">UnevenRounded 比例背景填充，右侧 1px 清晰高光截断线</span>
+            </li>
+            <li>
+              <svg class="check-svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span data-i18n="stories.charging.p2">权威电池电量与“xx分钟充满”精准估算</span>
+            </li>
+            <li>
+              <svg class="check-svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span data-i18n="stories.charging.p3">低电量提示、低电量模式与充满状态专属主题色彩映射</span>
+            </li>
+          </ul>
+        </article>
+
+        <!-- 场景 7: 独创 Unix Socket Live Activity 接口 -->
+        <article class="feature-story-card" data-trigger-state="socket" id="storySocket">
+          <div class="story-badge-label">
+            <span class="story-step-index">07</span>
+            <span class="story-category" data-i18n="stories.socket.category">UNIX SOCKET LIVE ACTIVITIES API</span>
+          </div>
+          <h2 class="story-title" data-i18n-html="stories.socket.title">
+            极客之桥，<br>
+            向所有终端与应用开放。
+          </h2>
+          <p class="story-desc" data-i18n="stories.socket.desc">
+            内置的 <code>ExternalLiveActivityServer</code>：
+            通过本地 Unix Domain Socket 暴露标准实时活动协议。
+            任何 Shell 脚本、Xcode 编译任务、下载进度或第三方工具，均可直接向 MacBook 刘海投送实时活动卡片。
+          </p>
+          <ul class="feature-points-list">
+            <li>
+              <svg class="check-svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span data-i18n="stories.socket.p1">通过 Unix Domain Socket 本地高速通信，极低开销</span>
+            </li>
+            <li>
+              <svg class="check-svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span data-i18n="stories.socket.p2">一行脚本即可向刘海推送构建完成、倒计时或自定义提醒</span>
+            </li>
+            <li>
+              <svg class="check-svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span data-i18n="stories.socket.p3">探索属于 Mac 平台的开放式 Live Activity 体验</span>
+            </li>
+          </ul>
+        </article>
+
+        <!-- 场景 8: 移窗就范 · Windows 级分屏吸附 (Window Snap Layouts) -->
+        <article class="feature-story-card" data-trigger-state="snap" id="storySnap">
+          <div class="story-badge-label">
+            <span class="story-step-index">08</span>
+            <span class="story-category" data-i18n="stories.snap.category">WINDOWS-STYLE SNAP LAYOUTS</span>
+          </div>
+          <h2 class="story-title" data-i18n-html="stories.snap.title">
+            移窗就范，<br>
+            媲美 Windows 11 的灵动分屏。
+          </h2>
+          <p class="story-desc" data-i18n="stories.snap.desc">
+            拖拽任意 macOS 窗口靠近刘海或屏幕顶边，瞬时唤出精致的磨砂分屏选择器。
+            内置 5 种黄金比例布局预设，支持按住 Shift 一键智能排布桌面所有窗口。
+            更搭配独创的磨砂玻璃替身动画（Ghost Animator），位移归位丝滑流畅、告别原生闪烁。
+          </p>
+          <ul class="feature-points-list">
+            <li>
+              <svg class="check-svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span data-i18n="stories.snap.p1">顶边灵动呼出：靠近刘海瞬时浮现 5 款分屏预设（对半、黄金分割、三等分、左主右副、四宫格）</span>
+            </li>
+            <li>
+              <svg class="check-svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span data-i18n="stories.snap.p2">Shift 智能排布：按住 Shift 键松手，一键将当前桌面所有窗口自动平铺归位</span>
+            </li>
+            <li>
+              <svg class="check-svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span data-i18n="stories.snap.p3">毛玻璃替身动画：SkyLight 深度合成与弹簧物理曲线，无缝 Cross-fade 告别系统重绘闪烁</span>
+            </li>
+          </ul>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- 设计理念：少即是多，聚焦 Live Activity -->
+  <section class="features-grid-section" id="philosophy">
+    <div class="section-header">
+      <span class="sub-heading" data-i18n="bento.subtitle">DESIGN PHILOSOPHY</span>
+      <h2 class="main-heading" data-i18n="bento.title">少即是多，专注纯粹之美。</h2>
+      <p class="section-desc" data-i18n="bento.desc">站在开源社区的肩膀上，专注于把 Live Activity 在 MacBook 刘海上的每一次呈现雕琢至极。</p>
+    </div>
+
+    <div class="bento-grid">
+      <div class="bento-card bento-card-large">
+        <div class="bento-glow"></div>
+        <div class="bento-content">
+          <div class="bento-icon-wrap">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+            </svg>
+          </div>
+          <h3 class="bento-title" data-i18n="bento.card1Title">核心聚焦于 Live Activity</h3>
+          <p class="bento-desc" data-i18n="bento.card1Desc">
+            探索更纯粹的原生呈现。将全部状态汇聚至统一的 Live Activity 与 Alert 调度中心，
+            紧密围绕音乐律动、系统提示与事件通知，保持界面的轻盈与克制。
+          </p>
+        </div>
+      </div>
+
+      <div class="bento-card">
+        <div class="bento-glow"></div>
+        <div class="bento-content">
+          <div class="bento-icon-wrap">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
+            </svg>
+          </div>
+          <h3 class="bento-title" data-i18n="bento.card2Title">&lt; 0.3% CPU 轻量表现</h3>
+          <p class="bento-desc" data-i18n="bento.card2Desc">
+            采用轻量单进程架构，进程内高效原生驱动，休眠期零负载，让 Mac 保持全天候冰凉续航。
+          </p>
+        </div>
+      </div>
+
+      <div class="bento-card">
+        <div class="bento-glow"></div>
+        <div class="bento-content">
+          <div class="bento-icon-wrap">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="3" width="20" height="14" rx="2"></rect>
+              <line x1="8" y1="21" x2="16" y2="21"></line>
+              <line x1="12" y1="17" x2="12" y2="21"></line>
+            </svg>
+          </div>
+          <h3 class="bento-title" data-i18n="bento.card3Title">专为内置刘海度身打造</h3>
+          <p class="bento-desc" data-i18n="bento.card3Desc">
+            精准贴合 MacBook 内置物理刘海的实际硬件曲率与边距，呈现自然无缝的视觉连贯性。
+          </p>
+        </div>
+      </div>
+
+      <div class="bento-card bento-card-large">
+        <div class="bento-glow"></div>
+        <div class="bento-content">
+          <div class="bento-icon-wrap">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+              <line x1="12" y1="3" x2="12" y2="21"></line>
+              <line x1="12" y1="12" x2="21" y2="12"></line>
+            </svg>
+          </div>
+          <h3 class="bento-title" data-i18n="bento.cardSnapTitle">Windows 风格窗口吸附 · Snap Layouts</h3>
+          <p class="bento-desc" data-i18n="bento.cardSnapDesc">
+            拖拽任意窗口靠近刘海或屏幕顶边，瞬时唤出 5 款预设分屏网格。按住 Shift 键更可一键将桌面所有窗口智能排布。独创毛玻璃替身飞行动画（Frosted Glass Ghost Animator），位移丝滑不闪烁。
+          </p>
+        </div>
+      </div>
+
+      <div class="bento-card bento-card-full">
+        <div class="bento-glow"></div>
+        <div class="bento-content">
+          <div class="bento-icon-wrap">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+          </div>
+          <h3 class="bento-title" data-i18n="bento.card4Title">开源透明，纯净守护</h3>
+          <p class="bento-desc" data-i18n="bento.card4Desc">
+            完全基于开源社区代码探索与自主迭代，不包含任何商业追踪或数据上传，
+            源码完全公开在 GitHub 上，自由查验与分享。
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 规格与下载说明 -->
+  <section class="specs-section" id="specs">
+    <div class="specs-card">
+      <div class="specs-header">
+        <span class="sub-heading" data-i18n="specs.subtitle">SPECIFICATIONS & RELEASES</span>
+        <h2 class="main-heading" data-i18n="specs.title">轻松安装，即刻体验。</h2>
+      </div>
+
+      <div class="specs-content-row">
+        <div class="req-box">
+          <h4 class="box-title" data-i18n="specs.sysReq">系统规格要求</h4>
+          <ul class="req-list">
+            <li>
+              <span class="req-label" data-i18n="specs.osVer">操作系统</span>
+              <span class="req-val" data-i18n="specs.osVerVal">macOS 14 Sonoma 或更新版本</span>
+            </li>
+            <li>
+              <span class="req-label" data-i18n="specs.macModel">硬件架构</span>
+              <span class="req-val" data-i18n="specs.chipVal">Apple Silicon (M1/M2/M3/M4) 原生支持</span>
+            </li>
+            <li>
+              <span class="req-label" data-i18n="specs.macModel">设备支持</span>
+              <span class="req-val" data-i18n="specs.macModelVal">MacBook Pro / Air (带物理刘海或外接屏)</span>
+            </li>
+            <li>
+              <span class="req-label" data-i18n="specs.license">开源协议</span>
+              <span class="req-val">GPL-3.0 自由分发</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="install-box">
+          <h4 class="box-title" data-i18n="specs.installGuide">下载与安装指南</h4>
+          <p class="install-guide-text" data-i18n-html="specs.step1">
+            前往 GitHub Releases 页面下载最新的 <code>DynamicNotch.dmg</code> 安装包。
+          </p>
+          <p class="install-guide-text" data-i18n-html="specs.step2">
+            双击打开 DMG，将 <code>Dynamic Notch.app</code> 拖入 <strong>Applications</strong> 应用程序文件夹。
+          </p>
+
+          <div class="direct-download-action-box">
+            <a href="https://github.com/linchi07/dynamic_notch/releases/latest" target="_blank" rel="noreferrer" class="btn-direct-dmg">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+              </svg>
+              <span data-i18n="hero.downloadBtn">下载 macOS DMG 安装包</span>
+            </a>
+          </div>
+
+          <div class="quarantine-tip">
+            <div class="tip-icon">💡</div>
+            <div class="tip-text" data-i18n="specs.securityNote">
+              温馨提示：本项目为个人开源项目，代码完全公开可审计，请放心使用。
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 底部 Call To Action -->
+  <section class="cta-download-section" id="download">
+    <div class="cta-inner-card">
+      <div class="cta-glow-bg"></div>
+      
+      <img src="assets/app_icon_large.png" alt="Dynamic Notch Icon" class="cta-app-icon">
+
+      <h2 class="cta-title" data-i18n="specs.title">立即在你的 MacBook 上开启灵动体验</h2>
+      <p class="cta-desc" data-i18n-html="hero.subtitle">
+        为 MacBook 内置物理刘海量身定制的灵动舞台。<br>
+        聚焦实时活动，追求更贴近苹果美学的细腻与纯粹。
+      </p>
+
+      <div class="cta-buttons-group">
+        <a href="https://github.com/linchi07/dynamic_notch/releases/latest" target="_blank" rel="noreferrer" class="cta-btn cta-btn-primary">
+          <svg class="apple-logo-svg" viewBox="0 0 170 170" width="20" height="20" fill="currentColor">
+            <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.69-3.08-7.7-7.94-12.04-14.58-6.19-9.5-10.96-20.46-14.3-32.88-3.35-12.42-5.02-23.77-5.02-34.05 0-14.93 3.65-27.17 10.95-36.71 7.3-9.54 16.51-14.44 27.63-14.7 4.9.12 10.42 1.34 16.56 3.67 6.13 2.33 10.22 3.56 12.27 3.69 1.76-.13 5.92-1.38 12.49-3.75 6.57-2.37 12.01-3.48 16.33-3.33 12.46.68 22.42 5.37 29.89 14.07-10.89 6.64-16.22 15.63-16 26.98.22 8.93 3.65 16.48 10.29 22.65 6.64 6.17 14.61 9.87 23.91 11.1-2.22 6.84-4.8 13.43-7.73 19.78zm-31.52-117.84c.11 2.39-.42 5.02-1.6 7.89-1.18 2.87-2.88 5.6-5.1 8.2-2.6 3.03-5.59 5.4-8.97 7.12-3.38 1.72-6.52 2.76-9.42 3.12-.33-2.17-.18-4.52.45-7.05.63-2.53 1.95-5.22 3.96-8.07 2.22-3.15 4.97-5.74 8.25-7.78 3.28-2.04 6.99-3.23 11.13-3.57.43.04.86.09 1.3.14z"/>
+          </svg>
+          <div class="cta-btn-text">
+            <span class="main-txt" data-i18n="hero.downloadBtn">下载 DMG 安装包</span>
+            <span class="sub-txt">Apple Silicon / Intel 架构</span>
+          </div>
+        </a>
+
+        <a href="https://github.com/linchi07/dynamic_notch" target="_blank" rel="noreferrer" class="cta-btn cta-btn-secondary">
+          <svg class="icon-svg" viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+          </svg>
+          <div class="cta-btn-text">
+            <span class="main-txt" data-i18n="hero.githubBtn">GitHub 开源仓库</span>
+            <span class="sub-txt">linchi07/dynamic_notch</span>
+          </div>
+        </a>
+      </div>
+
+      <div class="cta-release-meta">
+        <span>Dynamic Notch &middot; 开源自由分发</span>
+        <span class="meta-separator">&bull;</span>
+        <span>保持纯粹与克制</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 页脚 -->
+  <footer class="site-footer">
+    <div class="footer-container">
+      <div class="footer-top-row">
+        <div class="footer-brand-col">
+          <div class="footer-logo">
+            <img src="assets/app_icon.png" alt="Dynamic Notch Logo" class="footer-icon">
+            <span class="footer-name">Dynamic Notch</span>
+          </div>
+          <p class="footer-tagline" data-i18n-html="hero.subtitle">
+            为 MacBook 内置物理刘海量身定制的灵动舞台。<br>
+            聚焦实时活动，追求更贴近苹果美学的细腻与纯粹。
+          </p>
+        </div>
+        <div class="footer-links-col">
+          <h5 class="links-title" data-i18n="nav.showcase">导航</h5>
+          <a href="#hero" data-i18n="nav.showcase">首页</a>
+          <a href="#showcase" data-i18n="nav.showcase">灵动演示</a>
+          <a href="#philosophy" data-i18n="nav.philosophy">设计理念</a>
+          <a href="#specs" data-i18n="nav.specs">下载与要求</a>
+        </div>
+        <div class="footer-links-col">
+          <h5 class="links-title">项目与开源</h5>
+          <a href="https://github.com/linchi07/dynamic_notch" target="_blank" rel="noreferrer">GitHub 源码仓库</a>
+          <a href="https://github.com/linchi07/dynamic_notch/releases" target="_blank" rel="noreferrer">发布历史 (Releases)</a>
+          <a href="https://github.com/linchi07/dynamic_notch/issues" target="_blank" rel="noreferrer">反馈建议 (Issues)</a>
+          <a href="https://github.com/linchi07/dynamic_notch/blob/main/LICENSE" target="_blank" rel="noreferrer">开源许可协议</a>
+        </div>
+      </div>
+
+      <div class="footer-bottom-row">
+        <p class="copyright-txt" data-i18n="footer.copy">
+          &copy; 2026 Dynamic Notch (Maintained by linchi07). 感谢开源社区先行者们的探索。<br>
+          Apple, MacBook, macOS, Dynamic Island 为 Apple Inc. 注册商标。
+        </p>
+        <div class="back-to-top">
+          <a href="#hero" class="back-top-link">
+            <span>回到顶部</span>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 15l-6-6-6 6"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="i18n.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

@@ -54,3 +54,6 @@ build/
 *.ipa
 *.xcarchive
 *.dSYM
+
+# Local scratch / browser profiles (never commit)
+scratch/

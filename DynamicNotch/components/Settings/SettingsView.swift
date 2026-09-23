@@ -171,7 +171,12 @@ struct GeneralSettings: View {
     var body: some View {
         Form {
             Section {
-                LaunchAtLogin.Toggle("Launch at login")
+                // Must use the label-builder form: the `Toggle(_ title:)` overload takes
+                // `some StringProtocol`, which renders the literal verbatim and bypasses
+                // LocalizedStringKey lookup entirely.
+                LaunchAtLogin.Toggle {
+                    Text("Launch at login")
+                }
             } header: {
                 Text("System features")
             }
@@ -523,7 +528,7 @@ struct About: View {
                 HStack(spacing: 30) {
                     Spacer(minLength: 0)
                     Button {
-                        if let url = URL(string: "https://github.com/TheBoredTeam/boring.notch") {
+                        if let url = URL(string: "https://github.com/linchi07/dynamic_notch") {
                             NSWorkspace.shared.open(url)
                         }
                     } label: {
@@ -533,6 +538,21 @@ struct About: View {
                                 .aspectRatio(contentMode: .fit)
                                 .frame(width: 18)
                             Text("GitHub")
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    Spacer(minLength: 0)
+                    Button {
+                        if let url = URL(string: "https://notch.wejoinnwk.com") {
+                            NSWorkspace.shared.open(url)
+                        }
+                    } label: {
+                        VStack(spacing: 5) {
+                            Image(systemName: "globe")
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 18)
+                            Text("Website")
                         }
                         .contentShape(Rectangle())
                     }

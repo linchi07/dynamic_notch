@@ -318,29 +318,17 @@ struct ContentView: View {
     func NotchLayout() -> some View {
         VStack(alignment: .leading) {
             VStack(alignment: .leading) {
-                if coordinator.helloAnimationRunning {
-                    Spacer()
-                    HelloAnimation(onFinish: {
-                        vm.closeHello()
-                    }).frame(
-                        width: getClosedNotchSize().width,
-                        height: 80
-                    )
-                    .padding(.top, 40)
-                    Spacer()
+                if case .active(let activeState) = effectiveDisplayMode, vm.notchState == .closed {
+                    NotchWingsContainer(state: activeState)
+                        .frame(alignment: .center)
+                } else if vm.notchState == .closed && (!musicManager.isPlaying && musicManager.isPlayerIdle) && Defaults[.showNotHumanFace] && !vm.hideOnClosed {
+                    BoringFaceAnimation()
+                } else if vm.notchState == .open {
+                    BoringHeader()
+                        .frame(height: max(24, vm.effectiveClosedNotchHeight))
                 } else {
-                    if case .active(let activeState) = effectiveDisplayMode, vm.notchState == .closed {
-                          NotchWingsContainer(state: activeState)
-                              .frame(alignment: .center)
-                      } else if vm.notchState == .closed && (!musicManager.isPlaying && musicManager.isPlayerIdle) && Defaults[.showNotHumanFace] && !vm.hideOnClosed  {
-                          BoringFaceAnimation()
-                       } else if vm.notchState == .open {
-                           BoringHeader()
-                               .frame(height: max(24, vm.effectiveClosedNotchHeight))
-                       } else {
-                           Rectangle().fill(.clear).frame(width: vm.closedNotchSize.width, height: vm.effectiveClosedNotchHeight)
-                       }
-                  }
+                    Rectangle().fill(.clear).frame(width: vm.closedNotchSize.width, height: vm.effectiveClosedNotchHeight)
+                }
               }
               .zIndex(2)
             if vm.notchState == .open {

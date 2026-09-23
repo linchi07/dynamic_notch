@@ -68,6 +68,9 @@ class MusicManager: ObservableObject {
     @Published var isFavoriteTrack: Bool = false
     @Published var currentGenre: String = ""
 
+    private var isManuallySwitchingSession: Bool = false
+    private var colorCalculationGeneration: Int = 0
+
     private var artworkData: Data? = nil
 
     // Store last values at the time artwork was changed
@@ -93,6 +96,15 @@ class MusicManager: ObservableObject {
         NotificationCenter.default.publisher(for: Notification.Name.mediaControllerChanged)
             .sink { [weak self] _ in
                 self?.setupControllersFromPreferences()
+            }
+            .store(in: &cancellables)
+
+        // Listen for changes to the colored spectrogram preference
+        Defaults.publisher(.coloredSpectrogram)
+            .sink { [weak self] _ in
+                DispatchQueue.main.async {
+                    self?.updateLiveActivity()
+                }
             }
             .store(in: &cancellables)
 
@@ -326,7 +338,12 @@ class MusicManager: ObservableObject {
     func selectSession(type: MediaControllerType) {
         guard selectedSessionType != type else { return }
         selectedSessionType = type
+        isManuallySwitchingSession = true
         syncActiveSessionProperties()
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .milliseconds(600))
+            self?.isManuallySwitchingSession = false
+        }
     }
 
     @MainActor
@@ -781,6 +798,8 @@ class MusicManager: ObservableObject {
     private static let MUSIC_ACTIVITY_ID = "music.playback"
 
     private func updateSneakPeek(title: String, artist: String, customImage: NSImage? = nil, isPlaying: Bool? = nil) {
+        guard !isManuallySwitchingSession else { return }
+        guard !coordinator.isNotchOpen else { return }
         let effectivePlaying = isPlaying ?? self.isPlaying
         guard effectivePlaying && Defaults[.enableSneakPeek] else { return }
         let image = customImage ?? (usingAppIconForArtwork ? nil : self.albumArt)
@@ -807,11 +826,15 @@ class MusicManager: ObservableObject {
     }
 
     func calculateAverageColor() {
+        colorCalculationGeneration += 1
+        let generation = colorCalculationGeneration
         albumArt.averageColor { [weak self] color in
             DispatchQueue.main.async {
+                guard let self = self, self.colorCalculationGeneration == generation else { return }
                 withAnimation(.smooth) {
-                    self?.avgColor = color ?? .white
+                    self.avgColor = color ?? .white
                 }
+                self.updateLiveActivity()
             }
         }
     }

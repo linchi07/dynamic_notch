@@ -19,10 +19,10 @@ let ALBUM_ART_INSET_FROM_NOTCH: CGFloat = 12
 /// 展开时统一的专辑插图曲率（同心平滑圆角：外圆角 - 边距）
 let ALBUM_ART_CORNER_RADIUS_OPENED: CGFloat = OPEN_NOTCH_BOTTOM_CORNER_RADIUS - ALBUM_ART_INSET_FROM_NOTCH
 /// 闭合时统一的专辑插图曲率
-let ALBUM_ART_CORNER_RADIUS_CLOSED: CGFloat = 4.0
+let ALBUM_ART_CORNER_RADIUS_CLOSED: CGFloat = 6
 
 /// 展开状态下面板容器的固定高度（Home/Shelf 等面板统一固定在此高度）
-let NOTCH_PANEL_CONTAINER_HEIGHT: CGFloat = 130
+let NOTCH_PANEL_CONTAINER_HEIGHT: CGFloat = 103
 
 let downloadSneakSize: CGSize = .init(width: 65, height: 1)
 let batterySneakSize: CGSize = .init(width: 160, height: 1)
@@ -30,7 +30,7 @@ let batterySneakSize: CGSize = .init(width: 160, height: 1)
 let shadowPadding: CGFloat = 20
 /// Extra transparent window space used by HUDs that appear below an expanded notch.
 let floatingOverlaySpace: CGFloat = 64
-let openNotchSize: CGSize = .init(width: 460, height: 218)
+let openNotchSize: CGSize = .init(width: 460, height: 181)
 let windowSize: CGSize = .init(
     width: openNotchSize.width,
     height: openNotchSize.height + shadowPadding + floatingOverlaySpace
@@ -57,7 +57,7 @@ enum MusicPlayerImageSizes {
         return .zero
     }
 
-    var notchWidth: CGFloat = 190
+    var notchWidth: CGFloat = 185
 
     if let leftWidth = screen.auxiliaryTopLeftArea?.width,
        let rightWidth = screen.auxiliaryTopRightArea?.width

@@ -194,11 +194,11 @@ struct NotchComboActivity: Identifiable, Equatable {
 /// Geometry shared by every active presentation, including music and developer
 /// previews. The physical notch is never padded; only the two outer edges are.
 enum NotchLayoutMetrics {
-    static let minimumVisualSize: CGFloat = 16
-    static let innerPadding: CGFloat = 2
+    static let minimumVisualSize: CGFloat = 12
+    static let innerPadding: CGFloat = 0
 
     static func effectiveOuterPadding(_ outerPadding: CGFloat) -> CGFloat {
-        max(16, outerPadding)
+        max(12, outerPadding)
     }
 
     static func visualSize(for notchHeight: CGFloat) -> CGFloat {

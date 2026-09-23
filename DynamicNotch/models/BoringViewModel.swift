@@ -169,6 +169,7 @@ class BoringViewModel: NSObject, ObservableObject {
     func open() {
         self.notchSize = openNotchSize
         self.notchState = .open
+        coordinator.isNotchOpen = true
 
         // Playback is the primary expanded experience. Shelf remains available
         // from the bottom navigation after the notch opens.
@@ -187,6 +188,7 @@ class BoringViewModel: NSObject, ObservableObject {
         }
         coordinator.restoreViewAfterDropLanding()
         self.notchState = .closed
+        coordinator.isNotchOpen = false
         refreshClosedNotchSize()
         self.isBatteryPopoverActive = false
         // Keep an in-flight system HUD alive so its shared floating bar can
@@ -214,15 +216,6 @@ class BoringViewModel: NSObject, ObservableObject {
         closedNotchSize = size
         if notchState == .closed {
             notchSize = size
-        }
-    }
-
-    func closeHello() {
-        Task { @MainActor in
-            withAnimation(animationLibrary.animation) {
-                coordinator.helloAnimationRunning = false
-                close()
-            }
         }
     }
 }
