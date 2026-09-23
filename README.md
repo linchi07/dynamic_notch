@@ -106,7 +106,14 @@ open DynamicNotch.xcodeproj
 
 ## 📄 License & Attributions
 
-This project is distributed under the **GPL-3.0** license, inheriting the licensing terms of the upstream project. See [LICENSE](LICENSE) for details.
+This project is distributed under the **GPL-3.0** license, inheriting the licensing terms of the upstream project. See [LICENSE](LICENSE) for the full, unmodified license text, and [NOTICE](NOTICE) for the copyright holders.
+
+> Dynamic Notch is a derivative work of Boring Notch, so it stays under GPL-3.0 and cannot be relicensed under different terms.
+
+**Copyright**
+
+- Copyright (C) 2026 linchi — Dynamic Notch
+- Copyright (C) The Bored Team and the Boring Notch contributors — upstream Boring Notch
 
 ### Acknowledgments:
 - **[TheBoredTeam/boring.notch](https://github.com/TheBoredTeam/boring.notch)**: The upstream project this repository originated from;

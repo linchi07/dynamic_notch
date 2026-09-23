@@ -1,0 +1,28 @@
+Dynamic Notch
+Copyright (C) 2026 linchi <https://github.com/linchi07>
+
+This product is a fork of Boring Notch and includes software developed by
+The Bored Team and the Boring Notch contributors
+<https://github.com/TheBoredTeam/boring.notch>.
+Copyright (C) The Bored Team and the Boring Notch contributors.
+
+Dynamic Notch is distributed under the GNU General Public License, version 3.
+
+Why the copyright notices are here and not in LICENSE
+-----------------------------------------------------
+The LICENSE file is kept byte-for-byte identical to the official GPL-3.0 text
+published by the Free Software Foundation, which states that the license
+document itself may be copied but not changed. GitHub identifies GPL-3.0 by
+matching that file exactly, so adding a copyright line to it makes the
+repository lose its GPL-3.0 label and fall back to "Other". The copyright
+notices therefore live in this file instead.
+
+Because Dynamic Notch is a derivative work of Boring Notch, it inherits the
+GPL-3.0 license and cannot be relicensed under different terms. Anyone
+distributing Dynamic Notch, modified or not, must pass on the same freedoms
+and make the corresponding source available.
+
+Third-party components
+----------------------
+Licenses and attributions for bundled and linked third-party code are in
+THIRD_PARTY_LICENSES.
