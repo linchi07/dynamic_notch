@@ -695,11 +695,6 @@ class I18nEngine {
     if (selectEl && selectEl.value !== lang) {
       selectEl.value = lang;
     }
-
-    // 持久化存储
-    try {
-      localStorage.setItem(STORAGE_LANG_KEY, lang);
-    } catch (e) {}
   }
 
   /**
@@ -746,9 +741,21 @@ class I18nEngine {
         const selectedLang = e.target.value;
         if (selectedLang) {
           this.applyLanguage(selectedLang);
+          this.persistLanguage(selectedLang);
         }
       });
     }
+  }
+
+  /**
+   * 只有用户主动切换语言时才落盘偏好。
+   * 自动检测（URL 参数 / navigator.languages）不写入 localStorage，
+   * 否则首次访问的检测结果会被固化，用户之后修改浏览器语言就无法自动跟随了。
+   */
+  persistLanguage(lang) {
+    try {
+      localStorage.setItem(STORAGE_LANG_KEY, lang);
+    } catch (e) {}
   }
 }
 
