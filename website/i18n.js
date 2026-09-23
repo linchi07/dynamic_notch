@@ -102,15 +102,14 @@ const TRANSLATION_MAP = {
         p1: '通过 Unix Domain Socket 本地高速通信，极低开销',
         p2: '一行脚本即可向刘海推送构建完成、倒计时或自定义提醒',
         p3: '探索属于 Mac 平台的开放式 Live Activity 体验',
-        hint: '↓ 继续滚动，体验 Windows 风格分屏吸附布局'
+        hint: '↓ 继续滚动，体验顶边窗口分屏吸附布局'
       },
       snap: {
-        category: 'WINDOWS-STYLE SNAP LAYOUTS',
-        title: '移窗就范，<br>媲美 Windows 11 的灵动分屏。',
-        desc: '拖拽任意 macOS 窗口靠近刘海或屏幕顶边，瞬时唤出精致的磨砂分屏选择器。内置 5 种黄金比例布局预设，支持按住 Shift 一键智能排布桌面所有窗口。更搭配独创的磨砂玻璃替身动画（Ghost Animator），位移归位丝滑流畅、告别原生闪烁。',
+        category: 'TOP-EDGE SNAP LAYOUTS',
+        title: '移窗就范，<br>灵动自如的顶边分屏。',
+        desc: '拖拽任意 macOS 窗口靠近刘海或屏幕顶边，瞬时唤出精致的磨砂分屏选择器。内置 5 种黄金比例布局预设，支持按住 Shift 一键智能排布桌面所有窗口。',
         p1: '顶边灵动呼出：靠近刘海瞬时浮现 5 款分屏预设（对半、黄金分割、三等分、左主右副、四宫格）',
         p2: 'Shift 智能排布：按住 Shift 键松手，一键将当前桌面所有窗口自动平铺归位',
-        p3: '毛玻璃替身动画：SkyLight 深度合成与弹簧物理曲线，无缝 Cross-fade 告别系统重绘闪烁',
         hint: '↓ 继续滚动，探索更多二开设计理念与开源下载'
       }
     },
@@ -124,8 +123,8 @@ const TRANSLATION_MAP = {
       card2Desc: '采用轻量单进程架构，进程内高效原生驱动，休眠期零负载，让 Mac 保持全天候冰凉续航。',
       card3Title: '专为内置刘海度身打造',
       card3Desc: '精准贴合 MacBook 内置物理刘海的实际硬件曲率与边距，呈现自然无缝的视觉连贯性。',
-      cardSnapTitle: 'Windows 风格窗口吸附 · Snap Layouts',
-      cardSnapDesc: '拖拽任意窗口靠近刘海或屏幕顶边，瞬时唤出 5 款预设分屏网格。按住 Shift 键更可一键将桌面所有窗口智能排布。独创毛玻璃替身飞行动画（Frosted Glass Ghost Animator），位移丝滑不闪烁。',
+      cardSnapTitle: '顶边窗口吸附 · Snap Layouts',
+      cardSnapDesc: '拖拽任意窗口靠近刘海或屏幕顶边，瞬时唤出 5 款预设分屏网格。按住 Shift 键更可一键将桌面所有窗口智能排布。',
       card4Title: '开源透明，纯净守护',
       card4Desc: '完全基于开源社区代码探索与自主迭代，不包含任何商业追踪或数据上传，源码完全公开在 GitHub 上，自由查验与分享。'
     },
@@ -236,15 +235,14 @@ const TRANSLATION_MAP = {
         p1: '透過 Unix Domain Socket 本機高速通訊，極低開銷',
         p2: '一行腳本即可向瀏海推送建置完成、倒數計時或自訂提醒',
         p3: '探索屬於 Mac 平台的開放式 Live Activity 體驗',
-        hint: '↓ 繼續滾動，體驗 Windows 風格分屏吸附佈局'
+        hint: '↓ 繼續滾動，體驗頂邊視窗分屏吸附佈局'
       },
       snap: {
-        category: 'WINDOWS-STYLE SNAP LAYOUTS',
-        title: '移窗就範，<br>媲美 Windows 11 的靈動分屏。',
-        desc: '拖曳任意 macOS 視窗靠近瀏海或螢幕頂邊，瞬時喚出精緻的磨砂分屏選擇器。內建 5 種黃金比例佈局預設，支援按住 Shift 一鍵智慧排布桌面所有視窗。獨創毛玻璃替身動畫（Ghost Animator），位移歸位絲滑流暢、告別原生閃爍。',
+        category: 'TOP-EDGE SNAP LAYOUTS',
+        title: '移窗就範，<br>靈動自如的頂邊分屏。',
+        desc: '拖曳任意 macOS 視窗靠近瀏海或螢幕頂邊，瞬時喚出精緻的磨砂分屏選擇器。內建 5 種黃金比例佈局預設，支援按住 Shift 一鍵智慧排布桌面所有視窗。',
         p1: '頂邊靈動呼出：靠近瀏海瞬時浮現 5 款分屏預設（對半、黃金分割、三等分、左主右副、四宮格）',
         p2: 'Shift 智慧排布：按住 Shift 鍵鬆手，一鍵將當前桌面所有視窗自動平鋪歸位',
-        p3: '毛玻璃替身動畫：SkyLight 深度合成與彈簧物理曲線，無縫 Cross-fade 告別系統重繪閃爍',
         hint: '↓ 繼續滾動，探索更多二開設計理念與開源下載'
       }
     },
@@ -258,8 +256,8 @@ const TRANSLATION_MAP = {
       card2Desc: '採用輕量單行程架構，行程內高效原生驅動，休眠期零負載，讓 Mac 保持全天候冰涼續航。',
       card3Title: '專為內建瀏海量身打造',
       card3Desc: '精準貼合 MacBook 內建物理瀏海的實際硬體曲率與邊距，呈現自然無縫的視覺連貫性。',
-      cardSnapTitle: 'Windows 風格視窗吸附 · Snap Layouts',
-      cardSnapDesc: '拖曳任意視窗靠近瀏海或螢幕頂邊，瞬時喚出 5 款預設分屏網格。按住 Shift 鍵更可一鍵將桌面所有視窗智慧排布。獨創毛玻璃替身飛行動畫（Frosted Glass Ghost Animator），位移絲滑不閃爍。',
+      cardSnapTitle: '頂邊視窗吸附 · Snap Layouts',
+      cardSnapDesc: '拖曳任意視窗靠近瀏海或螢幕頂邊，瞬時喚出 5 款預設分屏網格。按住 Shift 鍵更可一鍵將桌面所有視窗智慧排布。',
       card4Title: '開源透明，純淨守護',
       card4Desc: '完全基於開源社群程式碼探索與自主迭代，不包含任何商業追蹤或資料上傳，原始碼完全公開在 GitHub 上，自由查驗與分享。'
     },
@@ -370,15 +368,14 @@ const TRANSLATION_MAP = {
         p1: 'Built-in local Unix Domain Socket with sub-millisecond latency',
         p2: 'Terminal friendly: a single echo command pushes rich notifications',
         p3: 'Fully open: easily integrate with Raycast, Alfred, shell scripts, or CI',
-        hint: '↓ Scroll on to experience Windows-style snap layouts'
+        hint: '↓ Scroll on to experience top-edge snap layouts'
       },
       snap: {
-        category: 'WINDOWS-STYLE SNAP LAYOUTS',
-        title: 'Snap with ease,<br>Windows 11-style window layouts.',
-        desc: 'Drag any macOS window towards the notch or top screen edge to summon a sleek frosted snap layout chooser. Includes 5 preset grid layouts, Shift-key smart arrangement for all active windows, and an experimental frosted-glass ghost flight animator that eliminates visual flicker.',
+        category: 'TOP-EDGE SNAP LAYOUTS',
+        title: 'Snap with ease,<br>effortless top-edge window layouts.',
+        desc: 'Drag any macOS window towards the notch or top screen edge to summon a sleek frosted snap layout chooser. Includes 5 preset grid layouts and Shift-key smart arrangement for all active windows.',
         p1: 'Top-edge snap trigger: Hover near the notch to reveal 5 grid presets (halves, wide-left, thirds, one-two, quarters)',
         p2: 'Shift smart tiling: Hold Shift to arrange and distribute all active workspace windows into the layout simultaneously',
-        p3: 'Frosted ghost animation: SkyLight deep compositing and spring physics with seamless cross-fade, eliminating window flicker',
         hint: '↓ Scroll down to explore design philosophy and downloads'
       }
     },
@@ -392,8 +389,8 @@ const TRANSLATION_MAP = {
       card2Desc: 'Single-process architecture with native performance and zero idle CPU draw for all-day cool battery endurance.',
       card3Title: 'Tailored for Hardware Notch',
       card3Desc: 'Meticulously aligned with physical MacBook notch hardware curves and bezels for seamless continuity.',
-      cardSnapTitle: 'Windows-style Snap Layouts',
-      cardSnapDesc: 'Drag any window to the top edge or notch to summon 5 grid snap presets. Hold Shift to intelligently tile all open windows across your desktop. Features an experimental frosted-glass ghost flight animator for seamless, flicker-free docking.',
+      cardSnapTitle: 'Top-edge Snap Layouts',
+      cardSnapDesc: 'Drag any window to the top edge or notch to summon 5 grid snap presets. Hold Shift to intelligently tile all open windows across your desktop.',
       card4Title: '100% Open & Transparent',
       card4Desc: 'Community-driven open source code with zero tracking or telemetry. Fully auditable on GitHub.'
     },
@@ -470,7 +467,7 @@ const TRANSLATION_MAP = {
       card2Desc: '単一プロセスによる高効率ネイティブ動作で、Mac を常に涼しく保ちます。',
       card3Title: '物理ノッチ専用設計',
       card3Desc: 'MacBook の画面曲率とベゼルに精密に合わせたシームレスな連続性。',
-      cardSnapTitle: 'Windows スタイル ウィンドウ スナップ · Snap Layouts',
+      cardSnapTitle: 'ウィンドウ スナップ · Snap Layouts',
       cardSnapDesc: 'ウィンドウをノッチまたは上端にドラッグすると、5 種類の分割プリセットが即座に出現。Shift キーを押しながら離せば全ウィンドウを一括自動整列。',
       card4Title: '完全オープンソースで安全',
       card4Desc: '追跡やテレメトリは一切なし。すべてのコードは GitHub で公開されています。'
@@ -512,7 +509,7 @@ const TRANSLATION_MAP = {
       }
     },
     bento: {
-      cardSnapTitle: 'Windows 스타일 윈도우 스냅 레이아웃',
+      cardSnapTitle: '윈도우 스냅 레이아웃',
       cardSnapDesc: '창을 노치나 화면 상단으로 드래그하면 5가지 분할 그리드가 즉시 나타납니다. Shift 키를 누르면 열려 있는 모든 창을 한 번에 스마트하게 타일링합니다.'
     }
   },
@@ -538,7 +535,7 @@ const TRANSLATION_MAP = {
       scrollHint: 'Nach unten scrollen zum Entdecken'
     },
     bento: {
-      cardSnapTitle: 'Snap-Layouts im Windows 11-Stil',
+      cardSnapTitle: 'Snap-Layouts an der oberen Kante',
       cardSnapDesc: 'Ziehe ein beliebiges Fenster an die Notch oder die obere Kante, um 5 Layout-Vorlagen aufzurufen. Halte Shift gedrückt, um alle Fenster gleichzeitig anzuordnen.'
     }
   },
@@ -564,7 +561,7 @@ const TRANSLATION_MAP = {
       scrollHint: 'Faites défiler vers le bas pour explorer'
     },
     bento: {
-      cardSnapTitle: 'Agencements de fenêtres style Windows 11',
+      cardSnapTitle: 'Agencements de fenêtres par bord supérieur',
       cardSnapDesc: 'Glissez une fenêtre vers l’encoche pour afficher 5 grilles de disposition. Maintenez Shift pour réorganiser intelligemment toutes les fenêtres ouvertes.'
     }
   },
@@ -590,7 +587,7 @@ const TRANSLATION_MAP = {
       scrollHint: 'Desplázate hacia abajo para explorar'
     },
     bento: {
-      cardSnapTitle: 'Diseños de ventana Snap estilo Windows 11',
+      cardSnapTitle: 'Diseños de ventana Snap en el borde superior',
       cardSnapDesc: 'Arrastra cualquier ventana hacia el notch para abrir 5 plantillas de división. Mantén presionado Shift para organizar todas las ventanas abiertas al instante.'
     }
   }
