@@ -142,11 +142,12 @@ class BoringViewCoordinator: ObservableObject {
         postNotificationItem(item)
     }
 
-    /// 热更新当前活跃通知中的图片（用于切歌时封面异步加载完成后的即时同步）
-    func updateActiveNotificationImage(_ image: NSImage) {
-        guard var item = LiveActivityManager.shared.activeAlert else { return }
-        item.updateImage(image)
-        LiveActivityManager.shared.postAlert(item)
+    func updateActiveNotificationImage(
+        _ image: NSImage, activityId: String, title: String, message: String
+    ) {
+        LiveActivityManager.shared.updateAlertImage(
+            image, activityId: activityId, title: title, message: message
+        )
     }
 
     func postBatteryNotification(
@@ -167,6 +168,13 @@ class BoringViewCoordinator: ObservableObject {
             timeToFullCharge: timeToFullCharge
         )
         postNotificationItem(FloatingNotificationItem(battery: payload, duration: duration))
+    }
+
+    func postBluetoothNotification(
+        payload: BluetoothDeviceNotificationPayload,
+        duration: TimeInterval = 2.5
+    ) {
+        postNotificationItem(FloatingNotificationItem(bluetooth: payload, duration: duration))
     }
 
     func dismissNotification() {

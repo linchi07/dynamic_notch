@@ -8,11 +8,11 @@
 import SwiftUI
 import Defaults
 
-
 struct MusicControllerSelectionView: View {
     let onContinue: () -> Void
 
     @Default(.mediaController) var mediaController
+    @Default(.enabledMediaControllers) var enabledMediaControllers
     
     private var availableMediaControllers: [MediaControllerType] {
         if MusicManager.shared.isNowPlayingDeprecated {
@@ -22,16 +22,16 @@ struct MusicControllerSelectionView: View {
         }
     }
     
-    @State private var selectedMediaController: MediaControllerType = Defaults[.mediaController]
+    @State private var selectedControllers: Set<MediaControllerType> = Set(Defaults[.enabledMediaControllers])
     
     var body: some View {
         VStack(spacing: 20) {
-            Text("Choose a Music Source")
+            Text("Choose Playback Sources")
                 .font(.title)
                 .fontWeight(.bold)
                 .padding(.top, 24)
 
-            Text("Select the music source you want to use. You can change this later in the app settings.")
+            Text("Select the music and media sources you want to use (multiple selections supported). You can adjust this later in settings.")
                 .multilineTextAlignment(.center)
                 .font(.body)
                 .foregroundColor(.secondary)
@@ -42,37 +42,48 @@ struct MusicControllerSelectionView: View {
                     ForEach(availableMediaControllers) { controller in
                         ControllerOptionView(
                             controller: controller,
-                            isSelected: self.selectedMediaController == controller
+                            isSelected: selectedControllers.contains(controller)
                         )
                         .onTapGesture {
-                            self.selectedMediaController = controller
+                            toggleController(controller)
                         }
                     }
                 }
                 .padding()
             }
-            //Disable scroll if there are 4 or fewer to avoid unnecessary scroll behavior
             .scrollDisabled(availableMediaControllers.count <= 4)
 
-//            Spacer()
-
             Button("Continue", action: {
-                self.mediaController = self.selectedMediaController
+                let ordered = availableMediaControllers.filter { selectedControllers.contains($0) }
+                enabledMediaControllers = ordered.isEmpty ? availableMediaControllers : ordered
+                if !selectedControllers.contains(mediaController), let first = ordered.first {
+                    mediaController = first
+                }
                 NotificationCenter.default.post(
                     name: Notification.Name.mediaControllerChanged,
                     object: nil
                 )
                 onContinue()
             })
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-                .padding(.bottom, 24)
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+            .padding(.bottom, 24)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(
             VisualEffectView(material: .underWindowBackground, blendingMode: .behindWindow)
                 .ignoresSafeArea()
         )
+    }
+
+    private func toggleController(_ controller: MediaControllerType) {
+        if selectedControllers.contains(controller) {
+            if selectedControllers.count > 1 {
+                selectedControllers.remove(controller)
+            }
+        } else {
+            selectedControllers.insert(controller)
+        }
     }
 }
 
@@ -82,7 +93,7 @@ struct ControllerOptionView: View {
 
     var body: some View {
         HStack(spacing: 16) {
-            Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+            Image(systemName: isSelected ? "checkmark.square.fill" : "square")
                 .font(.title2)
                 .foregroundColor(isSelected ? .effectiveAccent : .secondary.opacity(0.5))
                 .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isSelected)
@@ -117,7 +128,6 @@ struct ControllerOptionView: View {
         .contentShape(Rectangle())
     }
 }
-
 
 extension MediaControllerType {
     var description: String {

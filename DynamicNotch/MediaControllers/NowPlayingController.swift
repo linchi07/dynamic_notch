@@ -207,6 +207,7 @@ final class NowPlayingController: ObservableObject, MediaControllerProtocol, @un
 
         stopNowPlayingObserver()
         let generation = adapterGeneration
+        lastAdapterUpdate = nil
 
         let process = Process()
         guard
@@ -435,8 +436,8 @@ final class NowPlayingController: ObservableObject, MediaControllerProtocol, @un
             newPlaybackState.artwork = Data(
                 base64Encoded: artworkDataString.trimmingCharacters(in: .whitespacesAndNewlines)
             )
-        } else if !diff {
-            newPlaybackState.artwork = nil
+        } else if diff {
+            newPlaybackState.artwork = self.playbackState.artwork
         }
 
         if let dateString = payload.timestamp,

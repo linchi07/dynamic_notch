@@ -34,7 +34,58 @@ struct BatteryNotificationPayload: Equatable {
     }
 }
 
-/// Notification payload variants
+/// Recognized AirPods models
+enum AirPodsModel: String, Equatable {
+    case classic = "AirPods"
+    case pro = "AirPods Pro"
+    case gen3 = "AirPods (3rd gen)"
+    case gen4 = "AirPods 4"
+    case max = "AirPods Max"
+}
+
+/// Recognized Beats models
+enum BeatsModel: String, Equatable {
+    case solo = "Beats Solo"
+    case studio = "Beats Studio"
+    case studioBuds = "Beats Studio Buds"
+    case fitPro = "Beats Fit Pro"
+    case powerbeatsPro = "Powerbeats Pro"
+    case generic = "Beats"
+}
+
+/// High-level device classification for Bluetooth accessories
+enum BluetoothDeviceType: Equatable {
+    case airPods(AirPodsModel)
+    case beats(BeatsModel)
+    case headphones
+    case speaker
+    case mouse
+    case keyboard
+    case gameController
+    case watch
+    case phone
+    case pad
+    case generic
+}
+
+/// Payload specific to Bluetooth device connection notifications
+struct BluetoothDeviceNotificationPayload: Equatable {
+    var deviceName: String
+    var deviceType: BluetoothDeviceType
+    var batteryLevel: Int?
+    var customImage: NSImage?
+    var symbolName: String
+    var isAirPods: Bool
+
+    static func == (lhs: BluetoothDeviceNotificationPayload, rhs: BluetoothDeviceNotificationPayload) -> Bool {
+        lhs.deviceName == rhs.deviceName &&
+        lhs.deviceType == rhs.deviceType &&
+        lhs.batteryLevel == rhs.batteryLevel &&
+        lhs.symbolName == rhs.symbolName &&
+        lhs.isAirPods == rhs.isAirPods
+    }
+}
+
 /// Notification category defining whether the notification is an independent system alert or an activity state update
 enum NotificationCategory: Equatable {
     case systemAlert    // 独立系统事件（如电池、充电等）
@@ -53,6 +104,7 @@ enum FloatingNotificationPayload: Equatable {
         customImage: NSImage? = nil
     )
     case battery(BatteryNotificationPayload)
+    case bluetooth(BluetoothDeviceNotificationPayload)
 }
 
 /// Notification item model defining an alert's visual payload
@@ -98,6 +150,14 @@ struct FloatingNotificationItem: Identifiable, Equatable {
         self.duration = duration
     }
 
+    // Convenience initializer for bluetooth notification
+    init(bluetooth: BluetoothDeviceNotificationPayload, duration: TimeInterval = 2.5) {
+        self.payload = .bluetooth(bluetooth)
+        self.category = .systemAlert
+        self.activityId = nil
+        self.duration = duration
+    }
+
     mutating func updateImage(_ image: NSImage) {
         if case .standard(let title, let message, let trailing, let iconName, let iconColor, let iconBg, _) = payload {
             self.payload = .standard(
@@ -129,6 +189,8 @@ struct FloatingNotificationItem: Identifiable, Equatable {
             } else {
                 return "电池"
             }
+        case .bluetooth(let bluetooth):
+            return bluetooth.deviceName
         }
     }
 
@@ -138,6 +200,12 @@ struct FloatingNotificationItem: Identifiable, Equatable {
             return message
         case .battery(let battery):
             return "\(Int(battery.level))%"
+        case .bluetooth(let bluetooth):
+            if let level = bluetooth.batteryLevel {
+                return "已连接 · \(level)%"
+            } else {
+                return "已连接"
+            }
         }
     }
 
@@ -147,6 +215,8 @@ struct FloatingNotificationItem: Identifiable, Equatable {
             return iconName
         case .battery:
             return "bolt.fill"
+        case .bluetooth(let bluetooth):
+            return bluetooth.symbolName
         }
     }
 
@@ -160,6 +230,8 @@ struct FloatingNotificationItem: Identifiable, Equatable {
             case .red: return Color.red
             case .yellow: return Color.yellow
             }
+        case .bluetooth:
+            return .white
         }
     }
 
@@ -173,6 +245,8 @@ struct FloatingNotificationItem: Identifiable, Equatable {
             case .red: return Color.red.opacity(0.15)
             case .yellow: return Color.yellow.opacity(0.15)
             }
+        case .bluetooth:
+            return Color.white.opacity(0.10)
         }
     }
 
@@ -181,6 +255,11 @@ struct FloatingNotificationItem: Identifiable, Equatable {
         case .standard(_, _, let trailingText, _, _, _, _):
             return trailingText
         case .battery:
+            return nil
+        case .bluetooth(let bluetooth):
+            if let level = bluetooth.batteryLevel {
+                return "\(level)%"
+            }
             return nil
         }
     }
@@ -191,11 +270,18 @@ struct FloatingNotificationItem: Identifiable, Equatable {
             return customImage
         case .battery:
             return nil
+        case .bluetooth(let bluetooth):
+            return bluetooth.customImage
         }
     }
 
     var isBattery: Bool {
         if case .battery = payload { return true }
+        return false
+    }
+
+    var isBluetooth: Bool {
+        if case .bluetooth = payload { return true }
         return false
     }
 }

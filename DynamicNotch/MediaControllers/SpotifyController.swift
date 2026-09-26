@@ -36,6 +36,7 @@ class SpotifyController: MediaControllerProtocol {
 
     private var lastArtworkURL: String?
     private var artworkFetchTask: Task<Void, Never>?
+    private var artworkFetchGeneration = 0
     
     init() {
         setupPlaybackStateChangeObserver()
@@ -136,6 +137,8 @@ class SpotifyController: MediaControllerProtocol {
         if !artworkURL.isEmpty, let url = URL(string: artworkURL) {
             guard artworkURL != lastArtworkURL || state.artwork == nil else { return }
             artworkFetchTask?.cancel()
+            artworkFetchGeneration += 1
+            let generation = artworkFetchGeneration
 
             let currentState = state
 
@@ -144,8 +147,11 @@ class SpotifyController: MediaControllerProtocol {
                     let data = try await ImageService.shared.fetchImageData(from: url)
 
                     await MainActor.run { [weak self] in
-                        guard let self = self else { return }
-                        var updatedState = currentState
+                        guard let self, self.artworkFetchGeneration == generation,
+                              self.playbackState.title == currentState.title,
+                              self.playbackState.artist == currentState.artist,
+                              self.playbackState.album == currentState.album else { return }
+                        var updatedState = self.playbackState
                         updatedState.artwork = data
                         self.playbackState = updatedState
                         self.lastArtworkURL = artworkURL
@@ -153,7 +159,8 @@ class SpotifyController: MediaControllerProtocol {
                     }
                 } catch {
                     await MainActor.run { [weak self] in
-                        self?.artworkFetchTask = nil
+                        guard let self, self.artworkFetchGeneration == generation else { return }
+                        self.artworkFetchTask = nil
                     }
                 }
             }

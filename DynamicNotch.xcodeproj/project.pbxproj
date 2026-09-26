@@ -122,6 +122,7 @@
 		B1628B922CC260C0003D8DF3 /* SwiftUIIntrospect in Frameworks */ = {isa = PBXBuildFile; productRef = B1628B912CC260C0003D8DF3 /* SwiftUIIntrospect */; };
 		B17266DF2C64DFA00031BA0D /* BundleInfos.swift in Sources */ = {isa = PBXBuildFile; fileRef = B17266DE2C64DFA00031BA0D /* BundleInfos.swift */; };
 		B17266E12C6532560031BA0D /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = B17266E02C6532560031BA0D /* Localizable.xcstrings */; };
+		B17266E52C6532560031BA0D /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = B17266E42C6532560031BA0D /* InfoPlist.xcstrings */; };
 		B17266E32C65F7FB0031BA0D /* WhatsNewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B17266E22C65F7FB0031BA0D /* WhatsNewView.swift */; };
 		B172AAC02C95DA0B001623F1 /* InlineHUD.swift in Sources */ = {isa = PBXBuildFile; fileRef = B172AABF2C95DA0B001623F1 /* InlineHUD.swift */; };
 		B19016222CC15B3D00E3F12E /* Defaults in Frameworks */ = {isa = PBXBuildFile; productRef = B19016212CC15B3D00E3F12E /* Defaults */; };
@@ -147,10 +148,9 @@
 		E7B000082D8A000100000008 /* scratchpad_editor_window_controller.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7A000082D8A000100000008 /* scratchpad_editor_window_controller.swift */; };
 		E7B000092D8A000100000009 /* drop_landing_view.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7A000092D8A000100000009 /* drop_landing_view.swift */; };
 		F38DE6482D8243E7008B5C6D /* BatteryActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F38DE6472D8243E2008B5C6D /* BatteryActivityManager.swift */; };
+		AA0100022D8243E7008B5C6D /* bluetooth_activity_manager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0100012D8243E2008B5C6D /* bluetooth_activity_manager.swift */; };
+		AA0200022ED166E20079DD4E /* bluetooth_notification_popup.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0200012ED166E20079DD4E /* bluetooth_notification_popup.swift */; };
 /* End PBXBuildFile section */
-
-/* Begin PBXContainerItemProxy section */
-/* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
 		B1ECFA062C6FE58A002ACD87 /* Embed Frameworks */ = {
@@ -280,6 +280,7 @@
 		B141C2402CA5F53E00AC8CC8 /* SparkleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SparkleView.swift; sourceTree = "<group>"; };
 		B17266DE2C64DFA00031BA0D /* BundleInfos.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BundleInfos.swift; sourceTree = "<group>"; };
 		B17266E02C6532560031BA0D /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
+		B17266E42C6532560031BA0D /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = InfoPlist.xcstrings; sourceTree = "<group>"; };
 		B17266E22C65F7FB0031BA0D /* WhatsNewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhatsNewView.swift; sourceTree = "<group>"; };
 		B172AABF2C95DA0B001623F1 /* InlineHUD.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InlineHUD.swift; sourceTree = "<group>"; };
 		B19016232CC15B4D00E3F12E /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
@@ -304,6 +305,8 @@
 		E7A000082D8A000100000008 /* scratchpad_editor_window_controller.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = scratchpad_editor_window_controller.swift; sourceTree = "<group>"; };
 		E7A000092D8A000100000009 /* drop_landing_view.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = drop_landing_view.swift; sourceTree = "<group>"; };
 		F38DE6472D8243E2008B5C6D /* BatteryActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatteryActivityManager.swift; sourceTree = "<group>"; };
+		AA0100012D8243E2008B5C6D /* bluetooth_activity_manager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = bluetooth_activity_manager.swift; sourceTree = "<group>"; };
+		AA0200012ED166E20079DD4E /* bluetooth_notification_popup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = bluetooth_notification_popup.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -477,6 +480,7 @@
 			children = (
 				11D58EA12E760AE100FA8377 /* ImageService.swift */,
 				F38DE6472D8243E2008B5C6D /* BatteryActivityManager.swift */,
+				AA0100012D8243E2008B5C6D /* bluetooth_activity_manager.swift */,
 				112FB7342CCF16F70015238C /* NotchSpaceManager.swift */,
 				147163992C5D35FF0068B555 /* MusicManager.swift */,
 				AA0000010000000000000002 /* ExternalLiveActivityServer.swift */,
@@ -530,6 +534,7 @@
 				14CEF4152C5CAED300855D72 /* DynamicNotchApp.swift */,
 				14CEF4172C5CAED300855D72 /* ContentView.swift */,
 				B17266E02C6532560031BA0D /* Localizable.xcstrings */,
+				B17266E42C6532560031BA0D /* InfoPlist.xcstrings */,
 				14CEF4192C5CAED400855D72 /* Assets.xcassets */,
 				1443E7F42C609E650027C1FC /* Info.plist */,
 				14CEF41E2C5CAED400855D72 /* DynamicNotch.entitlements */,
@@ -693,6 +698,7 @@
 				111BEA802ED166E20079DD4E /* floating_notification_container.swift */,
 				111BEA822ED166E20079DD4E /* floating_notification_popup.swift */,
 				111BEA842ED166E20079DD4E /* battery_notification_popup.swift */,
+				AA0200012ED166E20079DD4E /* bluetooth_notification_popup.swift */,
 			);
 			path = "Live activities";
 			sourceTree = "<group>";
@@ -858,6 +864,7 @@
 				112B0EB82E30DD0F00562D6C /* MediaRemoteAdapterTestClient in Resources */,
 				112B0EB92E30DD0F00562D6C /* mediaremote-adapter.pl in Resources */,
 				B17266E12C6532560031BA0D /* Localizable.xcstrings in Resources */,
+				B17266E52C6532560031BA0D /* InfoPlist.xcstrings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -970,6 +977,8 @@
 				118EBE3B2E9720C500D54B5A /* ShelfStateViewModel.swift in Sources */,
 				11F747CE2EC75CEA00F841DB /* DragPreviewView.swift in Sources */,
 				F38DE6482D8243E7008B5C6D /* BatteryActivityManager.swift in Sources */,
+				AA0100022D8243E7008B5C6D /* bluetooth_activity_manager.swift in Sources */,
+				AA0200022ED166E20079DD4E /* bluetooth_notification_popup.swift in Sources */,
 				B10348D92C74E56000475897 /* ConditionalModifier.swift in Sources */,
 				118D1FD12E98FF5F00A2FF63 /* SharingStateManager.swift in Sources */,
 				14D570C22C5EAFBF0011E668 /* EmptyState.swift in Sources */,
@@ -998,9 +1007,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
-
-/* Begin PBXTargetDependency section */
-/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		14CEF41F2C5CAED400855D72 /* Debug */ = {
@@ -1166,7 +1172,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.2;
-				PRODUCT_BUNDLE_IDENTIFIER = dynamic;
+				PRODUCT_BUNDLE_IDENTIFIER = com.linchi.dynamicnotch;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -1217,7 +1223,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 1.2;
-				PRODUCT_BUNDLE_IDENTIFIER = dynamic;
+				PRODUCT_BUNDLE_IDENTIFIER = com.linchi.dynamicnotch;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;

@@ -57,3 +57,5 @@ build/
 
 # Local scratch / browser profiles (never commit)
 scratch/
+__pycache__/
+*.pyc

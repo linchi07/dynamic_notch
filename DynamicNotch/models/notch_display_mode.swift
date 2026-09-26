@@ -150,6 +150,14 @@ final class LiveActivityManager: ObservableObject {
         isAlertPresented = true
     }
 
+    func updateAlertImage(_ image: NSImage, activityId: String, title: String, message: String) {
+        guard isAlertPresented, var alert = activeAlert,
+              alert.activityId == activityId,
+              alert.title == title, alert.message == message else { return }
+        alert.updateImage(image)
+        activeAlert = alert
+    }
+
     func dismissAlert() {
         isAlertPresented = false
     }

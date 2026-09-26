@@ -125,7 +125,7 @@ extension Defaults.Keys {
     static let tileShowLabels = Key<Bool>("tileShowLabels", default: false)
     static let sliderColor = Key<SliderColorEnum>(
         "sliderUseAlbumArtColor",
-        default: SliderColorEnum.white
+        default: SliderColorEnum.albumArt
     )
     static let playerColorTinting = Key<Bool>("playerColorTinting", default: true)
     static let useMusicVisualizer = Key<Bool>("useMusicVisualizer", default: true)
@@ -136,6 +136,7 @@ extension Defaults.Keys {
     static let gestureSensitivity = Key<CGFloat>("gestureSensitivity", default: 200.0)
     
     // MARK: Media playback
+    // 这里面有很多废除的选项，但是好像也没啥必要删？
     static let coloredSpectrogram = Key<Bool>("coloredSpectrogram", default: true)
     static let enableSneakPeek = Key<Bool>("enableSneakPeek", default: true)
     static let waitInterval = Key<Double>("waitInterval", default: 3)
@@ -155,6 +156,14 @@ extension Defaults.Keys {
     static let showBatteryIndicator = Key<Bool>("showBatteryIndicator", default: true)
     static let showBatteryPercentage = Key<Bool>("showBatteryPercentage", default: true)
     static let showPowerStatusIcons = Key<Bool>("showPowerStatusIcons", default: true)
+    
+    // MARK: Bluetooth
+    static let SHOW_BLUETOOTH_NOTIFICATIONS = Key<Bool>("showBluetoothNotifications", default: true)
+    static let BLUETOOTH_ALERT_AUDIO_DEVICES = Key<Bool>("bluetoothAlertAudioDevices", default: true)
+    static let BLUETOOTH_ALERT_MOUSE_DEVICES = Key<Bool>("bluetoothAlertMouseDevices", default: true)
+    static let BLUETOOTH_ALERT_KEYBOARD_DEVICES = Key<Bool>("bluetoothAlertKeyboardDevices", default: true)
+    static let BLUETOOTH_ALERT_GAME_CONTROLLERS = Key<Bool>("bluetoothAlertGameControllers", default: true)
+    static let BLUETOOTH_ALERT_OTHER_DEVICES = Key<Bool>("bluetoothAlertOtherDevices", default: false)
     
     // MARK: Downloads
     static let enableDownloadListener = Key<Bool>("enableDownloadListener", default: true)

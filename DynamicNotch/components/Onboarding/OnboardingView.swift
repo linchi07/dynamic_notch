@@ -65,25 +65,11 @@ struct OnboardingView: View {
                 .transition(.opacity)
 
             case .accessibilityPermission:
-                PermissionRequestView(
-                    icon: Image(systemName: "hand.raised.fill"),
-                    title: "Enable Accessibility Access",
-                    description: "Accessibility access powers custom HUD controls and window layouts. It lets DynamicNotch detect the window you are dragging and resize it after you choose a layout.",
-                    privacyNote: "Accessibility access is used only for system controls and window arrangement. No window content is collected or shared.",
-                    onAllow: {
-                        Task {
-                            await requestAccessibilityPermission()
-                            withAnimation(.easeInOut(duration: 0.6)) {
-                                step = .musicPermission
-                            }
-                        }
-                    },
-                    onSkip: {
-                        withAnimation(.easeInOut(duration: 0.6)) {
-                            step = .musicPermission
-                        }
+                AccessibilityPermissionStepView {
+                    withAnimation(.easeInOut(duration: 0.6)) {
+                        step = .musicPermission
                     }
-                )
+                }
                 .transition(.opacity)
                 
             case .musicPermission:
@@ -109,9 +95,188 @@ struct OnboardingView: View {
     func requestCameraPermission() async {
         await AVCaptureDevice.requestAccess(for: .video)
     }
-    
-    func requestAccessibilityPermission() async {
-        _ = await XPCHelperClient.shared.ensureAccessibilityAuthorization(promptIfNeeded: true)
+}
+
+struct AccessibilityPermissionStepView: View {
+    let onGranted: () -> Void
+
+    @State private var isAuthorized: Bool = AXIsProcessTrusted()
+    @State private var timer: Timer?
+    @State private var hasRequested: Bool = false
+
+    var body: some View {
+        VStack(spacing: 18) {
+            ZStack {
+                if isAuthorized {
+                    Image(systemName: "checkmark.circle.fill")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 56, height: 56)
+                        .foregroundColor(.green)
+                } else {
+                    Image(systemName: "hand.raised.fill")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 52, height: 52)
+                        .foregroundColor(.effectiveAccent)
+                }
+            }
+            .animation(.spring(response: 0.4, dampingFraction: 0.7), value: isAuthorized)
+            .padding(.top, 24)
+
+            // Required Badge
+            HStack(spacing: 4) {
+                Image(systemName: "exclamationmark.shield.fill")
+                Text("Required Permission")
+            }
+            .font(.caption.bold())
+            .padding(.horizontal, 10)
+            .padding(.vertical, 4)
+            .background(Color.effectiveAccent.opacity(0.15))
+            .foregroundColor(.effectiveAccent)
+            .clipShape(Capsule())
+
+            // Title
+            Text("Enable Accessibility Access")
+                .font(.title2)
+                .fontWeight(.bold)
+
+            // Usage explanation
+            Text("DynamicNotch requires Accessibility access to power window snapping and custom HUD controls. It allows the app to detect windows you are dragging and resize them to your chosen layout.")
+                .font(.callout)
+                .multilineTextAlignment(.center)
+                .foregroundColor(.secondary)
+                .padding(.horizontal, 20)
+
+            // Privacy and Open-Source Evidence Card
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: "lock.shield")
+                        .foregroundColor(.secondary)
+                        .frame(width: 16)
+                    Text("Accessibility access is used exclusively for window management and system controls. No window content or user data is ever collected or shared.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: "curlybraces.square")
+                        .foregroundColor(.secondary)
+                        .frame(width: 16)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("DynamicNotch is 100% open source. You can inspect the source code as proof.")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        Button {
+                            if let url = URL(string: "https://github.com/linchi07/dynamic_notch") {
+                                NSWorkspace.shared.open(url)
+                            }
+                        } label: {
+                            Text("View Source Code on GitHub")
+                                .font(.caption.bold())
+                                .foregroundColor(.effectiveAccent)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+            .padding(12)
+            .background(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(Color.primary.opacity(0.04))
+            )
+            .padding(.horizontal, 20)
+
+            Spacer(minLength: 0)
+
+            // Action area
+            VStack(spacing: 12) {
+                if isAuthorized {
+                    HStack(spacing: 8) {
+                        Image(systemName: "checkmark.circle")
+                            .foregroundColor(.green)
+                        Text("Accessibility Granted!")
+                            .font(.subheadline.bold())
+                            .foregroundColor(.green)
+                    }
+
+                    Button("Continue") {
+                        onGranted()
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+                } else {
+                    Button(hasRequested ? "Open System Settings" : "Grant Accessibility Access") {
+                        hasRequested = true
+                        openAccessibilitySettings()
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+
+                    if hasRequested {
+                        HStack(spacing: 6) {
+                            ProgressView()
+                                .controlSize(.small)
+                            Text("Waiting for permission in System Settings...")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                }
+            }
+            .padding(.bottom, 24)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(
+            VisualEffectView(material: .underWindowBackground, blendingMode: .behindWindow)
+                .ignoresSafeArea()
+        )
+        .onAppear {
+            checkAuthorization()
+            startPolling()
+        }
+        .onDisappear {
+            stopPolling()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            checkAuthorization()
+        }
+    }
+
+    private func checkAuthorization() {
+        let authorized = AXIsProcessTrusted()
+        if authorized != isAuthorized {
+            withAnimation(.easeInOut(duration: 0.3)) {
+                isAuthorized = authorized
+            }
+            if authorized {
+                stopPolling()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                    onGranted()
+                }
+            }
+        }
+    }
+
+    private func startPolling() {
+        timer?.invalidate()
+        timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { _ in
+            checkAuthorization()
+        }
+    }
+
+    private func stopPolling() {
+        timer?.invalidate()
+        timer = nil
+    }
+
+    private func openAccessibilitySettings() {
+        let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
+        AXIsProcessTrustedWithOptions(options)
+
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+            NSWorkspace.shared.open(url)
+        }
     }
 }
 

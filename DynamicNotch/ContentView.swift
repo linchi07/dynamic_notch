@@ -130,7 +130,7 @@ struct ContentView: View {
             }
 
             if let notification = liveActivities.activeAlert {
-                let contentWidth: CGFloat = notification.isBattery ? 246 : 224
+                let contentWidth: CGFloat = (notification.isBattery || notification.isBluetooth) ? 246 : 224
                 let contentHeight: CGFloat = 30
 
                 FloatingNotificationContainer(
@@ -162,6 +162,13 @@ struct ContentView: View {
                                         coordinator.dismissNotification()
                                     }
                                 )
+                            case .bluetooth(let bluetoothData):
+                                BluetoothNotificationPopup(
+                                    payload: bluetoothData,
+                                    isContentVisible: isContentVisible
+                                ) {
+                                    coordinator.dismissNotification()
+                                }
                             }
                         }
                         .id(notification.id)

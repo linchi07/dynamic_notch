@@ -30,6 +30,14 @@
 	</dict>
 	<key>NSCameraUseContinuityCameraDeviceType</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Dynamic Notch uses the camera to provide a quick mirror preview from the notch.</string>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>Dynamic Notch uses AppleScript to control music players like Apple Music and Spotify, displaying track info and album art in the notch.</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>Dynamic Notch uses Bluetooth to display connection notifications and battery status for your accessories.</string>
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>Dynamic Notch uses Bluetooth to display connection notifications and battery status for your accessories.</string>
 	<key>SUEnableDownloaderService</key>
 	<true/>
 	<key>SUEnableInstallerLauncherService</key>
@@ -37,6 +45,6 @@
 	<key>SUFeedURL</key>
 	<string>https://notch.wejoinnwk.com/appcast.xml</string>
 	<key>SUPublicEDKey</key>
-	<string>SgmSJOxKXuiXY7pDrzXDxrFTvmr0ZYnzxU04eYN5KFk=</string>
+	<string>ZVqaFnj+R8F5L8oRytpAdhZKPlggDCxepFPDc1UX1eM=</string>
 </dict>
 </plist>

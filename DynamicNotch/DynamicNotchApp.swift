@@ -80,6 +80,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         windowSnapController.cancel()
         stopDragDetector()
         cleanupWindow()
+        BluetoothActivityManager.shared.stopMonitoring()
         XPCHelperClient.shared.shutdown()
     }
 
@@ -267,6 +268,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         ExternalLiveActivityServer.shared.start()
+        BluetoothActivityManager.shared.startMonitoring()
         Task {
             await XPCHelperClient.shared.primeNativeWindowLayoutShortcuts()
         }

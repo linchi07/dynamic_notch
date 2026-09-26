@@ -41,6 +41,19 @@ struct SettingsView: View {
                 NavigationLink(value: "Battery") {
                     Label("Battery", systemImage: "battery.100.bolt")
                 }
+                NavigationLink(value: "Bluetooth") {
+                    Label {
+                        Text("Bluetooth")
+                    } icon: {
+                        if let image = NSImage(named: NSImage.bluetoothTemplateName) {
+                            Image(nsImage: image)
+                                .renderingMode(.template)
+                        } else {
+                            Image("bluetooth")
+                                .renderingMode(.template)
+                        }
+                    }
+                }
                 NavigationLink(value: "External Apps") {
                     Label("External Apps", systemImage: "app.connected.to.app.below.fill")
                 }
@@ -79,6 +92,8 @@ struct SettingsView: View {
                     HUD()
                 case "Battery":
                     Charge()
+                case "Bluetooth":
+                    BluetoothSettingsView()
                 case "External Apps":
                     ExternalActivitySettings()
                 case "Shelf":
@@ -171,11 +186,8 @@ struct GeneralSettings: View {
     var body: some View {
         Form {
             Section {
-                // Must use the label-builder form: the `Toggle(_ title:)` overload takes
-                // `some StringProtocol`, which renders the literal verbatim and bypasses
-                // LocalizedStringKey lookup entirely.
                 LaunchAtLogin.Toggle {
-                    Text("Launch at login")
+                    Text(NSLocalizedString("Launch at login", bundle: .main, comment: "Launch at login toggle label"))
                 }
             } header: {
                 Text("System features")
@@ -216,6 +228,50 @@ struct Charge: View {
         }
         .accentColor(.effectiveAccent)
         .navigationTitle("Battery")
+    }
+}
+
+struct BluetoothSettingsView: View {
+    @Default(.SHOW_BLUETOOTH_NOTIFICATIONS) var showBluetoothNotifications
+
+    var body: some View {
+        Form {
+            Section {
+                Defaults.Toggle(key: .SHOW_BLUETOOTH_NOTIFICATIONS) {
+                    Text("Show Bluetooth connection alerts")
+                }
+            } header: {
+                Text("General")
+            } footer: {
+                Text("Display a floating alert under the notch when a Bluetooth device connects.")
+            }
+
+            if showBluetoothNotifications {
+                Section {
+                    Defaults.Toggle(key: .BLUETOOTH_ALERT_AUDIO_DEVICES) {
+                        Label("Audio devices", systemImage: "headphones")
+                    }
+                    Defaults.Toggle(key: .BLUETOOTH_ALERT_MOUSE_DEVICES) {
+                        Label("Mice and trackpads", systemImage: "computermouse")
+                    }
+                    Defaults.Toggle(key: .BLUETOOTH_ALERT_KEYBOARD_DEVICES) {
+                        Label("Keyboards", systemImage: "keyboard")
+                    }
+                    Defaults.Toggle(key: .BLUETOOTH_ALERT_GAME_CONTROLLERS) {
+                        Label("Game controllers", systemImage: "gamecontroller")
+                    }
+                    Defaults.Toggle(key: .BLUETOOTH_ALERT_OTHER_DEVICES) {
+                        Label("Other accessories", systemImage: "cable.connector.horizontal")
+                    }
+                } header: {
+                    Text("Device categories")
+                } footer: {
+                    Text("Choose which types of Bluetooth accessories trigger a connection alert.")
+                }
+            }
+        }
+        .accentColor(.effectiveAccent)
+        .navigationTitle("Bluetooth")
     }
 }
 

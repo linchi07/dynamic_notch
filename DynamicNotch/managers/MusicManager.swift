@@ -87,11 +87,6 @@ class MusicManager: ObservableObject {
 
     // MARK: - Initialization
     init() {
-        if !UserDefaults.standard.bool(forKey: "didInitializeSneakPeekV2") {
-            Defaults[.enableSneakPeek] = true
-            UserDefaults.standard.set(true, forKey: "didInitializeSneakPeekV2")
-        }
-
         // Listen for changes to the controller preference
         NotificationCenter.default.publisher(for: Notification.Name.mediaControllerChanged)
             .sink { [weak self] _ in
@@ -313,13 +308,19 @@ class MusicManager: ObservableObject {
         let sessionExists = sessions.contains { $0.type == selectedSessionType }
 
         // If another session started playing while current is paused, switch to it
-        if let lastUpdatedType = lastUpdatedType,
-           let updatedState = sessionStates[lastUpdatedType],
-           updatedState.isPlaying,
-           lastUpdatedType != selectedSessionType {
-            let currentIsPlaying = sessionStates[selectedSessionType]?.isPlaying ?? false
+        let updatedSession = lastUpdatedType.flatMap { updatedType in
+            sessions.first { session in
+                if updatedType == .nowPlaying {
+                    return session.type == .nowPlaying || session.type == .qqMusic || session.type == .neteaseMusic
+                }
+                return session.type == updatedType
+            }
+        }
+        if let updatedSession, updatedSession.isPlaying,
+           updatedSession.type != selectedSessionType {
+            let currentIsPlaying = sessions.first { $0.type == selectedSessionType }?.isPlaying ?? false
             if !currentIsPlaying {
-                selectedSessionType = lastUpdatedType
+                selectedSessionType = updatedSession.type
             }
         } else if !sessionExists {
             if let firstPlaying = sessions.first(where: { $0.isPlaying }) {
@@ -370,14 +371,12 @@ class MusicManager: ObservableObject {
                 self.isPlaying = state.isPlaying
                 self.updateIdleState(state: state.isPlaying)
             }
-
-            if state.isPlaying && !state.title.isEmpty && state.title != "I'm Handsome" {
-                self.updateSneakPeek(title: state.title, artist: state.artist, isPlaying: state.isPlaying)
-            }
         }
 
         // Check for changes in track metadata
-        let trackChanged = !state.title.isEmpty && state.title != "I'm Handsome" && (state.title != self.songTitle || state.artist != self.artistName)
+        let trackChanged = !state.title.isEmpty && state.title != "I'm Handsome"
+            && (state.title != self.songTitle || state.artist != self.artistName
+                || state.bundleIdentifier != self.bundleIdentifier)
         let titleChanged = state.title != self.lastArtworkTitle
         let artistChanged = state.artist != self.lastArtworkArtist
         let albumChanged = state.album != self.lastArtworkAlbum
@@ -399,7 +398,7 @@ class MusicManager: ObservableObject {
                     latestArtworkImage = decoded
                     self.updateAlbumArt(newAlbumArt: decoded)
                 } else {
-                    self.updateArtwork(artwork)
+                    self.updateArtwork(artwork, title: state.title, artist: state.artist, album: state.album)
                 }
             } else if state.artwork == nil {
                 // Try to use app icon if no artwork but track changed
@@ -417,8 +416,14 @@ class MusicManager: ObservableObject {
             self.lastArtworkAlbum = state.album
             self.lastArtworkBundleIdentifier = state.bundleIdentifier
 
-            // Post sneak peek alert on content or track change
-            if !state.title.isEmpty && state.title != "I'm Handsome" && state.isPlaying {
+            if !trackChanged, let latestArtworkImage {
+                self.coordinator.updateActiveNotificationImage(
+                    latestArtworkImage, activityId: Self.MUSIC_ACTIVITY_ID,
+                    title: state.title, message: state.artist
+                )
+            }
+
+            if trackChanged && state.isPlaying {
                 self.updateSneakPeek(title: state.title, artist: state.artist, customImage: latestArtworkImage, isPlaying: state.isPlaying)
             }
 
@@ -751,14 +756,20 @@ class MusicManager: ObservableObject {
         DispatchQueue.main.async(execute: workItem)
     }
 
-    private func updateArtwork(_ artworkData: Data) {
+    private func updateArtwork(_ artworkData: Data, title: String, artist: String, album: String) {
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             guard let self = self else { return }
 
             if let artworkImage = NSImage(data: artworkData) {
                 DispatchQueue.main.async { [weak self] in
-                    self?.usingAppIconForArtwork = false
-                    self?.updateAlbumArt(newAlbumArt: artworkImage)
+                    guard let self, self.songTitle == title,
+                          self.artistName == artist, self.album == album else { return }
+                    self.usingAppIconForArtwork = false
+                    self.updateAlbumArt(newAlbumArt: artworkImage)
+                    self.coordinator.updateActiveNotificationImage(
+                        artworkImage, activityId: Self.MUSIC_ACTIVITY_ID,
+                        title: title, message: artist
+                    )
                 }
             }
         }
@@ -792,7 +803,6 @@ class MusicManager: ObservableObject {
                 self.calculateAverageColor()
             }
         }
-        coordinator.updateActiveNotificationImage(newAlbumArt)
     }
 
     private static let MUSIC_ACTIVITY_ID = "music.playback"
