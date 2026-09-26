@@ -6,7 +6,6 @@
 //  Modified by Richard Kunkli on 24/08/2024.
 //
 
-import AVFoundation
 import Combine
 import Defaults
 import SwiftUI
@@ -15,7 +14,6 @@ import SwiftUIIntrospect
 @MainActor
 struct ContentView: View {
     @EnvironmentObject var vm: BoringViewModel
-    @ObservedObject var webcamManager = WebcamManager.shared
 
     @ObservedObject var coordinator = BoringViewCoordinator.shared
     @ObservedObject private var liveActivities = LiveActivityManager.shared

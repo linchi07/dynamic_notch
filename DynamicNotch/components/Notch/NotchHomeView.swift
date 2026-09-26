@@ -155,8 +155,7 @@ struct AlbumArtView: View {
 
 struct MusicControlsView: View {
     @ObservedObject var musicManager = MusicManager.shared
-        @EnvironmentObject var vm: BoringViewModel
-        @ObservedObject var webcamManager = WebcamManager.shared
+    @EnvironmentObject var vm: BoringViewModel
     @State private var sliderValue: Double = 0
     @State private var dragging: Bool = false
     @State private var lastDragged: Date = .distantPast
@@ -273,14 +272,7 @@ struct MusicControlsView: View {
             MusicControlButton.maxSlotCount
         )
         let padded = slotConfig.padded(to: sanitizedLimit, filler: .none)
-        let result = Array(padded.prefix(sanitizedLimit))
-        // If camera is visible alongside music, hide the edge slots if needed
-        let shouldHideEdges = Defaults[.showMirror] && webcamManager.cameraAvailable && vm.isCameraExpanded
-        if shouldHideEdges && result.count >= 5 {
-            return Array(result.dropFirst().dropLast())
-        }
-
-        return result
+        return Array(padded.prefix(sanitizedLimit))
     }
 
     @ViewBuilder
@@ -466,7 +458,6 @@ struct VolumeControlView: View {
 
 struct NotchHomeView: View {
     @EnvironmentObject var vm: BoringViewModel
-    @ObservedObject var webcamManager = WebcamManager.shared
     @ObservedObject var batteryModel = BatteryStatusViewModel.shared
     @ObservedObject var coordinator = BoringViewCoordinator.shared
     @ObservedObject var musicManager = MusicManager.shared
@@ -481,10 +472,6 @@ struct NotchHomeView: View {
         .transition(.opacity)
     }
 
-    private var shouldShowCamera: Bool {
-        Defaults[.showMirror] && webcamManager.cameraAvailable && vm.isCameraExpanded
-    }
-
     @ViewBuilder
     private var mainContent: some View {
         if musicManager.isPlaying {
@@ -492,18 +479,8 @@ struct NotchHomeView: View {
                 .frame(maxWidth: .infinity)
                 .transition(.opacity)
         } else {
-            HStack(alignment: .top, spacing: 15) {
-                MusicPlayerView()
-
-                if shouldShowCamera {
-                    CameraPreviewView(webcamManager: webcamManager)
-                        .scaledToFit()
-                        .opacity(vm.notchState == .closed ? 0 : 1)
-                        .blur(radius: vm.notchState == .closed ? 20 : 0)
-                        .animation(.interactiveSpring(response: 0.32, dampingFraction: 0.76, blendDuration: 0), value: shouldShowCamera)
-                }
-            }
-            .transition(.opacity)
+            MusicPlayerView()
+                .transition(.opacity)
         }
     }
 }

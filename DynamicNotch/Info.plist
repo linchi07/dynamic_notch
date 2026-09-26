@@ -28,10 +28,6 @@
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
-	<key>NSCameraUseContinuityCameraDeviceType</key>
-	<true/>
-	<key>NSCameraUsageDescription</key>
-	<string>Dynamic Notch uses the camera to provide a quick mirror preview from the notch.</string>
 	<key>NSAppleEventsUsageDescription</key>
 	<string>Dynamic Notch uses AppleScript to control music players like Apple Music and Spotify, displaying track info and album art in the notch.</string>
 	<key>NSBluetoothAlwaysUsageDescription</key>

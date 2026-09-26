@@ -106,24 +106,13 @@
       }
     },
     "NSCameraUsageDescription" : {
-      "extractionState" : "manual",
+      "comment" : "Privacy - Camera Usage Description",
+      "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dynamic Notch uses the camera to provide a quick mirror preview from the notch."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dynamic Notch 需要访问摄像头以在刘海屏下方提供镜像快速预览功能。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dynamic Notch 需要取用攝影機以在瀏海螢幕下方提供鏡像快速預覽功能。"
+            "state" : "new",
+            "value" : "This app uses the camera to display a live camera view"
           }
         }
       }

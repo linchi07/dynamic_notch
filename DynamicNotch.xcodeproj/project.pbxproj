@@ -85,8 +85,6 @@
 		147163982C5D35B70068B555 /* MusicVisualizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 147163972C5D35B70068B555 /* MusicVisualizer.swift */; };
 		1471639A2C5D35FF0068B555 /* MusicManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 147163992C5D35FF0068B555 /* MusicManager.swift */; };
 		1471A8592C6281BD0058408D /* BoringNotchWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1471A8582C6281BD0058408D /* BoringNotchWindow.swift */; };
-		149E0B972C737D00006418B1 /* WebcamManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 149E0B962C737D00006418B1 /* WebcamManager.swift */; };
-		149E0B9A2C737D40006418B1 /* WebcamView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 149E0B992C737D40006418B1 /* WebcamView.swift */; };
 		14C08BC12C8E03AD000F8AA0 /* NSImage+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14C08BC02C8E03AD000F8AA0 /* NSImage+Extensions.swift */; };
 		14CEF4162C5CAED300855D72 /* DynamicNotchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14CEF4152C5CAED300855D72 /* DynamicNotchApp.swift */; };
 		14CEF4182C5CAED300855D72 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14CEF4172C5CAED300855D72 /* ContentView.swift */; };
@@ -243,8 +241,6 @@
 		147163972C5D35B70068B555 /* MusicVisualizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicVisualizer.swift; sourceTree = "<group>"; };
 		147163992C5D35FF0068B555 /* MusicManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicManager.swift; sourceTree = "<group>"; };
 		1471A8582C6281BD0058408D /* BoringNotchWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoringNotchWindow.swift; sourceTree = "<group>"; };
-		149E0B962C737D00006418B1 /* WebcamManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebcamManager.swift; sourceTree = "<group>"; };
-		149E0B992C737D40006418B1 /* WebcamView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebcamView.swift; sourceTree = "<group>"; };
 		14C08BC02C8E03AD000F8AA0 /* NSImage+Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "NSImage+Extensions.swift"; sourceTree = "<group>"; };
 		14CEF4122C5CAED300855D72 /* DynamicNotch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DynamicNotch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		14CEF4152C5CAED300855D72 /* DynamicNotchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicNotchApp.swift; sourceTree = "<group>"; };
@@ -459,7 +455,6 @@
 				B141C23B2CA5F50900AC8CC8 /* Onboarding */,
 				B1C448992C97375A001F0858 /* Tips */,
 				9A987A042C73CA66005CA465 /* Shelf */,
-				149E0B982C737D26006418B1 /* Webcam */,
 				B18654312C6F45AE000B926A /* Live activities */,
 				B18654302C6F4590000B926A /* Settings */,
 				B186542F2C6F455E000B926A /* Notch */,
@@ -484,19 +479,10 @@
 				112FB7342CCF16F70015238C /* NotchSpaceManager.swift */,
 				147163992C5D35FF0068B555 /* MusicManager.swift */,
 				AA0000010000000000000002 /* ExternalLiveActivityServer.swift */,
-				149E0B962C737D00006418B1 /* WebcamManager.swift */,
 				B1F0A0012E60000100000001 /* BrightnessManager.swift */,
 				59D8C23B2E589FAA00147B33 /* VolumeManager.swift */,
 			);
 			path = managers;
-			sourceTree = "<group>";
-		};
-		149E0B982C737D26006418B1 /* Webcam */ = {
-			isa = PBXGroup;
-			children = (
-				149E0B992C737D40006418B1 /* WebcamView.swift */,
-			);
-			path = Webcam;
 			sourceTree = "<group>";
 		};
 		14CEF4092C5CAED200855D72 = {
@@ -926,7 +912,6 @@
 				1160F8D82DD98230006FBB94 /* NotchShape.swift in Sources */,
 				5917FD112E57891600E87F1C /* MediaKeyInterceptor.swift in Sources */,
 				14C08BC12C8E03AD000F8AA0 /* NSImage+Extensions.swift in Sources */,
-				149E0B9A2C737D40006418B1 /* WebcamView.swift in Sources */,
 				1471639A2C5D35FF0068B555 /* MusicManager.swift in Sources */,
 				AA0000010000000000000001 /* ExternalLiveActivityServer.swift in Sources */,
 				B1B112932C6A577E00093D8F /* MouseTracker.swift in Sources */,
@@ -996,7 +981,6 @@
 				14D570D22C5F6C6A0011E668 /* BoringExtrasMenu.swift in Sources */,
 				11D58EA22E760AE100FA8377 /* ImageService.swift in Sources */,
 				11F748822ECB07A400F841DB /* MusicControlButton.swift in Sources */,
-				149E0B972C737D00006418B1 /* WebcamManager.swift in Sources */,
 				14288E0C2C6F8EC000B9F80C /* AppIcons.swift in Sources */,
 				B1C448982C972CC4001F0858 /* ListItemPopover.swift in Sources */,
 				B19016242CC15B5000E3F12E /* Constants.swift in Sources */,

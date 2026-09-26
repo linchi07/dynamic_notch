@@ -58,12 +58,6 @@ struct BoringHeader: View {
     private var leadingStatus: some View {
         if vm.notchState == .open {
             HStack(spacing: 4) {
-                if Defaults[.showMirror] {
-                    headerButton(systemName: "web.camera") {
-                        vm.toggleCameraPreview()
-                    }
-                }
-
                 if Defaults[.settingsIconInNotch] {
                     headerButton(systemName: "gear") {
                         DispatchQueue.main.async {
