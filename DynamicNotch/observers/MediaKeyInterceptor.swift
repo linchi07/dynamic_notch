@@ -3,6 +3,7 @@
 //  boringNotch
 //
 //  Created by Alexander on 2025-11-23.
+//
 
 import Foundation
 import AppKit
@@ -10,7 +11,45 @@ import ApplicationServices
 import Defaults
 import AVFoundation
 
-private let kSystemDefinedEventType = CGEventType(rawValue: 14)!
+private let SYSTEM_DEFINED_EVENT_TYPE_RAW: UInt32 = 14
+private let DEFAULT_STEP: Float = 1.0 / 16.0
+
+final class EventTapThread: Thread {
+    private(set) var runLoop: CFRunLoop?
+    private let semaphore = DispatchSemaphore(value: 0)
+
+    override func main() {
+        name = "com.dynamicnotch.media-key-interceptor"
+        qualityOfService = .userInteractive
+        runLoop = CFRunLoopGetCurrent()
+
+        // Keep the run loop alive even if sources are temporarily removed
+        var context = CFRunLoopSourceContext()
+        context.version = 0
+        if let dummySource = CFRunLoopSourceCreate(kCFAllocatorDefault, 0, &context) {
+            CFRunLoopAddSource(runLoop, dummySource, .commonModes)
+        }
+
+        semaphore.signal()
+        CFRunLoopRun()
+    }
+
+    func obtainRunLoop() -> CFRunLoop {
+        if let runLoop {
+            return runLoop
+        }
+        start()
+        semaphore.wait()
+        return runLoop!
+    }
+
+    func stop() {
+        if let runLoop {
+            CFRunLoopStop(runLoop)
+        }
+        cancel()
+    }
+}
 
 final class MediaKeyInterceptor {
     static let shared = MediaKeyInterceptor()
@@ -27,10 +66,11 @@ final class MediaKeyInterceptor {
     
     private var eventTap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
-    private let step: Float = 1.0 / 16.0
+    private var eventTapThread: EventTapThread?
     private var audioPlayer: AVAudioPlayer?
     private var holdTimer: DispatchSourceTimer?
     private var activeHoldingKey: NXKeyType?
+    private let stateLock = NSLock()
     
     private init() {}
     
@@ -66,31 +106,33 @@ final class MediaKeyInterceptor {
             }
         }
         
-        let mask = CGEventMask(1 << kSystemDefinedEventType.rawValue)
+        let mask = CGEventMask(1 << SYSTEM_DEFINED_EVENT_TYPE_RAW)
         eventTap = CGEvent.tapCreate(
             tap: .cghidEventTap,
             place: .headInsertEventTap,
             options: .defaultTap,
             eventsOfInterest: mask,
-            callback: { _, _, cgEvent, userInfo in
+            callback: { _, type, cgEvent, userInfo in
                 autoreleasepool {
-                    // The event tap owns the incoming CGEvent. Returning a retained
-                    // reference here leaks one event for every pass-through callback.
                     guard let userInfo else { return Unmanaged.passUnretained(cgEvent) }
                     let interceptor = Unmanaged<MediaKeyInterceptor>.fromOpaque(userInfo).takeUnretainedValue()
-                    return interceptor.handleEvent(cgEvent)
+                    return interceptor.handleTapCallback(type: type, cgEvent: cgEvent)
                 }
             },
             userInfo: UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
         )
         
-        if let eventTap {
-            runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, eventTap, 0)
-            if let runLoopSource {
-                CFRunLoopAddSource(CFRunLoopGetMain(), runLoopSource, .commonModes)
-            }
-            CGEvent.tapEnable(tap: eventTap, enable: true)
+        guard let eventTap else { return }
+
+        let thread = EventTapThread()
+        let backgroundRunLoop = thread.obtainRunLoop()
+        eventTapThread = thread
+
+        runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, eventTap, 0)
+        if let runLoopSource {
+            CFRunLoopAddSource(backgroundRunLoop, runLoopSource, .commonModes)
         }
+        CGEvent.tapEnable(tap: eventTap, enable: true)
     }
     
     func stop() {
@@ -98,21 +140,45 @@ final class MediaKeyInterceptor {
         if let eventTap {
             CGEvent.tapEnable(tap: eventTap, enable: false)
         }
-        if let runLoopSource {
-            CFRunLoopRemoveSource(CFRunLoopGetMain(), runLoopSource, .commonModes)
+        if let runLoopSource, let eventTapThread, let backgroundRunLoop = eventTapThread.runLoop {
+            CFRunLoopRemoveSource(backgroundRunLoop, runLoopSource, .commonModes)
         }
         if let eventTap {
             CFMachPortInvalidate(eventTap)
         }
+        eventTapThread?.stop()
+        eventTapThread = nil
         runLoopSource = nil
         eventTap = nil
     }
-    
-    // MARK: - Event Handling
+
+    // MARK: - Event Callback & Handling
+
+    fileprivate func handleTapCallback(type: CGEventType, cgEvent: CGEvent) -> Unmanaged<CGEvent>? {
+        // Automatically recover and re-enable tap when disabled by watchdog timeout
+        if type == .tapDisabledByTimeout {
+            if let eventTap {
+                CGEvent.tapEnable(tap: eventTap, enable: true)
+            }
+            return Unmanaged.passUnretained(cgEvent)
+        }
+
+        // Pass through when disabled by secure user input
+        if type == .tapDisabledByUserInput {
+            return Unmanaged.passUnretained(cgEvent)
+        }
+
+        // Strictly verify event type to prevent passing pseudo/corrupt events to NSEvent
+        guard type.rawValue == SYSTEM_DEFINED_EVENT_TYPE_RAW,
+              cgEvent.type.rawValue == SYSTEM_DEFINED_EVENT_TYPE_RAW else {
+            return Unmanaged.passUnretained(cgEvent)
+        }
+
+        return handleEvent(cgEvent)
+    }
     
     private func handleEvent(_ cgEvent: CGEvent) -> Unmanaged<CGEvent>? {
-        // Ensure the CGEvent has a valid type before converting to NSEvent
-        guard cgEvent.type != .null else {
+        guard cgEvent.type != .null, cgEvent.type.rawValue == SYSTEM_DEFINED_EVENT_TYPE_RAW else {
             return Unmanaged.passUnretained(cgEvent)
         }
         guard let nsEvent = NSEvent(cgEvent: cgEvent),
@@ -131,7 +197,11 @@ final class MediaKeyInterceptor {
         
         // 0xB = key up: immediately cancel hold stepping
         if stateByte == 0xB {
-            if activeHoldingKey == keyType {
+            stateLock.lock()
+            let isHoldingCurrentKey = (activeHoldingKey == keyType)
+            stateLock.unlock()
+
+            if isHoldingCurrentKey {
                 stopHoldTimer()
                 return nil
             }
@@ -143,13 +213,18 @@ final class MediaKeyInterceptor {
             return Unmanaged.passUnretained(cgEvent)
         }
         
-        let flags = nsEvent.modifierFlags
-        let option = flags.contains(.option)
-        let shift = flags.contains(.shift)
-        let command = flags.contains(.command)
+        // Safely extract modifier flags directly from CGEvent
+        let flags = cgEvent.flags
+        let option = flags.contains(.maskAlternate)
+        let shift = flags.contains(.maskShift)
+        let command = flags.contains(.maskCommand)
         
+        stateLock.lock()
+        let isSameKeyHolding = (activeHoldingKey == keyType)
+        stateLock.unlock()
+
         // If this is an OS key repeat while our hold timer is already active, consume it silently
-        if activeHoldingKey == keyType {
+        if isSameKeyHolding {
             return nil
         }
         
@@ -171,7 +246,6 @@ final class MediaKeyInterceptor {
     
     private func startHoldTimer(for keyType: NXKeyType, option: Bool, shift: Bool, command: Bool) {
         stopHoldTimer()
-        activeHoldingKey = keyType
         
         let timer = DispatchSource.makeTimerSource(queue: DispatchQueue.main)
         // 200ms initial delay before continuous stepping, then repeat every 40ms (100 steps * 40ms = 4.0s full traversal)
@@ -179,7 +253,12 @@ final class MediaKeyInterceptor {
         
         var ticks = 0
         timer.setEventHandler { [weak self] in
-            guard let self = self, self.activeHoldingKey == keyType else { return }
+            guard let self = self else { return }
+            self.stateLock.lock()
+            let isCurrentKey = (self.activeHoldingKey == keyType)
+            self.stateLock.unlock()
+
+            guard isCurrentKey else { return }
             ticks += 1
             // Watchdog: auto stop after 125 ticks (~5 seconds) if KeyUp was lost
             if ticks > 125 {
@@ -189,24 +268,31 @@ final class MediaKeyInterceptor {
             self.handleKeyPress(keyType: keyType, option: option, shift: shift, command: command, isHolding: true)
         }
         
+        stateLock.lock()
+        activeHoldingKey = keyType
         holdTimer = timer
+        stateLock.unlock()
+
         timer.resume()
     }
     
     private func stopHoldTimer() {
-        if let timer = holdTimer {
-            timer.cancel()
-            holdTimer = nil
-        }
-        if activeHoldingKey != nil {
-            activeHoldingKey = nil
+        stateLock.lock()
+        let timer = holdTimer
+        holdTimer = nil
+        let hadHoldingKey = (activeHoldingKey != nil)
+        activeHoldingKey = nil
+        stateLock.unlock()
+
+        timer?.cancel()
+
+        if hadHoldingKey {
             DispatchQueue.main.async {
                 NotificationCenter.default.post(name: .notchMediaKeyDidRelease, object: nil)
             }
         }
     }
 
-    
     private func prepareAudioPlayerIfNeeded() {
         guard audioPlayer == nil else { return }
 
@@ -282,10 +368,10 @@ final class MediaKeyInterceptor {
             }
         case .brightnessUp, .keyboardBrightnessUp:
             // Single tap = 1/16; Holding = 1/100 (4.0s full traversal)
-            let delta = (isHolding ? (2.5 / 100.0) : step) / stepDivisor
+            let delta = (isHolding ? (2.5 / 100.0) : DEFAULT_STEP) / stepDivisor
             adjustBrightness(delta: delta, keyboard: keyType == .keyboardBrightnessUp || command)
         case .brightnessDown, .keyboardBrightnessDown:
-            let delta = -((isHolding ? (2.5 / 100.0) : step) / stepDivisor)
+            let delta = -((isHolding ? (2.5 / 100.0) : DEFAULT_STEP) / stepDivisor)
             adjustBrightness(delta: delta, keyboard: keyType == .keyboardBrightnessDown || command)
         }
     }
@@ -299,5 +385,4 @@ final class MediaKeyInterceptor {
             }
         }
     }
-
 }
