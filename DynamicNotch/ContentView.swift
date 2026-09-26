@@ -32,8 +32,6 @@ struct ContentView: View {
     @Default(.useMusicVisualizer) var useMusicVisualizer
     @Default(.notchOuterPadding) private var notchOuterPadding
 
-    @Default(.showNotHumanFace) var showNotHumanFace
-
     private var isUnifiedHUDVisible: Bool {
         coordinator.sneakPeek.show &&
         (coordinator.sneakPeek.type == .volume || coordinator.sneakPeek.type == .brightness || coordinator.sneakPeek.type == .backlight || coordinator.sneakPeek.type == .mic)
@@ -104,11 +102,6 @@ struct ContentView: View {
                 notchHeight: vm.effectiveClosedNotchHeight,
                 outerPadding: NotchLayoutMetrics.effectiveOuterPadding(notchOuterPadding)
             )
-        } else if vm.notchState == .closed
-            && (!musicManager.isPlaying && musicManager.isPlayerIdle) && Defaults[.showNotHumanFace]
-            && !vm.hideOnClosed
-        {
-            chinWidth += (2 * max(0, vm.effectiveClosedNotchHeight - 12) + 16)
         }
 
         return chinWidth
@@ -326,8 +319,6 @@ struct ContentView: View {
                 if case .active(let activeState) = effectiveDisplayMode, vm.notchState == .closed {
                     NotchWingsContainer(state: activeState)
                         .frame(alignment: .center)
-                } else if vm.notchState == .closed && (!musicManager.isPlaying && musicManager.isPlayerIdle) && Defaults[.showNotHumanFace] && !vm.hideOnClosed {
-                    BoringFaceAnimation()
                 } else if vm.notchState == .open {
                     BoringHeader()
                         .frame(height: max(24, vm.effectiveClosedNotchHeight))
@@ -354,27 +345,6 @@ struct ContentView: View {
                 .allowsHitTesting(vm.notchState == .open)
             }
         }
-    }
-
-    @ViewBuilder
-    func BoringFaceAnimation() -> some View {
-        HStack(spacing: 0) {
-            Rectangle()
-                .fill(.clear)
-                .frame(
-                    width: max(0, vm.effectiveClosedNotchHeight - 12),
-                    height: max(0, vm.effectiveClosedNotchHeight - 12)
-                )
-                .padding(.leading, 8)
-            Rectangle()
-                .fill(.black)
-                .frame(width: vm.closedNotchSize.width)
-            MinimalFaceFeatures()
-                .padding(.trailing, 8)
-        }.frame(
-            height: vm.effectiveClosedNotchHeight,
-            alignment: .center
-        )
     }
 
     @ViewBuilder

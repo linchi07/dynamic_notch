@@ -872,8 +872,9 @@ struct Appearance: View {
                 Defaults.Toggle(key: .coloredSpectrogram) {
                     Text("Colored spectrogram")
                 }
-                Defaults
-                    .Toggle("Player tinting", key: .playerColorTinting)
+                Defaults.Toggle(key: .playerColorTinting) {
+                    Text("Player tinting")
+                }
                 Picker("Slider color", selection: $sliderColor) {
                     ForEach(SliderColorEnum.allCases, id: \.self) { option in
                         Text(LocalizedStringKey(option.rawValue))
@@ -881,16 +882,6 @@ struct Appearance: View {
                 }
             } header: {
                 Text("Media")
-            }
-
-            Section {
-                Defaults.Toggle(key: .showNotHumanFace) {
-                    Text("Show cool face animation while inactive")
-                }
-            } header: {
-                HStack {
-                    Text("Additional features")
-                }
             }
         }
         .accentColor(.effectiveAccent)
