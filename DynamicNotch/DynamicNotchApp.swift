@@ -68,6 +68,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationWillTerminate(_ notification: Notification) {
         screenConfigurationTask?.cancel()
         NotificationCenter.default.removeObserver(self)
+        NSWorkspace.shared.notificationCenter.removeObserver(self)
 
         if let screenLockedObserver {
             DistributedNotificationCenter.default().removeObserver(screenLockedObserver)
@@ -102,6 +103,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         isScreenLocked = false
         (window as? BoringNotchSkyLightWindow)?.disableSkyLight()
         refreshNotchWindow(changeAlpha: true)
+
+        if Defaults[.hudReplacement] {
+            Task {
+                await MediaKeyInterceptor.shared.reconnect()
+            }
+        }
     }
 
     private func cleanupWindow() {
@@ -310,6 +317,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 
+        NSWorkspace.shared.notificationCenter.addObserver(
+            self,
+            selector: #selector(systemDidWake),
+            name: NSWorkspace.didWakeNotification,
+            object: nil
+        )
+        NSWorkspace.shared.notificationCenter.addObserver(
+            self,
+            selector: #selector(systemDidWake),
+            name: NSWorkspace.screensDidWakeNotification,
+            object: nil
+        )
 
         refreshNotchWindow(changeAlpha: true)
 
@@ -325,6 +344,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         {
             DispatchQueue.main.async {
                 self.showOnboardingWindow(step: .musicPermission)
+            }
+        }
+    }
+
+    @objc func systemDidWake() {
+        Task { @MainActor in
+            refreshNotchWindow(changeAlpha: true)
+            if Defaults[.hudReplacement] {
+                await MediaKeyInterceptor.shared.reconnect()
             }
         }
     }

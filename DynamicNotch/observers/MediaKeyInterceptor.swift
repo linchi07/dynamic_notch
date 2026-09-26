@@ -13,6 +13,9 @@ import AVFoundation
 
 private let SYSTEM_DEFINED_EVENT_TYPE_RAW: UInt32 = 14
 private let DEFAULT_STEP: Float = 1.0 / 16.0
+private let WATCHDOG_INTERVAL_SECONDS: Double = 2.0
+private let MAX_RETRY_COUNT: Int = 3
+private let RETRY_DELAY_MS: Int = 200
 
 final class EventTapThread: Thread {
     private(set) var runLoop: CFRunLoop?
@@ -46,6 +49,7 @@ final class EventTapThread: Thread {
     func stop() {
         if let runLoop {
             CFRunLoopStop(runLoop)
+            CFRunLoopWakeUp(runLoop)
         }
         cancel()
     }
@@ -70,7 +74,10 @@ final class MediaKeyInterceptor {
     private var audioPlayer: AVAudioPlayer?
     private var holdTimer: DispatchSourceTimer?
     private var activeHoldingKey: NXKeyType?
+    private var watchdogTimer: DispatchSourceTimer?
+    private var isStarting = false
     private let stateLock = NSLock()
+    private let lifecycleLock = NSLock()
     
     private init() {}
     
@@ -87,14 +94,26 @@ final class MediaKeyInterceptor {
     // MARK: - Event Tap
     
     func start(promptIfNeeded: Bool = false) async {
-        guard eventTap == nil else { return }
-        
+        lifecycleLock.lock()
+        if eventTap != nil || isStarting {
+            lifecycleLock.unlock()
+            return
+        }
+        isStarting = true
+        lifecycleLock.unlock()
+
+        defer {
+            lifecycleLock.lock()
+            isStarting = false
+            lifecycleLock.unlock()
+        }
+
         // Ensure HUD replacement is enabled
         guard Defaults[.hudReplacement] else {
             stop()
             return
         }
-        
+
         // Check accessibility authorization
         let authorized = await XPCHelperClient.shared.isAccessibilityAuthorized()
         if !authorized {
@@ -105,38 +124,71 @@ final class MediaKeyInterceptor {
                 return
             }
         }
-        
-        let mask = CGEventMask(1 << SYSTEM_DEFINED_EVENT_TYPE_RAW)
-        eventTap = CGEvent.tapCreate(
-            tap: .cghidEventTap,
-            place: .headInsertEventTap,
-            options: .defaultTap,
-            eventsOfInterest: mask,
-            callback: { _, type, cgEvent, userInfo in
-                autoreleasepool {
-                    guard let userInfo else { return Unmanaged.passUnretained(cgEvent) }
-                    let interceptor = Unmanaged<MediaKeyInterceptor>.fromOpaque(userInfo).takeUnretainedValue()
-                    return interceptor.handleTapCallback(type: type, cgEvent: cgEvent)
-                }
-            },
-            userInfo: UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
-        )
-        
-        guard let eventTap else { return }
 
+        guard Defaults[.hudReplacement] else { return }
+
+        let mask = CGEventMask(1 << SYSTEM_DEFINED_EVENT_TYPE_RAW)
+        var createdTap: CFMachPort?
+
+        for attempt in 1...MAX_RETRY_COUNT {
+            createdTap = CGEvent.tapCreate(
+                tap: .cghidEventTap,
+                place: .headInsertEventTap,
+                options: .defaultTap,
+                eventsOfInterest: mask,
+                callback: { _, type, cgEvent, userInfo in
+                    autoreleasepool {
+                        guard let userInfo else { return Unmanaged.passUnretained(cgEvent) }
+                        let interceptor = Unmanaged<MediaKeyInterceptor>.fromOpaque(userInfo).takeUnretainedValue()
+                        return interceptor.handleTapCallback(type: type, cgEvent: cgEvent)
+                    }
+                },
+                userInfo: UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
+            )
+
+            if createdTap != nil {
+                break
+            }
+
+            if attempt < MAX_RETRY_COUNT {
+                try? await Task.sleep(for: .milliseconds(RETRY_DELAY_MS))
+            }
+        }
+
+        guard let tap = createdTap else {
+            NSLog("⚠️ [MediaKeyInterceptor] Failed to create CGEvent tap after %d attempts", MAX_RETRY_COUNT)
+            return
+        }
+
+        lifecycleLock.lock()
+        defer { lifecycleLock.unlock() }
+
+        guard Defaults[.hudReplacement] else {
+            CFMachPortInvalidate(tap)
+            return
+        }
+
+        eventTap = tap
         let thread = EventTapThread()
         let backgroundRunLoop = thread.obtainRunLoop()
         eventTapThread = thread
 
-        runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, eventTap, 0)
+        runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0)
         if let runLoopSource {
             CFRunLoopAddSource(backgroundRunLoop, runLoopSource, .commonModes)
         }
-        CGEvent.tapEnable(tap: eventTap, enable: true)
+        CGEvent.tapEnable(tap: tap, enable: true)
+
+        startWatchdog()
     }
-    
+
     func stop() {
+        lifecycleLock.lock()
+        defer { lifecycleLock.unlock() }
+
+        stopWatchdog()
         stopHoldTimer()
+
         if let eventTap {
             CGEvent.tapEnable(tap: eventTap, enable: false)
         }
@@ -152,6 +204,78 @@ final class MediaKeyInterceptor {
         eventTap = nil
     }
 
+    func reconnect() async {
+        stop()
+        try? await Task.sleep(for: .milliseconds(100))
+        await start()
+    }
+
+    // MARK: - Watchdog & Self-Healing
+
+    private func startWatchdog() {
+        stopWatchdog()
+        let timer = DispatchSource.makeTimerSource(queue: DispatchQueue.global(qos: .utility))
+        timer.schedule(deadline: .now() + WATCHDOG_INTERVAL_SECONDS, repeating: WATCHDOG_INTERVAL_SECONDS)
+        timer.setEventHandler { [weak self] in
+            guard let self else { return }
+            Task { @MainActor in
+                self.checkHealthAndRecover()
+            }
+        }
+        watchdogTimer = timer
+        timer.resume()
+    }
+
+    private func stopWatchdog() {
+        watchdogTimer?.cancel()
+        watchdogTimer = nil
+    }
+
+    @MainActor
+    private func checkHealthAndRecover() {
+        guard Defaults[.hudReplacement] else {
+            stop()
+            return
+        }
+
+        lifecycleLock.lock()
+        let currentTap = eventTap
+        lifecycleLock.unlock()
+
+        guard let currentTap else {
+            Task {
+                await self.start()
+            }
+            return
+        }
+
+        if !CFMachPortIsValid(currentTap) {
+            NSLog("⚠️ [MediaKeyInterceptor] MachPort invalidated by system, reconnecting...")
+            Task {
+                await self.reconnect()
+            }
+            return
+        }
+
+        if !CGEvent.tapIsEnabled(tap: currentTap) {
+            NSLog("🔄 [MediaKeyInterceptor] Tap disabled by system, re-enabling...")
+            CGEvent.tapEnable(tap: currentTap, enable: true)
+        }
+    }
+
+    private func scheduleReenable() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            guard let self else { return }
+            self.lifecycleLock.lock()
+            let currentTap = self.eventTap
+            self.lifecycleLock.unlock()
+
+            if let currentTap, CFMachPortIsValid(currentTap), !CGEvent.tapIsEnabled(tap: currentTap) {
+                CGEvent.tapEnable(tap: currentTap, enable: true)
+            }
+        }
+    }
+
     // MARK: - Event Callback & Handling
 
     fileprivate func handleTapCallback(type: CGEventType, cgEvent: CGEvent) -> Unmanaged<CGEvent>? {
@@ -163,14 +287,14 @@ final class MediaKeyInterceptor {
             return Unmanaged.passUnretained(cgEvent)
         }
 
-        // Pass through when disabled by secure user input
+        // Automatically recover when disabled by secure user input
         if type == .tapDisabledByUserInput {
+            scheduleReenable()
             return Unmanaged.passUnretained(cgEvent)
         }
 
         // Strictly verify event type to prevent passing pseudo/corrupt events to NSEvent
-        guard type.rawValue == SYSTEM_DEFINED_EVENT_TYPE_RAW,
-              cgEvent.type.rawValue == SYSTEM_DEFINED_EVENT_TYPE_RAW else {
+        guard type.rawValue == SYSTEM_DEFINED_EVENT_TYPE_RAW else {
             return Unmanaged.passUnretained(cgEvent)
         }
 
@@ -178,7 +302,7 @@ final class MediaKeyInterceptor {
     }
     
     private func handleEvent(_ cgEvent: CGEvent) -> Unmanaged<CGEvent>? {
-        guard cgEvent.type != .null, cgEvent.type.rawValue == SYSTEM_DEFINED_EVENT_TYPE_RAW else {
+        guard cgEvent.type != .null else {
             return Unmanaged.passUnretained(cgEvent)
         }
         guard let nsEvent = NSEvent(cgEvent: cgEvent),
