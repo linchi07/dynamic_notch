@@ -20,11 +20,22 @@ struct Bookmark: Sendable, Equatable, Codable {
             throw NSError(domain: "Bookmark", code: 1, userInfo: [NSLocalizedDescriptionKey: "Not a valid file URL or file does not exist at \(url.path)"])
         }
         do {
-            let bookmark = try url.bookmarkData(
-                options: .withSecurityScope,
+            // In a non-sandboxed environment, creating a scoped bookmark (.withSecurityScope) fails with Cocoa error 260.
+            // Prefer standard bookmark data first, and only fall back to security-scoped if standard fails.
+            let bookmark: Data
+            if let standard = try? url.bookmarkData(
+                options: [],
                 includingResourceValuesForKeys: nil,
                 relativeTo: nil
-            )
+            ) {
+                bookmark = standard
+            } else {
+                bookmark = try url.bookmarkData(
+                    options: .withSecurityScope,
+                    includingResourceValuesForKeys: nil,
+                    relativeTo: nil
+                )
+            }
             NSLog("✅ Successfully created bookmark for \(url.path)")
             self.data = bookmark
         } catch {
@@ -36,22 +47,37 @@ struct Bookmark: Sendable, Equatable, Codable {
     func resolve() -> (url: URL?, refreshedData: Data?) {
         guard !data.isEmpty else { return (nil, nil) }
         var isStale = false
-        do {
-            let url = try URL(
-                resolvingBookmarkData: data,
-                options: [.withSecurityScope],
-                relativeTo: nil,
-                bookmarkDataIsStale: &isStale
-            )
-            if isStale, let newData = try? url.bookmarkData(options: [.withSecurityScope]) {
+
+        // Attempt resolving as standard bookmark first (for non-sandboxed app)
+        if let url = try? URL(
+            resolvingBookmarkData: data,
+            options: [],
+            relativeTo: nil,
+            bookmarkDataIsStale: &isStale
+        ) {
+            if isStale, let newData = try? url.bookmarkData(options: []) {
                 NSLog("⚠️ Bookmark was stale for \(url.path), refreshed")
                 return (url, newData)
             }
             return (url, nil)
-        } catch {
-            NSLog("❌ Failed to resolve bookmark: \(error.localizedDescription)")
-            return (nil, nil)
         }
+
+        // Fallback: attempt resolving as security-scoped bookmark (for legacy entries)
+        if let url = try? URL(
+            resolvingBookmarkData: data,
+            options: [.withSecurityScope],
+            relativeTo: nil,
+            bookmarkDataIsStale: &isStale
+        ) {
+            if isStale, let newData = try? url.bookmarkData(options: []) {
+                NSLog("⚠️ Bookmark was stale for \(url.path), refreshed")
+                return (url, newData)
+            }
+            return (url, nil)
+        }
+
+        NSLog("❌ Failed to resolve bookmark")
+        return (nil, nil)
     }
 
     func resolveURL() -> URL? {
@@ -71,9 +97,7 @@ struct Bookmark: Sendable, Equatable, Codable {
     func validate() async -> Bool {
         let (url, _) = resolve()
         guard let url = url else { return false }
-        return url.accessSecurityScopedResource { url in
-            FileManager.default.fileExists(atPath: url.path)
-        }
+        return FileManager.default.fileExists(atPath: url.path)
     }
 
     func withAccess<T: Sendable>(_ block: @Sendable (URL) async throws -> T) async rethrows -> T? {

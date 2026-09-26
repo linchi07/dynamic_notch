@@ -39,19 +39,25 @@ final class DropRouterService {
         guard !providers.isEmpty else { return }
 
         Task { @MainActor in
+            var fileURLs: [URL] = []
+            var linkURLs: [URL] = []
             var plainTextItems: [String] = []
-            var shelfProviders: [NSItemProvider] = []
+            var otherProviders: [NSItemProvider] = []
 
             for provider in providers {
                 // First check if it's a file
                 if let fileURL = await provider.extractFileURL() {
-                    shelfProviders.append(provider)
+                    fileURLs.append(fileURL)
                     continue
                 }
 
                 // Next check if it's a pure URL link (not text)
-                if let url = await provider.extractURL(), !url.isFileURL {
-                    shelfProviders.append(provider)
+                if let url = await provider.extractURL() {
+                    if url.isFileURL {
+                        fileURLs.append(url)
+                    } else {
+                        linkURLs.append(url)
+                    }
                     continue
                 }
 
@@ -65,7 +71,7 @@ final class DropRouterService {
                 }
 
                 // Fallback for raw data or other items
-                shelfProviders.append(provider)
+                otherProviders.append(provider)
             }
 
             // Route plain text items to scratchpad
@@ -78,9 +84,18 @@ final class DropRouterService {
                 }
             }
 
-            // Route files/links to shelf
-            if !shelfProviders.isEmpty {
-                ShelfStateViewModel.shared.load(shelfProviders)
+            // Route files and links to shelf
+            if !fileURLs.isEmpty {
+                ShelfStateViewModel.shared.add(urls: fileURLs)
+            }
+            if !linkURLs.isEmpty {
+                ShelfStateViewModel.shared.add(links: linkURLs)
+            }
+            if !otherProviders.isEmpty {
+                ShelfStateViewModel.shared.load(otherProviders)
+            }
+
+            if !fileURLs.isEmpty || !linkURLs.isEmpty || !otherProviders.isEmpty {
                 if plainTextItems.isEmpty {
                     withAnimation(.smooth(duration: 0.28)) {
                         BoringViewCoordinator.shared.currentView = .shelf

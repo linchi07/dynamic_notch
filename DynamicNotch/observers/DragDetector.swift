@@ -107,7 +107,13 @@ final class DragDetector {
         guard let pasteboardTypes = dragPasteboard.types else { return false }
 
         return pasteboardTypes.contains { pasteboardType in
-            guard let contentType = UTType(pasteboardType.rawValue) else {
+            let raw = pasteboardType.rawValue
+            if raw == "NSFilenamesPboardType" ||
+                raw == "com.apple.pasteboard.promised-file-url" ||
+                raw == "public.file-url" {
+                return true
+            }
+            guard let contentType = UTType(raw) else {
                 return pasteboardType == .fileURL || pasteboardType == .string
             }
             return contentType.conforms(to: .fileURL)

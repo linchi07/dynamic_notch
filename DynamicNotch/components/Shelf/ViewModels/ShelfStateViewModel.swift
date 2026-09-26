@@ -43,6 +43,23 @@ final class ShelfStateViewModel: ObservableObject {
         items = merged
     }
 
+    func add(urls: [URL]) {
+        guard !urls.isEmpty else { return }
+        var newItems: [ShelfItem] = []
+        for url in urls {
+            if let bookmark = (try? Bookmark(url: url))?.data {
+                newItems.append(ShelfItem(kind: .file(bookmark: bookmark), isTemporary: false))
+            }
+        }
+        add(newItems)
+    }
+
+    func add(links: [URL]) {
+        guard !links.isEmpty else { return }
+        let newItems = links.map { ShelfItem(kind: .link(url: $0), isTemporary: false) }
+        add(newItems)
+    }
+
     func remove(_ item: ShelfItem) {
         item.cleanupStoredData()
         items.removeAll { $0.id == item.id }
