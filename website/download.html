@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title data-i18n="downloadPage.title">下载 Dynamic Notch - 灵动自如的 macOS Live Activity 体验</title>
-  <meta name="description" content="下载 Dynamic Notch macOS DMG 安装包。提供 Cloudflare CDN 高速直连下载与 GitHub Releases 官方源备用下载。">
+  <title data-i18n="downloadPage.title">Dynamic Notch - Download</title>
+  <meta name="description" content="Download Dynamic Notch for macOS - Direct CDN and GitHub Releases.">
   <link rel="icon" type="image/png" href="assets/app_icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com">
@@ -22,14 +22,14 @@
       </a>
       
       <nav class="nav-menu">
-        <a href="index.html" class="nav-link" data-i18n="downloadPage.backHome">返回官网首页</a>
+        <a href="index.html" class="nav-link" data-i18n="downloadPage.backHome">Back to Home</a>
         <a href="https://github.com/linchi07/dynamic_notch" target="_blank" rel="noreferrer" class="nav-link github-nav-link">
           <svg class="icon-svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
             <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
           </svg>
           <span>GitHub</span>
         </a>
-        <div class="lang-selector-wrap" title="Switch Language / 切换语言">
+        <div class="lang-selector-wrap" title="Switch Language">
           <svg class="lang-globe-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="10"></circle>
             <line x1="2" y1="12" x2="22" y2="12"></line>
@@ -59,153 +59,75 @@
     </div>
   </header>
 
-  <!-- 主体下载内容区域 -->
+  <!-- 主体下载内容区域：仅保留两大选项，去除一切冗余小字描述 -->
   <main class="download-main-wrap">
     
     <div class="download-hero-header">
       <div class="download-app-icon-wrap">
         <img src="assets/app_icon_large.png" alt="Dynamic Notch Icon" class="download-app-icon">
       </div>
-      <h1 class="download-hero-title" data-i18n="downloadPage.heading">下载 Dynamic Notch</h1>
-      <p class="download-hero-desc" data-i18n="downloadPage.subheading">
-        为 MacBook 内置物理刘海量身定制的开源实时活动体验。
-      </p>
+      <h1 class="download-hero-title" data-i18n="downloadPage.heading">Download Dynamic Notch</h1>
 
       <div class="download-version-pill">
         <span class="download-version-dot"></span>
-        <span id="versionLabel" data-i18n="downloadPage.currentVersion">最新正式版: v10.0</span>
+        <span>v10.0</span>
         <span>·</span>
         <span>Universal (Apple Silicon & Intel)</span>
-        <span>·</span>
-        <span id="fileSizeLabel">9.88 MB</span>
       </div>
     </div>
 
-    <!-- 下载通道双卡片 -->
+    <!-- 下载通道双卡片：直接下载 vs GitHub Releases -->
     <div class="download-options-grid">
       
-      <!-- 通道 1: 直接高速下载 (推荐) -->
+      <!-- 选项 1: 直接下载 (全球 CDN) -->
       <div class="download-option-card featured">
-        <div class="download-card-badge" data-i18n="downloadPage.directBadge">推荐 · 全球 CDN</div>
-        <div>
+        <div class="download-card-body">
           <div class="download-card-icon">
-            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <svg class="apple-logo-svg" viewBox="0 0 170 170" width="26" height="26" fill="currentColor">
+              <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.69-3.08-7.7-7.94-12.04-14.58-6.19-9.5-10.96-20.46-14.3-32.88-3.35-12.42-5.02-23.77-5.02-34.05 0-14.93 3.65-27.17 10.95-36.71 7.3-9.54 16.51-14.44 27.63-14.7 4.9.12 10.42 1.34 16.56 3.67 6.13 2.33 10.22 3.56 12.27 3.69 1.76-.13 5.92-1.38 12.49-3.75 6.57-2.37 12.01-3.48 16.33-3.33 12.46.68 22.42 5.37 29.89 14.07-10.89 6.64-16.22 15.63-16 26.98.22 8.93 3.65 16.48 10.29 22.65 6.64 6.17 14.61 9.87 23.91 11.1-2.22 6.84-4.8 13.43-7.73 19.78zm-31.52-117.84c.11 2.39-.42 5.02-1.6 7.89-1.18 2.87-2.88 5.6-5.1 8.2-2.6 3.03-5.59 5.4-8.97 7.12-3.38 1.72-6.52 2.76-9.42 3.12-.33-2.17-.18-4.52.45-7.05.63-2.53 1.95-5.22 3.96-8.07 2.22-3.15 4.97-5.74 8.25-7.78 3.28-2.04 6.99-3.23 11.13-3.57.43.04.86.09 1.3.14z"/>
+            </svg>
+          </div>
+          <h2 class="download-card-title" data-i18n="downloadPage.directTitle">Direct Download</h2>
+        </div>
+        <div class="download-card-action">
+          <a id="directDownloadBtn" href="https://download.wejoinnwk.com/DynamicNotch-10.0.dmg" class="btn-download-primary">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
               <polyline points="7 10 12 15 17 10"></polyline>
               <line x1="12" y1="15" x2="12" y2="3"></line>
             </svg>
-          </div>
-          <h2 class="download-card-title" data-i18n="downloadPage.directTitle">高速直接下载 (.dmg)</h2>
-          <p class="download-card-desc" data-i18n="downloadPage.directDesc">
-            由 Cloudflare + Backblaze CDN 全球多节点加速分发，国内直连高速下载不限速。
-          </p>
-        </div>
-
-        <div class="download-card-action">
-          <a id="directDownloadBtn" href="https://download.wejoinnwk.com/DynamicNotch-10.0.dmg" class="btn-download-primary">
-            <svg class="apple-logo-svg" viewBox="0 0 170 170" width="18" height="18" fill="currentColor">
-              <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.69-3.08-7.7-7.94-12.04-14.58-6.19-9.5-10.96-20.46-14.3-32.88-3.35-12.42-5.02-23.77-5.02-34.05 0-14.93 3.65-27.17 10.95-36.71 7.3-9.54 16.51-14.44 27.63-14.7 4.9.12 10.42 1.34 16.56 3.67 6.13 2.33 10.22 3.56 12.27 3.69 1.76-.13 5.92-1.38 12.49-3.75 6.57-2.37 12.01-3.48 16.33-3.33 12.46.68 22.42 5.37 29.89 14.07-10.89 6.64-16.22 15.63-16 26.98.22 8.93 3.65 16.48 10.29 22.65 6.64 6.17 14.61 9.87 23.91 11.1-2.22 6.84-4.8 13.43-7.73 19.78zm-31.52-117.84c.11 2.39-.42 5.02-1.6 7.89-1.18 2.87-2.88 5.6-5.1 8.2-2.6 3.03-5.59 5.4-8.97 7.12-3.38 1.72-6.52 2.76-9.42 3.12-.33-2.17-.18-4.52.45-7.05.63-2.53 1.95-5.22 3.96-8.07 2.22-3.15 4.97-5.74 8.25-7.78 3.28-2.04 6.99-3.23 11.13-3.57.43.04.86.09 1.3.14z"/>
-            </svg>
-            <span data-i18n="downloadPage.directBtn">立即下载 macOS DMG</span>
+            <span data-i18n="downloadPage.directBtn">Download DMG</span>
           </a>
-          <span class="download-card-subinfo">推荐优先使用 · 极速回源</span>
         </div>
       </div>
 
-      <!-- 通道 2: GitHub Releases 官方源 -->
+      <!-- 选项 2: GitHub Releases -->
       <div class="download-option-card">
-        <div class="download-card-badge" data-i18n="downloadPage.githubBadge">官方发布源</div>
-        <div>
+        <div class="download-card-body">
           <div class="download-card-icon">
-            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+            <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor">
               <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
             </svg>
           </div>
-          <h2 class="download-card-title" data-i18n="downloadPage.githubTitle">GitHub Releases (官方源)</h2>
-          <p class="download-card-desc" data-i18n="downloadPage.githubDesc">
-            访问 GitHub Release 官方资产库，查看完整 Commit 记录、更新日志与源码归档。
-          </p>
+          <h2 class="download-card-title" data-i18n="downloadPage.githubTitle">GitHub Releases</h2>
         </div>
-
         <div class="download-card-action">
           <a id="githubReleaseBtn" href="https://github.com/linchi07/dynamic_notch/releases/latest" target="_blank" rel="noreferrer" class="btn-download-secondary">
-            <svg class="icon-svg" viewBox="0 0 16 16" width="16" height="16" fill="currentColor">
-              <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+              <polyline points="15 3 21 3 21 9"></polyline>
+              <line x1="10" y1="14" x2="21" y2="3"></line>
             </svg>
-            <span data-i18n="downloadPage.githubBtn">前往 GitHub Releases</span>
+            <span data-i18n="downloadPage.githubBtn">View on GitHub</span>
           </a>
-          <span class="download-card-subinfo">备用下载通道 · 历史版本可选</span>
         </div>
-      </div>
-
-    </div>
-
-    <!-- 底部辅助说明面板 -->
-    <div class="download-details-section">
-      
-      <!-- 系统要求 -->
-      <div class="download-info-panel">
-        <h3 class="download-info-title">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-            <line x1="8" y1="21" x2="16" y2="21"></line>
-            <line x1="12" y1="17" x2="12" y2="21"></line>
-          </svg>
-          <span data-i18n="downloadPage.requirementsTitle">系统与硬件要求</span>
-        </h3>
-        <ul class="download-req-list">
-          <li class="download-req-item">
-            <span class="icon">✓</span>
-            <span data-i18n="downloadPage.reqOs">macOS 14.0 (Sonoma) 或更高版本</span>
-          </li>
-          <li class="download-req-item">
-            <span class="icon">✓</span>
-            <span data-i18n="downloadPage.reqArch">Apple Silicon (M1/M2/M3/M4) 与 Intel 架构原生支持</span>
-          </li>
-          <li class="download-req-item">
-            <span class="icon">✓</span>
-            <span data-i18n="downloadPage.reqDevice">MacBook Pro / MacBook Air (物理刘海或外接显示器)</span>
-          </li>
-          <li class="download-req-item">
-            <span class="icon">✓</span>
-            <span>已通过 Apple 官方代码签名与公证（Notarized）</span>
-          </li>
-        </ul>
-      </div>
-
-      <!-- 安装指引 -->
-      <div class="download-info-panel">
-        <h3 class="download-info-title">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-            <polyline points="14 2 14 8 20 8"></polyline>
-            <line x1="16" y1="13" x2="8" y2="13"></line>
-            <line x1="16" y1="17" x2="8" y2="17"></line>
-            <polyline points="10 9 9 9 8 9"></polyline>
-          </svg>
-          <span data-i18n="downloadPage.installTitle">快速安装指引</span>
-        </h3>
-        <ul class="download-req-list">
-          <li class="download-req-item">
-            <span class="icon">1.</span>
-            <span data-i18n="downloadPage.installStep1">下载 DMG 镜像文件并双击打开挂载；</span>
-          </li>
-          <li class="download-req-item">
-            <span class="icon">2.</span>
-            <span data-i18n="downloadPage.installStep2">将 DynamicNotch.app 拖入 Applications（应用程序）文件夹；</span>
-          </li>
-          <li class="download-req-item">
-            <span class="icon">3.</span>
-            <span data-i18n="downloadPage.installStep3">首次启动请按提示授权“辅助功能”与“蓝牙”权限以启用刘海感知。</span>
-          </li>
-        </ul>
       </div>
 
     </div>
 
   </main>
 
-  <!-- 底部版权 -->
+  <!-- 底部极简版权 -->
   <footer class="site-footer">
     <div class="footer-container">
       <div class="footer-bottom-bar">

@@ -155,4 +155,41 @@ appLanguages.forEach(lang => {
 
 assert(!i18nContent.includes('kconst'), 'i18n 严禁使用 kconst 命名');
 
-console.log('✅ 所有测试通过！\n- 背景色统一为纯黑 #000000，高亮依然保持霓虹紫\n- 覆盖 app 全部内置 17 种语言的 i18n 引擎（支持浏览器语言自适应与原生下拉切换）\n- 已彻底移除演播台底部的胶囊切换控制栏（杜绝 overflow 隐患，界面更加纯净）\n- 首屏专属巨幅流光半屏特写 (只在首屏展示，严格复刻官方渲染图)\n- 刘海物理摄像头装饰已彻底取消\n- Wing 逻辑修正 (刘海弹出时隐藏，其他状态常驻)\n- 音量 HUD 采用高精度线性无级平滑动画\n- 8 大 Live Activity 与分屏状态（含 Windows 风格顶边吸附分屏 Window Snap Layouts 与毛玻璃幽灵替身）与右侧滚动 100% 灵动联动\n- Bento Grid 矩阵新增 Windows Snap 分屏特性卡片');
+// 5. 验证 download.html 极简落地页与全 17 种语言完整国际化覆盖
+const downloadHtmlPath = path.join(__dirname, '../website/download.html');
+assert(fs.existsSync(downloadHtmlPath), '缺少 website/download.html 文件');
+const downloadHtmlContent = fs.readFileSync(downloadHtmlPath, 'utf8');
+
+assert(downloadHtmlContent.includes('id="directDownloadBtn"'), 'download.html 必须包含直接下载按钮 (directDownloadBtn)');
+assert(downloadHtmlContent.includes('id="githubReleaseBtn"'), 'download.html 必须包含 GitHub Releases 按钮 (githubReleaseBtn)');
+assert(downloadHtmlContent.includes('download.wejoinnwk.com/DynamicNotch-10.0.dmg'), 'download.html 直接下载链接应指向 CDN 域名');
+assert(downloadHtmlContent.includes('github.com/linchi07/dynamic_notch/releases/latest'), 'download.html 备用下载链接应指向 GitHub Releases');
+
+// 验证所有多余的小字描述已全部去掉
+assert(!downloadHtmlContent.includes('download-card-desc'), 'download.html 严禁包含 download-card-desc 小字描述');
+assert(!downloadHtmlContent.includes('download-card-subinfo'), 'download.html 严禁包含 download-card-subinfo 小字描述');
+assert(!downloadHtmlContent.includes('download-details-section'), 'download.html 严禁包含 download-details-section 辅助面板');
+assert(!downloadHtmlContent.includes('download-card-badge'), 'download.html 严禁包含 download-card-badge 标签');
+
+// 验证所有 17 种语言均完整具备 downloadPage 的 7 大核心字段
+// 动态载入 TRANSLATION_MAP 模拟解析
+const vm = require('vm');
+const sandbox = { window: {}, document: { addEventListener: () => {} }, localStorage: {} };
+vm.createContext(sandbox);
+vm.runInContext(i18nContent + '\n;globalResult = TRANSLATION_MAP;', sandbox);
+const translationMap = sandbox.globalResult;
+
+const downloadKeys = ['title', 'heading', 'backHome', 'directTitle', 'directBtn', 'githubTitle', 'githubBtn'];
+appLanguages.forEach(lang => {
+  assert(translationMap[lang], `TRANSLATION_MAP 缺少语言: ${lang}`);
+  assert(translationMap[lang].downloadPage, `语言 ${lang} 缺少 downloadPage 对象`);
+  downloadKeys.forEach(k => {
+    assert(
+      translationMap[lang].downloadPage[k],
+      `语言 ${lang} 的 downloadPage 缺少键: ${k}`
+    );
+  });
+});
+
+console.log('✅ 所有测试通过！\n- 背景色统一为纯黑 #000000，高亮依然保持霓虹紫\n- 覆盖 app 全部内置 17 种语言的 i18n 引擎（支持浏览器语言自适应与原生下拉切换）\n- 已彻底移除演播台底部的胶囊切换控制栏（杜绝 overflow 隐患，界面更加纯净）\n- 首屏专属巨幅流光半屏特写 (只在首屏展示，严格复刻官方渲染图)\n- 刘海物理摄像头装饰已彻底取消\n- Wing 逻辑修正 (刘海弹出时隐藏，其他状态常驻)\n- 音量 HUD 采用高精度线性无级平滑动画\n- 8 大 Live Activity 与分屏状态与右侧滚动 100% 灵动联动\n- Bento Grid 矩阵新增 Windows Snap 分屏特性卡片\n- download.html 纯净重构：仅保留直接下载与 GitHub Releases 双通道，彻底去除多余小字描述\n- download.html 17 种全语言 i18n 字典无遗漏覆盖，彻底杜绝 fallback 回中文');
+

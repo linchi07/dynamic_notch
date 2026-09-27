@@ -146,25 +146,11 @@ const TRANSLATION_MAP = {
     downloadPage: {
       title: '下载 Dynamic Notch - 灵动自如的 macOS Live Activity 体验',
       heading: '下载 Dynamic Notch',
-      subheading: '为 MacBook 内置物理刘海量身定制的开源实时活动体验。',
       backHome: '返回官网首页',
-      currentVersion: '最新正式版: v10.0',
-      directBadge: '推荐 · 全球 CDN',
-      directTitle: '高速直接下载 (.dmg)',
-      directDesc: '由 Cloudflare + Backblaze CDN 全球多节点加速分发，国内直连高速下载不限速。',
-      directBtn: '立即下载 macOS DMG',
-      githubBadge: '官方发布源',
-      githubTitle: 'GitHub Releases (官方源)',
-      githubDesc: '访问 GitHub Release 官方资产库，查看完整 Commit 记录、更新日志与源码归档。',
-      githubBtn: '前往 GitHub Releases',
-      requirementsTitle: '系统与硬件要求',
-      reqOs: 'macOS 14.0 (Sonoma) 或更高版本',
-      reqArch: 'Apple Silicon (M1/M2/M3/M4) 与 Intel 架构原生支持',
-      reqDevice: 'MacBook Pro / MacBook Air (物理刘海或外接显示器)',
-      installTitle: '快速安装指引',
-      installStep1: '下载 DMG 镜像文件并双击打开挂载；',
-      installStep2: '将 DynamicNotch.app 拖入 Applications（应用程序）文件夹；',
-      installStep3: '首次启动请按提示授权“辅助功能”与“蓝牙”权限以启用刘海感知。'
+      directTitle: '直接下载',
+      directBtn: '下载 DMG 安装包',
+      githubTitle: 'GitHub Releases',
+      githubBtn: '前往 GitHub 发布页'
     },
     footer: {
       copy: '© 2026 Dynamic Notch (Maintained by linchi07). 感谢开源社区先行者们的探索。<br>Apple, MacBook, macOS, Dynamic Island 为 Apple Inc. 注册商标。'
@@ -298,6 +284,15 @@ const TRANSLATION_MAP = {
       step1: '前往 GitHub Releases 頁面下載最新的 <code>DynamicNotch.dmg</code> 安裝檔。',
       step2: '連按兩下打開 DMG，將 <code>Dynamic Notch.app</code> 拖入 <strong>Applications</strong> 應用程式資料夾。',
       securityNote: '溫馨提示：本專案為個人開源專案，程式碼完全公開可審計，請放心使用。'
+    },
+    downloadPage: {
+      title: '下載 Dynamic Notch - 靈動自如的 macOS Live Activity 體驗',
+      heading: '下載 Dynamic Notch',
+      backHome: '返回官網首頁',
+      directTitle: '直接下載',
+      directBtn: '下載 DMG 安裝檔',
+      githubTitle: 'GitHub Releases',
+      githubBtn: '前往 GitHub 發布頁'
     },
     footer: {
       copy: '© 2026 Dynamic Notch (Maintained by linchi07). 感謝開源社群先行者們的探索。<br>Apple, MacBook, macOS, Dynamic Island 為 Apple Inc. 註冊商標。'
@@ -435,25 +430,11 @@ const TRANSLATION_MAP = {
     downloadPage: {
       title: 'Download Dynamic Notch - Seamless macOS Live Activity Experience',
       heading: 'Download Dynamic Notch',
-      subheading: 'Open-source live activity stage tailored for MacBook notch.',
       backHome: 'Back to Home',
-      currentVersion: 'Latest Release: v10.0',
-      directBadge: 'Recommended · Global CDN',
-      directTitle: 'Fast Direct Download (.dmg)',
-      directDesc: 'Accelerated worldwide by Cloudflare + Backblaze CDN with uncapped speed.',
-      directBtn: 'Download macOS DMG',
-      githubBadge: 'Official Release',
-      githubTitle: 'GitHub Releases (Official)',
-      githubDesc: 'Access official GitHub Releases to view full commit logs, release notes and source archives.',
-      githubBtn: 'Go to GitHub Releases',
-      requirementsTitle: 'System & Hardware Requirements',
-      reqOs: 'macOS 14.0 (Sonoma) or newer',
-      reqArch: 'Apple Silicon (M1/M2/M3/M4) & Intel Universal binary',
-      reqDevice: 'MacBook Pro / MacBook Air (with notch or external displays)',
-      installTitle: 'Quick Installation Guide',
-      installStep1: 'Download and double-click the DMG image to mount;',
-      installStep2: 'Drag DynamicNotch.app into your Applications folder;',
-      installStep3: 'Follow the onboarding prompts to grant Accessibility & Bluetooth permissions.'
+      directTitle: 'Direct Download',
+      directBtn: 'Download DMG',
+      githubTitle: 'GitHub Releases',
+      githubBtn: 'Go to GitHub Releases'
     },
     footer: {
       copy: '© 2026 Dynamic Notch (Maintained by linchi07). Grateful to open source pioneers.<br>Apple, MacBook, macOS, Dynamic Island are trademarks of Apple Inc.'
@@ -517,6 +498,15 @@ const TRANSLATION_MAP = {
       cardSnapDesc: 'ウィンドウをノッチまたは上端にドラッグすると、5 種類の分割プリセットが即座に出現。Shift キーを押しながら離せば全ウィンドウを一括自動整列。',
       card4Title: '完全オープンソースで安全',
       card4Desc: '追跡やテレメトリは一切なし。すべてのコードは GitHub で公開されています。'
+    },
+    downloadPage: {
+      title: 'Dynamic Notch をダウンロード - 流麗な macOS ライブアクティビティ体験',
+      heading: 'Dynamic Notch をダウンロード',
+      backHome: 'ホームに戻る',
+      directTitle: '直接ダウンロード',
+      directBtn: 'DMG をダウンロード',
+      githubTitle: 'GitHub Releases',
+      githubBtn: 'GitHub リリースへ'
     }
   },
 
@@ -557,6 +547,15 @@ const TRANSLATION_MAP = {
     bento: {
       cardSnapTitle: '윈도우 스냅 레이아웃',
       cardSnapDesc: '창을 노치나 화면 상단으로 드래그하면 5가지 분할 그리드가 즉시 나타납니다. Shift 키를 누르면 열려 있는 모든 창을 한 번에 스마트하게 타일링합니다.'
+    },
+    downloadPage: {
+      title: 'Dynamic Notch 다운로드 - 유려한 macOS Live Activity 경험',
+      heading: 'Dynamic Notch 다운로드',
+      backHome: '홈으로 돌아가기',
+      directTitle: '직접 다운로드',
+      directBtn: 'DMG 다운로드',
+      githubTitle: 'GitHub Releases',
+      githubBtn: 'GitHub 릴리스로 이동'
     }
   },
 
@@ -583,6 +582,15 @@ const TRANSLATION_MAP = {
     bento: {
       cardSnapTitle: 'Snap-Layouts an der oberen Kante',
       cardSnapDesc: 'Ziehe ein beliebiges Fenster an die Notch oder die obere Kante, um 5 Layout-Vorlagen aufzurufen. Halte Shift gedrückt, um alle Fenster gleichzeitig anzuordnen.'
+    },
+    downloadPage: {
+      title: 'Dynamic Notch herunterladen - Nahtlose macOS Live-Aktivitäten',
+      heading: 'Dynamic Notch herunterladen',
+      backHome: 'Zurück zur Startseite',
+      directTitle: 'Direkter Download',
+      directBtn: 'DMG herunterladen',
+      githubTitle: 'GitHub Releases',
+      githubBtn: 'Zu den GitHub Releases'
     }
   },
 
@@ -609,6 +617,15 @@ const TRANSLATION_MAP = {
     bento: {
       cardSnapTitle: 'Agencements de fenêtres par bord supérieur',
       cardSnapDesc: 'Glissez une fenêtre vers l’encoche pour afficher 5 grilles de disposition. Maintenez Shift pour réorganiser intelligemment toutes les fenêtres ouvertes.'
+    },
+    downloadPage: {
+      title: 'Télécharger Dynamic Notch - Expérience Live Activities sur macOS',
+      heading: 'Télécharger Dynamic Notch',
+      backHome: 'Retour à l’accueil',
+      directTitle: 'Téléchargement direct',
+      directBtn: 'Télécharger le DMG',
+      githubTitle: 'GitHub Releases',
+      githubBtn: 'Voir sur GitHub'
     }
   },
 
@@ -635,6 +652,123 @@ const TRANSLATION_MAP = {
     bento: {
       cardSnapTitle: 'Diseños de ventana Snap en el borde superior',
       cardSnapDesc: 'Arrastra cualquier ventana hacia el notch para abrir 5 plantillas de división. Mantén presionado Shift para organizar todas las ventanas abiertas al instante.'
+    },
+    downloadPage: {
+      title: 'Descargar Dynamic Notch - Experiencia fluida de Live Activities',
+      heading: 'Descargar Dynamic Notch',
+      backHome: 'Volver al inicio',
+      directTitle: 'Descarga directa',
+      directBtn: 'Descargar DMG',
+      githubTitle: 'GitHub Releases',
+      githubBtn: 'Ir a GitHub Releases'
+    }
+  },
+
+  it: {
+    downloadPage: {
+      title: 'Scarica Dynamic Notch - Attività in tempo reale su macOS',
+      heading: 'Scarica Dynamic Notch',
+      backHome: 'Torna alla home',
+      directTitle: 'Download diretto',
+      directBtn: 'Scarica DMG',
+      githubTitle: 'GitHub Releases',
+      githubBtn: 'Vai a GitHub Releases'
+    }
+  },
+
+  ru: {
+    downloadPage: {
+      title: 'Скачать Dynamic Notch - Плавный опыт Live Activities для macOS',
+      heading: 'Скачать Dynamic Notch',
+      backHome: 'На главную',
+      directTitle: 'Прямая загрузка',
+      directBtn: 'Скачать DMG',
+      githubTitle: 'GitHub Releases',
+      githubBtn: 'Перейти к GitHub Releases'
+    }
+  },
+
+  'pt-BR': {
+    downloadPage: {
+      title: 'Baixar Dynamic Notch - Experiência fluida de Live Activities no macOS',
+      heading: 'Baixar Dynamic Notch',
+      backHome: 'Voltar ao início',
+      directTitle: 'Download direto',
+      directBtn: 'Baixar DMG',
+      githubTitle: 'GitHub Releases',
+      githubBtn: 'Ir para GitHub Releases'
+    }
+  },
+
+  tr: {
+    downloadPage: {
+      title: 'Dynamic Notch İndir - Akıcı macOS Canlı Etkinlik Deneyimi',
+      heading: 'Dynamic Notch İndir',
+      backHome: 'Ana Sayfaya Dön',
+      directTitle: 'Doğrudan İndir',
+      directBtn: 'DMG İndir',
+      githubTitle: 'GitHub Sürümleri',
+      githubBtn: 'GitHub Releases’e Git'
+    }
+  },
+
+  pl: {
+    downloadPage: {
+      title: 'Pobierz Dynamic Notch - Płynne Live Activities dla macOS',
+      heading: 'Pobierz Dynamic Notch',
+      backHome: 'Wróć do strony głównej',
+      directTitle: 'Bezpośrednie pobieranie',
+      directBtn: 'Pobierz DMG',
+      githubTitle: 'GitHub Releases',
+      githubBtn: 'Przejdź do GitHub Releases'
+    }
+  },
+
+  uk: {
+    downloadPage: {
+      title: 'Завантажити Dynamic Notch - Плавний досвід Live Activities для macOS',
+      heading: 'Завантажити Dynamic Notch',
+      backHome: 'На головну',
+      directTitle: 'Пряме завантаження',
+      directBtn: 'Завантажити DMG',
+      githubTitle: 'GitHub Releases',
+      githubBtn: 'Перейти до GitHub Releases'
+    }
+  },
+
+  ar: {
+    downloadPage: {
+      title: 'تنزيل Dynamic Notch - تجربة الأنشطة الحية السلسة على macOS',
+      heading: 'تنزيل Dynamic Notch',
+      backHome: 'العودة للرئيسية',
+      directTitle: 'تنزيل مباشر',
+      directBtn: 'تنزيل ملف DMG',
+      githubTitle: 'إصدارات GitHub',
+      githubBtn: 'الانتقال إلى GitHub'
+    }
+  },
+
+  cs: {
+    downloadPage: {
+      title: 'Stáhnout Dynamic Notch - Živé aktivity na macOS',
+      heading: 'Stáhnout Dynamic Notch',
+      backHome: 'Zpět na domovskou stránku',
+      directTitle: 'Přímé stažení',
+      directBtn: 'Stáhnout DMG',
+      githubTitle: 'GitHub Releases',
+      githubBtn: 'Přejít na GitHub Releases'
+    }
+  },
+
+  hu: {
+    downloadPage: {
+      title: 'Dynamic Notch letöltése - Folyékony macOS élő tevékenységek',
+      heading: 'Dynamic Notch letöltése',
+      backHome: 'Vissza a főoldalra',
+      directTitle: 'Közvetlen letöltés',
+      directBtn: 'DMG letöltése',
+      githubTitle: 'GitHub Kiadások',
+      githubBtn: 'Ugrás a GitHub Kiadásokhoz'
     }
   }
 };
@@ -710,12 +844,17 @@ class I18nEngine {
     document.documentElement.dir = (lang === 'ar') ? 'rtl' : 'ltr';
 
     // 更新网页标题与 Meta Description
-    const metaTitle = this.resolveKey('meta.title', lang);
-    if (metaTitle) document.title = metaTitle;
-    const metaDesc = this.resolveKey('meta.description', lang);
-    if (metaDesc) {
-      const descEl = document.querySelector('meta[name="description"]');
-      if (descEl) descEl.setAttribute('content', metaDesc);
+    const isDownloadPage = document.body && document.body.classList.contains('download-page-body');
+    const titleKey = isDownloadPage ? 'downloadPage.title' : 'meta.title';
+    const pageTitle = this.resolveKey(titleKey, lang);
+    if (pageTitle) document.title = pageTitle;
+
+    if (!isDownloadPage) {
+      const metaDesc = this.resolveKey('meta.description', lang);
+      if (metaDesc) {
+        const descEl = document.querySelector('meta[name="description"]');
+        if (descEl) descEl.setAttribute('content', metaDesc);
+      }
     }
 
     // 替换所有 data-i18n 元素
@@ -745,7 +884,10 @@ class I18nEngine {
 
   /**
    * 优雅级联 Fallback 解析机制：
-   * 目标语言 -> 英文 (en) -> 简体中文 (zh-Hans)
+   * 1. 目标语言
+   * 2. (若为 zh-Hant) 优先简体中文 (zh-Hans)
+   * 3. 英文 (en, 国际通用兜底，杜绝外语用户意外回退到中文)
+   * 4. 简体中文 (zh-Hans)
    */
   resolveKey(path, lang) {
     const keys = path.split('.');
@@ -754,13 +896,19 @@ class I18nEngine {
     let val = this.getNestedValue(TRANSLATION_MAP[lang], keys);
     if (val !== undefined) return val;
 
-    // 2. 回退到英文
+    // 2. 繁体中文优先回退到简体中文
+    if (lang === 'zh-Hant') {
+      val = this.getNestedValue(TRANSLATION_MAP['zh-Hans'], keys);
+      if (val !== undefined) return val;
+    }
+
+    // 3. 所有非英文语言优先回退到英文 (en)，避免外语用户看到未翻译的中文
     if (lang !== 'en') {
       val = this.getNestedValue(TRANSLATION_MAP['en'], keys);
       if (val !== undefined) return val;
     }
 
-    // 3. 回退到默认中文
+    // 4. 最终兜底到简体中文
     if (lang !== 'zh-Hans') {
       val = this.getNestedValue(TRANSLATION_MAP['zh-Hans'], keys);
       if (val !== undefined) return val;

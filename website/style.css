@@ -2422,7 +2422,7 @@ body {
 }
 
 /* --------------------------------------------------------------------------
-   Download Page 专属样式
+   Download Page 专属样式（极简双通道设计，移除多余小字描述）
    -------------------------------------------------------------------------- */
 .download-page-body {
   background-color: #000000;
@@ -2434,22 +2434,25 @@ body {
 
 .download-main-wrap {
   flex: 1;
-  padding: 120px 24px 80px;
-  max-width: 1080px;
+  padding: 140px 24px 80px;
+  max-width: 760px;
   margin: 0 auto;
   width: 100%;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .download-hero-header {
   text-align: center;
-  margin-bottom: 48px;
+  margin-bottom: 40px;
   position: relative;
 }
 
 .download-app-icon-wrap {
-  width: 96px;
-  height: 96px;
+  width: 88px;
+  height: 88px;
   margin: 0 auto 20px;
   position: relative;
 }
@@ -2457,27 +2460,19 @@ body {
 .download-app-icon {
   width: 100%;
   height: 100%;
-  border-radius: 22px;
+  border-radius: 20px;
   box-shadow: 0 12px 36px rgba(147, 51, 234, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.15);
   display: block;
 }
 
 .download-hero-title {
-  font-size: 38px;
+  font-size: 36px;
   font-weight: 800;
   letter-spacing: -0.03em;
-  margin: 0 0 12px;
+  margin: 0 0 16px;
   background: linear-gradient(180deg, #ffffff 0%, #d8b4fe 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-}
-
-.download-hero-desc {
-  font-size: 16px;
-  color: rgba(255, 255, 255, 0.65);
-  max-width: 560px;
-  margin: 0 auto 24px;
-  line-height: 1.6;
 }
 
 .download-version-pill {
@@ -2504,22 +2499,25 @@ body {
 .download-options-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 24px;
-  margin-bottom: 48px;
+  gap: 20px;
+  width: 100%;
 }
 
 .download-option-card {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 20px;
-  padding: 32px;
+  padding: 32px 24px;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  text-align: center;
   justify-content: space-between;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  position: relative;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  min-height: 200px;
+  box-sizing: border-box;
 }
 
 .download-option-card:hover {
@@ -2533,62 +2531,48 @@ body {
   border-color: rgba(147, 51, 234, 0.45);
 }
 
-.download-card-badge {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: rgba(147, 51, 234, 0.25);
-  color: #e9d5ff;
-  border: 1px solid rgba(147, 51, 234, 0.5);
-}
-
-.download-card-header {
+.download-card-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   margin-bottom: 24px;
 }
 
 .download-card-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
   background: rgba(255, 255, 255, 0.06);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
   color: #d8b4fe;
 }
 
+.download-option-card.featured .download-card-icon {
+  background: rgba(147, 51, 234, 0.2);
+  color: #f3e8ff;
+}
+
 .download-card-title {
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 700;
-  margin: 0 0 8px;
+  margin: 0;
   color: #ffffff;
 }
 
-.download-card-desc {
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.6);
-  line-height: 1.6;
-  margin: 0;
-}
-
 .download-card-action {
-  margin-top: 28px;
+  width: 100%;
 }
 
 .btn-download-primary {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
-  padding: 14px 20px;
+  padding: 13px 18px;
   background: linear-gradient(135deg, #9333ea 0%, #7e22ce 100%);
   color: #ffffff;
   font-size: 15px;
@@ -2610,9 +2594,9 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
-  padding: 14px 20px;
+  padding: 13px 18px;
   background: rgba(255, 255, 255, 0.06);
   color: #ffffff;
   font-size: 15px;
@@ -2630,70 +2614,17 @@ body {
   transform: translateY(-1px);
 }
 
-.download-card-subinfo {
-  display: block;
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.4);
-  text-align: center;
-  margin-top: 10px;
-}
-
-.download-details-section {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
-}
-
-.download-info-panel {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 16px;
-  padding: 24px;
-}
-
-.download-info-title {
-  font-size: 16px;
-  font-weight: 700;
-  margin: 0 0 16px;
-  color: #e9d5ff;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.download-req-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.download-req-item {
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.7);
-  line-height: 1.5;
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-}
-
-.download-req-item span.icon {
-  color: #34d399;
-  font-size: 14px;
-  line-height: 1;
-}
-
-@media (max-width: 800px) {
+@media (max-width: 640px) {
+  .download-main-wrap {
+    padding-top: 100px;
+  }
   .download-options-grid {
     grid-template-columns: 1fr;
-  }
-  .download-details-section {
-    grid-template-columns: 1fr;
+    gap: 16px;
   }
   .download-hero-title {
     font-size: 28px;
   }
 }
+
 
