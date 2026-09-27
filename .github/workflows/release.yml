@@ -149,7 +149,7 @@ jobs:
           done
 
           # Sparkle compares CFBundleVersion, so it must never move backwards.
-          highest="$(grep -o '<sparkle:version>[^<]*</sparkle:version>' website/appcast.xml \
+          highest="$( (grep -o '<sparkle:version>[^<]*</sparkle:version>' website/appcast.xml || true) \
                      | sed 's/<[^>]*>//g' | sort -n | tail -1)"
           highest="${highest:-0}"
           if [ "${BUILD}" -le "${highest}" ]; then
