@@ -29,5 +29,58 @@
         <link>https://github.com/linchi07/dynamic_notch</link>
         <description>DynamicNotch release feed</description>
         <language>en</language>
+        <item>
+            <title>10.0</title>
+            <pubDate>Sun, 27 Sep 2026 09:10:05 +0000</pubDate>
+            <link>https://github.com/linchi07/dynamic_notch/releases/tag/v10.0</link>
+            <sparkle:version>2</sparkle:version>
+            <sparkle:shortVersionString>10.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+<h2>DynamicNotch 10.0</h2>
+<ul>
+    <li>淦！忘记改build了</li>
+    <li>还是修Workflow oobe完了自动启用hud replace</li>
+    <li>依旧修Workflow</li>
+    <li>修Workflow</li>
+    <li>我就要从10.0开始发版本号！</li>
+    <li>feat(onboarding): add launch at login step to OOBE and restore standard HIG app icon</li>
+    <li>feat(onboarding): add launch at login step to OOBE and restore standard HIG app icon</li>
+    <li>chore(updater): consolidate appcast feed under website and support b2 mirror</li>
+    <li>fix(media): eliminate priority inversion by using async continuation and explicit QoS</li>
+    <li>fix(media): enhance media key interceptor with watchdog, auto-recovery and wake handling</li>
+    <li>fix(i18n): fix settings and onboarding localizations, remove face animation hack</li>
+    <li>fix(shelf): resolve drag and drop failure by using standard bookmark options and optimizing drop routing</li>
+    <li>fix(interceptor): isolate MediaKeyInterceptor on dedicated thread and recover from timeouts</li>
+    <li>refactor: remove webcam feature and update localized resources</li>
+    <li>feat: add bluetooth device connection activities and improve artwork synchronization</li>
+    <li>refactor: remove DynamicNotchXPCHelper and clean up unused resources</li>
+    <li>fix(website): persist the language preference only on manual switch</li>
+    <li>chore(website): consolidate the site under website/ and drop Windows/SkyLight copy</li>
+    <li>chore: drop upstream governance files and rebrand the issue templates</li>
+    <li>ci: add a fork-scoped notarization release pipeline</li>
+    <li>fix(signing): rotate the Sparkle EdDSA key and harden the XPC helper</li>
+    <li>docs: move copyright out of LICENSE so GitHub keeps the GPL-3.0 badge</li>
+    <li>docs(license): trim the copyright preamble to the canonical GPL notice</li>
+    <li>docs: rebrand license, add Code of Conduct, update security policy</li>
+    <li>feat: ship DynamicNotch 1.2 with its own update feed</li>
+    <li>fix: resolve sneak peek alert popdown, expand notch height and localize playback sources</li>
+    <li>fix(music): restore sneak peek alert on track change; remove shortcut system and redundant text; add i18n for playback sources</li>
+    <li>refactor: eliminate XPC service dependency and inline helper logic in-process</li>
+    <li>fix: disable app sandbox and add inner padding to notch wings</li>
+    <li>chore: update Localizable.xcstrings</li>
+</ul>
+]]></description>
+            <enclosure
+                url="https://download.wejoinnwk.com/DynamicNotch-10.0.dmg"
+                sparkle:version="2"
+                sparkle:shortVersionString="10.0"
+                length="9879074"
+                type="application/octet-stream"
+                sparkle:edSignature="QZsOLLFRQNY/rpWe6fGMH10BiRepixwiuzDFnwdw5yWt4UZQgD6jVlwGNRrgv5+neXeelQUiMbsWY3CBh8zECg==" />
+            <sparkle:mirror
+                url="https://github.com/linchi07/dynamic_notch/releases/download/v10.0/DynamicNotch-10.0.dmg" />
+        </item>
+
     </channel>
 </rss>
