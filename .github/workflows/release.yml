@@ -246,12 +246,24 @@ jobs:
           BUILD: ${{ steps.inputs.outputs.build }}
         run: |
           set -euo pipefail
-          # The project sets CODE_SIGN_IDENTITY[sdk=macosx*] = "-" (ad-hoc) for
-          # local development. That sdk-qualified setting wins over the plain
-          # CODE_SIGN_IDENTITY, so both have to be overridden here.
-          #
-          # ARCHS is pinned so the shipped app is a universal binary regardless
-          # of which architecture the runner happens to be.
+          # Create a temporary xcconfig file to pass code signing settings.
+          # Passing conditional build settings like CODE_SIGN_IDENTITY[sdk=macosx*]
+          # on the xcodebuild command line causes Xcode to misparse the setting as
+          # "macosx*]=...", resulting in "No certificate matching ... found".
+          # An xcconfig file correctly scopes the setting for all targets and packages.
+          CONFIG_PATH="${RUNNER_TEMP}/release.xcconfig"
+          cat <<EOF | sed "s/^[[:space:]]*//" > "${CONFIG_PATH}"
+            DEVELOPMENT_TEAM = ${TEAM_ID}
+            CODE_SIGN_STYLE = Manual
+            CODE_SIGN_IDENTITY = ${IDENTITY}
+            CODE_SIGN_IDENTITY[sdk=macosx*] = ${IDENTITY}
+            PROVISIONING_PROFILE_SPECIFIER =
+            ENABLE_HARDENED_RUNTIME = YES
+            OTHER_CODE_SIGN_FLAGS = --timestamp
+            MARKETING_VERSION = ${VERSION}
+            CURRENT_PROJECT_VERSION = ${BUILD}
+          EOF
+
           xcodebuild archive \
             -project "${PROJECT}" \
             -scheme "${SCHEME}" \
@@ -260,19 +272,11 @@ jobs:
             -archivePath "${RUNNER_TEMP}/${APP_NAME}.xcarchive" \
             -derivedDataPath "${RUNNER_TEMP}/dd" \
             -clonedSourcePackagesDirPath "${RUNNER_TEMP}/spm" \
+            -xcconfig "${CONFIG_PATH}" \
             -skipPackagePluginValidation \
             -skipMacroValidation \
             ARCHS="arm64 x86_64" \
             ONLY_ACTIVE_ARCH=NO \
-            DEVELOPMENT_TEAM="${TEAM_ID}" \
-            CODE_SIGN_STYLE=Manual \
-            PROVISIONING_PROFILE_SPECIFIER="" \
-            CODE_SIGN_IDENTITY="${SIGN_IDENTITY_NAME}" \
-            "CODE_SIGN_IDENTITY[sdk=macosx*]=${SIGN_IDENTITY_NAME}" \
-            OTHER_CODE_SIGN_FLAGS="--timestamp" \
-            ENABLE_HARDENED_RUNTIME=YES \
-            MARKETING_VERSION="${VERSION}" \
-            CURRENT_PROJECT_VERSION="${BUILD}" \
             -quiet
 
       - name: Collect the built app
