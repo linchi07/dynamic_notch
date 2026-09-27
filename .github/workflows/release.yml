@@ -25,13 +25,16 @@ name: Release
 #   SPARKLE_ED_PRIVATE_KEY    Sparkle EdDSA private key file contents
 #                             (`generate_keys --account dynamicnotch -x file`)
 #
+# Optional Backblaze B2 upload secrets:
+#   B2_APPLICATION_KEY_ID     Backblaze B2 application key ID
+#   B2_APPLICATION_KEY        Backblaze B2 application key
+#   B2_BUCKET_NAME            Backblaze B2 bucket name
+#
 # Optional repository variable:
-#   DOWNLOAD_BASE             e.g. https://notch.wejoinnwk.com/downloads
-#                             When set, the appcast points there instead of at
-#                             the GitHub release asset. The workflow verifies
-#                             the URL actually serves the DMG before writing the
-#                             feed, so a missing mirror fails the run instead of
-#                             shipping a feed nobody can download from.
+#   DOWNLOAD_BASE             e.g. https://download.wejoinnwk.com
+#                             Defaults to https://download.wejoinnwk.com when B2 upload
+#                             is enabled. Sparkle feed uses this as primary enclosure,
+#                             with GitHub Release asset as backup sparkle:mirror.
 
 on:
   workflow_dispatch:
@@ -146,7 +149,7 @@ jobs:
           done
 
           # Sparkle compares CFBundleVersion, so it must never move backwards.
-          highest="$(grep -o '<sparkle:version>[^<]*</sparkle:version>' updater/appcast.xml \
+          highest="$(grep -o '<sparkle:version>[^<]*</sparkle:version>' website/appcast.xml \
                      | sed 's/<[^>]*>//g' | sort -n | tail -1)"
           highest="${highest:-0}"
           if [ "${BUILD}" -le "${highest}" ]; then
@@ -515,6 +518,31 @@ jobs:
           gh "${args[@]}"
           echo "published=true" >> "$GITHUB_OUTPUT"
 
+      - name: Upload DMG to Backblaze B2 bucket
+        id: b2_upload
+        if: ${{ inputs.dry_run == false }}
+        env:
+          DMG: ${{ steps.dmg.outputs.path }}
+          DMG_NAME: ${{ steps.dmg.outputs.name }}
+          B2_KEY_ID: ${{ secrets.B2_APPLICATION_KEY_ID }}
+          B2_APP_KEY: ${{ secrets.B2_APPLICATION_KEY }}
+          B2_BUCKET: ${{ secrets.B2_BUCKET_NAME }}
+        run: |
+          set -euo pipefail
+          if [ -n "${B2_KEY_ID}" ] && [ -n "${B2_APP_KEY}" ] && [ -n "${B2_BUCKET}" ]; then
+            echo "Uploading ${DMG_NAME} to Backblaze B2 bucket ${B2_BUCKET}..."
+            python3 scripts/upload_b2.py \
+              --file "${DMG}" \
+              --destination "${DMG_NAME}" \
+              --bucket "${B2_BUCKET}" \
+              --key-id "${B2_KEY_ID}" \
+              --app-key "${B2_APP_KEY}"
+            echo "uploaded=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::B2 secrets (B2_APPLICATION_KEY_ID, B2_APPLICATION_KEY, B2_BUCKET_NAME) not fully configured; skipping B2 upload."
+            echo "uploaded=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Resolve the appcast download URL
         id: download_url
         env:
@@ -523,34 +551,50 @@ jobs:
           DMG: ${{ steps.dmg.outputs.path }}
           DOWNLOAD_BASE_INPUT: ${{ inputs.download_base }}
           DOWNLOAD_BASE_VAR: ${{ vars.DOWNLOAD_BASE }}
+          B2_UPLOADED: ${{ steps.b2_upload.outputs.uploaded }}
         run: |
           set -euo pipefail
-          # Precedence: per-run input > repository variable > GitHub release asset.
+          # Precedence: per-run input > repository variable > default CDN domain (if B2 uploaded) > GitHub release asset.
+          gh_asset_url="https://github.com/${GITHUB_REPOSITORY}/releases/download/v${VERSION}/${DMG_NAME}"
           base="${DOWNLOAD_BASE_INPUT}"
           if [ -z "${base}" ]; then
             base="${DOWNLOAD_BASE_VAR}"
           fi
+          if [ -z "${base}" ] && [ "${B2_UPLOADED:-false}" = "true" ]; then
+            base="https://download.wejoinnwk.com"
+          fi
 
           if [ -z "${base}" ]; then
-            url="https://github.com/${GITHUB_REPOSITORY}/releases/download/v${VERSION}/${DMG_NAME}"
-            echo "No download base configured; the feed will point at the GitHub release asset."
-            echo "::notice::Set the DOWNLOAD_BASE repository variable to serve from your own CDN instead."
+            url="${gh_asset_url}"
+            mirror_url=""
+            echo "No download base configured; the feed will point directly at the GitHub release asset."
+            echo "::notice::Configure B2 upload secrets or set DOWNLOAD_BASE variable to enable Cloudflare CDN with GitHub Release backup mirror."
           else
             base="${base%/}"
             url="${base}/${DMG_NAME}"
-            echo "Verifying the CDN copy is reachable at ${url} ..."
-            remote="$(curl -sSL --fail --max-time 60 -o /dev/null \
-                       -w '%{http_code}' "${url}" 2>/dev/null || echo "000")"
-            if [ "${remote}" != "200" ]; then
-              echo "::error::${url} returned HTTP ${remote}."
-              echo "::error::The appcast would advertise a download nobody can fetch, and Sparkle"
-              echo "::error::would fail for every user. Either mirror the DMG first, or clear the"
-              echo "::error::DOWNLOAD_BASE variable to fall back to the GitHub release asset."
-              exit 1
+            mirror_url="${gh_asset_url}"
+            echo "Verifying primary CDN reachable at ${url} ..."
+            is_live="false"
+            for attempt in 1 2 3 4 5; do
+              remote="$(curl -sSL --fail --max-time 15 -o /dev/null \
+                         -w '%{http_code}' "${url}" 2>/dev/null || echo "000")"
+              if [ "${remote}" = "200" ]; then
+                echo "Primary CDN copy verified live (HTTP 200) on attempt ${attempt}."
+                is_live="true"
+                break
+              fi
+              echo "Attempt ${attempt}: ${url} returned HTTP ${remote}, waiting 3s for CDN cache/origin..."
+              sleep 3
+            done
+
+            if [ "${is_live}" != "true" ]; then
+              echo "::warning::Primary CDN returned non-200. The Sparkle feed will still publish, and the backup mirror (${mirror_url}) will ensure downloads succeed."
             fi
-            echo "CDN copy is live."
+            echo "Primary CDN configured: ${url}"
+            echo "Backup mirror configured: ${mirror_url}"
           fi
           echo "url=${url}" >> "$GITHUB_OUTPUT"
+          echo "mirror_url=${mirror_url}" >> "$GITHUB_OUTPUT"
 
       - name: Update the appcast
         id: appcast
@@ -559,23 +603,28 @@ jobs:
           BUILD: ${{ steps.inputs.outputs.build }}
           DMG: ${{ steps.dmg.outputs.path }}
           URL: ${{ steps.download_url.outputs.url }}
+          MIRROR_URL: ${{ steps.download_url.outputs.mirror_url }}
           MIN_SYSTEM_VERSION: ${{ inputs.min_system_version }}
           NOTES: ${{ steps.notes.outputs.path }}
         run: |
           set -euo pipefail
           cp "${RUNNER_TEMP}/sparkle-signature.txt" "${RUNNER_TEMP}/sig.txt"
-          python3 scripts/update_appcast.py \
-            --appcast updater/appcast.xml \
-            --version "${VERSION}" \
-            --build "${BUILD}" \
-            --dmg "${DMG}" \
-            --url "${URL}" \
-            --signature-file "${RUNNER_TEMP}/sig.txt" \
-            --release-notes "${NOTES}" \
-            --link "https://github.com/${GITHUB_REPOSITORY}/releases/tag/v${VERSION}" \
-            --min-system-version "${MIN_SYSTEM_VERSION}"
-          /usr/bin/xmllint --noout updater/appcast.xml
-          git --no-pager diff --stat -- updater/appcast.xml
+          cmd=(python3 scripts/update_appcast.py
+               --appcast website/appcast.xml
+               --version "${VERSION}"
+               --build "${BUILD}"
+               --dmg "${DMG}"
+               --url "${URL}"
+               --signature-file "${RUNNER_TEMP}/sig.txt"
+               --release-notes "${NOTES}"
+               --link "https://github.com/${GITHUB_REPOSITORY}/releases/tag/v${VERSION}"
+               --min-system-version "${MIN_SYSTEM_VERSION}")
+          if [ -n "${MIRROR_URL}" ]; then
+            cmd+=(--mirror-url "${MIRROR_URL}")
+          fi
+          "${cmd[@]}"
+          /usr/bin/xmllint --noout website/appcast.xml
+          git --no-pager diff --stat -- website/appcast.xml
 
       - name: Commit the appcast
         if: ${{ inputs.dry_run == false }}
@@ -586,7 +635,7 @@ jobs:
           set -euo pipefail
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add updater/appcast.xml
+          git add website/appcast.xml updater/appcast.xml
           if git diff --cached --quiet; then
             echo "appcast unchanged; nothing to commit"
             exit 0
@@ -635,10 +684,10 @@ jobs:
           ref: main
       - name: Configure Pages
         uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
-      - name: Upload the feed
+      - name: Upload the website and feed
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
-          path: updater/
+          path: website/
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0

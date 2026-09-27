@@ -1,0 +1,4 @@
+/appcast.xml
+  Cache-Control: public, max-age=300
+  Content-Type: application/xml; charset=utf-8
+  Access-Control-Allow-Origin: *

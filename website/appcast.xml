@@ -1,0 +1,33 @@
+<?xml version="1.0" standalone="yes"?>
+<!--
+  DynamicNotch update feed (Sparkle 2).
+
+  This feed is hosted directly alongside the official website on Cloudflare Pages:
+      https://notch.wejoinnwk.com/appcast.xml
+  Mirror copy may also be published to GitHub Pages:
+      https://linchi07.github.io/dynamic_notch/appcast.xml
+
+  DO NOT HAND-EDIT THE item ELEMENTS. Every enclosure needs the exact byte
+  length of the DMG and the EdDSA signature over those exact bytes; a mismatch
+  makes every client reject the update silently. Items are appended by
+  .github/workflows/release.yml through scripts/update_appcast.py - run that
+  script with no arguments to see its full option list.
+
+  The script supports dual-source mirrors (e.g. Backblaze B2/Cloudflare CDN as primary
+  enclosure and GitHub Releases as backup sparkle:mirror).
+
+  The EdDSA public key that verifies these signatures lives in
+  DynamicNotch/Info.plist under SUPublicEDKey. Keep the private key safe: if it
+  is lost you cannot ship updates to existing installs.
+
+  NOTE: XML comments may not contain a double hyphen, so option names are
+  spelled out in prose here rather than pasted as a command line.
+-->
+<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+    <channel>
+        <title>DynamicNotch</title>
+        <link>https://github.com/linchi07/dynamic_notch</link>
+        <description>DynamicNotch release feed</description>
+        <language>en</language>
+    </channel>
+</rss>

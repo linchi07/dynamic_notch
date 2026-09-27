@@ -130,10 +130,17 @@ def build_item(
     url: str,
     length: int,
     signature: str,
+    mirror_url: str | None = None,
 ) -> str:
     """Render one <item>, matching the 8/12/16-space indentation of the feed."""
     # A literal ']]>' inside CDATA would terminate the section early.
     safe_notes = notes_html.replace("]]>", "]]&gt;").rstrip("\n")
+    mirror_element = ""
+    if mirror_url:
+        mirror_element = (
+            "            <sparkle:mirror\n"
+            f"                url={quoteattr(mirror_url)} />\n"
+        )
     return (
         "        <item>\n"
         f"            <title>{escape(title)}</title>\n"
@@ -152,6 +159,7 @@ def build_item(
         f'                length="{length}"\n'
         '                type="application/octet-stream"\n'
         f"                sparkle:edSignature={quoteattr(signature)} />\n"
+        f"{mirror_element}"
         "        </item>\n"
     )
 
@@ -220,10 +228,11 @@ def splice(text: str, new_item: str, build: str) -> tuple[str, str]:
 
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("--appcast", required=True, help="path to appcast.xml to update in place")
+    p.add_argument("--appcast", default="website/appcast.xml", help="path to appcast.xml to update in place (default: website/appcast.xml)")
     p.add_argument("--version", required=True, help="marketing version, e.g. 1.2")
     p.add_argument("--build", required=True, help="CFBundleVersion, e.g. 2")
     p.add_argument("--url", required=True, help="download URL of the DMG")
+    p.add_argument("--mirror-url", help="fallback mirror download URL for the DMG (e.g. GitHub Releases asset)")
     p.add_argument("--dmg", help="local DMG, used to compute/verify <enclosure length>")
     p.add_argument("--signature", help="raw sign_update output or bare signature")
     p.add_argument("--signature-file", help="file holding sign_update output")
@@ -241,6 +250,8 @@ def main(argv: list[str] | None = None) -> int:
         die(f"--build must be a positive integer, got {args.build!r}")
     if not args.url.startswith("https://"):
         die("--url must be https:// (Sparkle refuses plaintext feeds/downloads)")
+    if args.mirror_url and not args.mirror_url.startswith("https://"):
+        die("--mirror-url must be https:// (Sparkle refuses plaintext feeds/downloads)")
 
     # --- signature + length -------------------------------------------------
     if args.signature and args.signature_file:
@@ -309,6 +320,7 @@ def main(argv: list[str] | None = None) -> int:
         url=args.url,
         length=length,
         signature=signature,
+        mirror_url=args.mirror_url,
     )
     updated, action = splice(text, item, args.build)
 

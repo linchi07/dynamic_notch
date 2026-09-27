@@ -100,7 +100,7 @@ extension Defaults.Keys {
     // MARK: General
     // 这个可以删掉了，不需要在menubar显示icon。设置项已经删除，但是这里没有弄干净。
     static let menubarIcon = Key<Bool>("menubarIcon", default: false)
-    static let releaseName = Key<String>("releaseName", default: "Arena")
+    static let releaseName = Key<String>("releaseName", default: "Cheetah 🐆")
     
     // MARK: Behavior
     static let minimumHoverDuration = Key<TimeInterval>("minimumHoverDuration", default: 0.2)
