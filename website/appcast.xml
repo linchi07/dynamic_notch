@@ -45,7 +45,6 @@
     <li>修Workflow</li>
     <li>我就要从10.0开始发版本号！</li>
     <li>feat(onboarding): add launch at login step to OOBE and restore standard HIG app icon</li>
-    <li>feat(onboarding): add launch at login step to OOBE and restore standard HIG app icon</li>
     <li>chore(updater): consolidate appcast feed under website and support b2 mirror</li>
     <li>fix(media): eliminate priority inversion by using async continuation and explicit QoS</li>
     <li>fix(media): enhance media key interceptor with watchdog, auto-recovery and wake handling</li>

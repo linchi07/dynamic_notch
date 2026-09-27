@@ -143,6 +143,29 @@ const TRANSLATION_MAP = {
       step2: '双击打开 DMG，将 <code>Dynamic Notch.app</code> 拖入 <strong>Applications</strong> 应用程序文件夹。',
       securityNote: '温馨提示：本项目为个人开源项目，代码完全公开可审计，请放心使用。'
     },
+    downloadPage: {
+      title: '下载 Dynamic Notch - 灵动自如的 macOS Live Activity 体验',
+      heading: '下载 Dynamic Notch',
+      subheading: '为 MacBook 内置物理刘海量身定制的开源实时活动体验。',
+      backHome: '返回官网首页',
+      currentVersion: '最新正式版: v10.0',
+      directBadge: '推荐 · 全球 CDN',
+      directTitle: '高速直接下载 (.dmg)',
+      directDesc: '由 Cloudflare + Backblaze CDN 全球多节点加速分发，国内直连高速下载不限速。',
+      directBtn: '立即下载 macOS DMG',
+      githubBadge: '官方发布源',
+      githubTitle: 'GitHub Releases (官方源)',
+      githubDesc: '访问 GitHub Release 官方资产库，查看完整 Commit 记录、更新日志与源码归档。',
+      githubBtn: '前往 GitHub Releases',
+      requirementsTitle: '系统与硬件要求',
+      reqOs: 'macOS 14.0 (Sonoma) 或更高版本',
+      reqArch: 'Apple Silicon (M1/M2/M3/M4) 与 Intel 架构原生支持',
+      reqDevice: 'MacBook Pro / MacBook Air (物理刘海或外接显示器)',
+      installTitle: '快速安装指引',
+      installStep1: '下载 DMG 镜像文件并双击打开挂载；',
+      installStep2: '将 DynamicNotch.app 拖入 Applications（应用程序）文件夹；',
+      installStep3: '首次启动请按提示授权“辅助功能”与“蓝牙”权限以启用刘海感知。'
+    },
     footer: {
       copy: '© 2026 Dynamic Notch (Maintained by linchi07). 感谢开源社区先行者们的探索。<br>Apple, MacBook, macOS, Dynamic Island 为 Apple Inc. 注册商标。'
     }
@@ -408,6 +431,29 @@ const TRANSLATION_MAP = {
       step1: 'Download the latest <code>DynamicNotch.dmg</code> from GitHub Releases.',
       step2: 'Open the DMG and drag <code>Dynamic Notch.app</code> into your <strong>Applications</strong> folder.',
       securityNote: 'Note: This is an open-source project with fully auditable source code.'
+    },
+    downloadPage: {
+      title: 'Download Dynamic Notch - Seamless macOS Live Activity Experience',
+      heading: 'Download Dynamic Notch',
+      subheading: 'Open-source live activity stage tailored for MacBook notch.',
+      backHome: 'Back to Home',
+      currentVersion: 'Latest Release: v10.0',
+      directBadge: 'Recommended · Global CDN',
+      directTitle: 'Fast Direct Download (.dmg)',
+      directDesc: 'Accelerated worldwide by Cloudflare + Backblaze CDN with uncapped speed.',
+      directBtn: 'Download macOS DMG',
+      githubBadge: 'Official Release',
+      githubTitle: 'GitHub Releases (Official)',
+      githubDesc: 'Access official GitHub Releases to view full commit logs, release notes and source archives.',
+      githubBtn: 'Go to GitHub Releases',
+      requirementsTitle: 'System & Hardware Requirements',
+      reqOs: 'macOS 14.0 (Sonoma) or newer',
+      reqArch: 'Apple Silicon (M1/M2/M3/M4) & Intel Universal binary',
+      reqDevice: 'MacBook Pro / MacBook Air (with notch or external displays)',
+      installTitle: 'Quick Installation Guide',
+      installStep1: 'Download and double-click the DMG image to mount;',
+      installStep2: 'Drag DynamicNotch.app into your Applications folder;',
+      installStep3: 'Follow the onboarding prompts to grant Accessibility & Bluetooth permissions.'
     },
     footer: {
       copy: '© 2026 Dynamic Notch (Maintained by linchi07). Grateful to open source pioneers.<br>Apple, MacBook, macOS, Dynamic Island are trademarks of Apple Inc.'
