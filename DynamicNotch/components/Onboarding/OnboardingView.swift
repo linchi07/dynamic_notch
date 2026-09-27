@@ -12,6 +12,7 @@ enum OnboardingStep {
     case welcome
     case accessibilityPermission
     case musicPermission
+    case launchAtLogin
     case finished
 }
 
@@ -50,6 +51,16 @@ struct OnboardingView: View {
                 
             case .musicPermission:
                 MusicControllerSelectionView(
+                    onContinue: {
+                        withAnimation(.easeInOut(duration: 0.6)) {
+                            step = .launchAtLogin
+                        }
+                    }
+                )
+                .transition(.opacity)
+
+            case .launchAtLogin:
+                LaunchAtLoginStepView(
                     onContinue: {
                         withAnimation(.easeInOut(duration: 0.6)) {
                             BoringViewCoordinator.shared.firstLaunch = false
