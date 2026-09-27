@@ -528,19 +528,21 @@ jobs:
         env:
           DMG: ${{ steps.dmg.outputs.path }}
           DMG_NAME: ${{ steps.dmg.outputs.name }}
-          B2_KEY_ID: ${{ secrets.B2_APPLICATION_KEY_ID }}
-          B2_APP_KEY: ${{ secrets.B2_APPLICATION_KEY }}
+          B2_APPLICATION_KEY_ID: ${{ secrets.B2_APPLICATION_KEY_ID }}
+          B2_APPLICATION_KEY: ${{ secrets.B2_APPLICATION_KEY }}
           B2_BUCKET: ${{ secrets.B2_BUCKET_NAME }}
+          B2_ACCOUNT_INFO: ${{ runner.temp }}/b2_account_info
         run: |
           set -euo pipefail
-          if [ -n "${B2_KEY_ID}" ] && [ -n "${B2_APP_KEY}" ] && [ -n "${B2_BUCKET}" ]; then
+          if [ -n "${B2_APPLICATION_KEY_ID:-}" ] && [ -n "${B2_APPLICATION_KEY:-}" ] && [ -n "${B2_BUCKET:-}" ]; then
+            echo "Installing official Backblaze B2 CLI..."
+            pip3 install --break-system-packages -q b2 || pip3 install -q b2
             echo "Uploading ${DMG_NAME} to Backblaze B2 bucket ${B2_BUCKET}..."
-            python3 scripts/upload_b2.py \
-              --file "${DMG}" \
-              --destination "${DMG_NAME}" \
-              --bucket "${B2_BUCKET}" \
-              --key-id "${B2_KEY_ID}" \
-              --app-key "${B2_APP_KEY}"
+            if b2 file upload --help >/dev/null 2>&1; then
+              b2 file upload --no-progress "${B2_BUCKET}" "${DMG}" "${DMG_NAME}"
+            else
+              b2 upload-file --no-progress "${B2_BUCKET}" "${DMG}" "${DMG_NAME}"
+            fi
             echo "uploaded=true" >> "$GITHUB_OUTPUT"
           else
             echo "::notice::B2 secrets (B2_APPLICATION_KEY_ID, B2_APPLICATION_KEY, B2_BUCKET_NAME) not fully configured; skipping B2 upload."

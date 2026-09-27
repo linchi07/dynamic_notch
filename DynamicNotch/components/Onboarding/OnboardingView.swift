@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Defaults
 
 enum OnboardingStep {
     case unsupported
@@ -43,6 +44,8 @@ struct OnboardingView: View {
 
             case .accessibilityPermission:
                 AccessibilityPermissionStepView {
+                    // Silently enable HUD replacement once accessibility is granted
+                    Defaults[.hudReplacement] = true
                     withAnimation(.easeInOut(duration: 0.6)) {
                         step = .musicPermission
                     }

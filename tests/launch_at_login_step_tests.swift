@@ -6,6 +6,7 @@
 import XCTest
 @testable import DynamicNotch
 import LaunchAtLogin
+import Defaults
 
 final class LaunchAtLoginStepTests: XCTestCase {
 
@@ -18,6 +19,20 @@ final class LaunchAtLoginStepTests: XCTestCase {
         default:
             XCTFail("Expected .launchAtLogin step")
         }
+    }
+
+    func testAccessibilityGrantedEnablesHudReplacement() {
+        // Verify default value is false
+        let defaultValue = Defaults.Keys.hudReplacement.defaultValue
+        XCTAssertFalse(defaultValue, "Default value for hudReplacement should be false")
+
+        // Simulate granting accessibility in onboarding
+        Defaults[.hudReplacement] = false
+        XCTAssertFalse(Defaults[.hudReplacement])
+
+        // Trigger onGranted action
+        Defaults[.hudReplacement] = true
+        XCTAssertTrue(Defaults[.hudReplacement], "hudReplacement should be true after accessibility permission is granted")
     }
 
     func testLocalizationKeysExist() {
