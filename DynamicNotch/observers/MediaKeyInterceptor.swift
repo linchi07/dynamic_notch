@@ -19,11 +19,16 @@ private let RETRY_DELAY_MS: Int = 200
 
 final class EventTapThread: Thread {
     private(set) var runLoop: CFRunLoop?
-    private let semaphore = DispatchSemaphore(value: 0)
+    private var runLoopContinuation: CheckedContinuation<CFRunLoop, Never>?
+    private let continuationLock = NSLock()
 
-    override func main() {
+    override init() {
+        super.init()
         name = "com.dynamicnotch.media-key-interceptor"
         qualityOfService = .userInteractive
+    }
+
+    override func main() {
         runLoop = CFRunLoopGetCurrent()
 
         // Keep the run loop alive even if sources are temporarily removed
@@ -33,17 +38,31 @@ final class EventTapThread: Thread {
             CFRunLoopAddSource(runLoop, dummySource, .commonModes)
         }
 
-        semaphore.signal()
+        continuationLock.lock()
+        let continuation = runLoopContinuation
+        runLoopContinuation = nil
+        continuationLock.unlock()
+
+        continuation?.resume(returning: runLoop!)
+
         CFRunLoopRun()
     }
 
-    func obtainRunLoop() -> CFRunLoop {
+    func obtainRunLoop() async -> CFRunLoop {
         if let runLoop {
             return runLoop
         }
-        start()
-        semaphore.wait()
-        return runLoop!
+        return await withCheckedContinuation { continuation in
+            continuationLock.lock()
+            if let runLoop = self.runLoop {
+                continuationLock.unlock()
+                continuation.resume(returning: runLoop)
+                return
+            }
+            self.runLoopContinuation = continuation
+            continuationLock.unlock()
+            self.start()
+        }
     }
 
     func stop() {
@@ -160,17 +179,19 @@ final class MediaKeyInterceptor {
             return
         }
 
+        let thread = EventTapThread()
+        let backgroundRunLoop = await thread.obtainRunLoop()
+
         lifecycleLock.lock()
         defer { lifecycleLock.unlock() }
 
         guard Defaults[.hudReplacement] else {
+            thread.stop()
             CFMachPortInvalidate(tap)
             return
         }
 
         eventTap = tap
-        let thread = EventTapThread()
-        let backgroundRunLoop = thread.obtainRunLoop()
         eventTapThread = thread
 
         runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0)
