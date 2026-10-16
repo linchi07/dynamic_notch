@@ -45,6 +45,14 @@ jobs:
       - name: Resolve Swift packages
         run: xcodebuild -resolvePackageDependencies -project "$PROJECT"
 
+      - name: Test accessibility authorization lifecycle
+        run: |
+          xcrun swiftc -parse-as-library \
+            DynamicNotch/XPCHelperClient/AccessibilityAuthorization.swift \
+            tests/accessibility_authorization_tests.swift \
+            -o "${RUNNER_TEMP}/accessibility_authorization_tests"
+          "${RUNNER_TEMP}/accessibility_authorization_tests"
+
       - name: Build (unsigned)
         run: |
           xcodebuild build \

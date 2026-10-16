@@ -84,9 +84,11 @@ struct OnboardingView: View {
 struct AccessibilityPermissionStepView: View {
     let onGranted: () -> Void
 
-    @State private var isAuthorized: Bool = AXIsProcessTrusted()
-    @State private var timer: Timer?
+    @ObservedObject private var authorization = AccessibilityAuthorization.shared
     @State private var hasRequested: Bool = false
+    @State private var didContinue = false
+
+    private var isAuthorized: Bool { authorization.isAuthorized }
 
     var body: some View {
         VStack(spacing: 18) {
@@ -185,14 +187,14 @@ struct AccessibilityPermissionStepView: View {
                     }
 
                     Button("Continue") {
-                        onGranted()
+                        continueOnce()
                     }
                     .buttonStyle(.borderedProminent)
                     .controlSize(.large)
                 } else {
                     Button(hasRequested ? "Open System Settings" : "Grant Accessibility Access") {
                         hasRequested = true
-                        openAccessibilitySettings()
+                        authorization.request()
                     }
                     .buttonStyle(.borderedProminent)
                     .controlSize(.large)
@@ -216,51 +218,22 @@ struct AccessibilityPermissionStepView: View {
                 .ignoresSafeArea()
         )
         .onAppear {
-            checkAuthorization()
-            startPolling()
+            authorization.refresh()
         }
-        .onDisappear {
-            stopPolling()
-        }
-        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
-            checkAuthorization()
-        }
-    }
-
-    private func checkAuthorization() {
-        let authorized = AXIsProcessTrusted()
-        if authorized != isAuthorized {
-            withAnimation(.easeInOut(duration: 0.3)) {
-                isAuthorized = authorized
-            }
-            if authorized {
-                stopPolling()
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-                    onGranted()
-                }
-            }
+        .task(id: isAuthorized) {
+            guard isAuthorized else { return }
+            do {
+                try await Task.sleep(for: .milliseconds(800))
+            } catch { return }
+            guard !Task.isCancelled, isAuthorized else { return }
+            continueOnce()
         }
     }
 
-    private func startPolling() {
-        timer?.invalidate()
-        timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { _ in
-            checkAuthorization()
-        }
-    }
-
-    private func stopPolling() {
-        timer?.invalidate()
-        timer = nil
-    }
-
-    private func openAccessibilitySettings() {
-        let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
-        AXIsProcessTrustedWithOptions(options)
-
-        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
-            NSWorkspace.shared.open(url)
-        }
+    private func continueOnce() {
+        guard isAuthorized, !didContinue else { return }
+        didContinue = true
+        onGranted()
     }
 }
 

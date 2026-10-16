@@ -9,12 +9,9 @@ import AppKit
 
 enum ApplicationRelauncher {
     static func restart() {
-        guard let bundleIdentifier = Bundle.main.bundleIdentifier else { return }
-
         let workspace = NSWorkspace.shared
-
-        guard let appURL = workspace.urlForApplication(withBundleIdentifier: bundleIdentifier)
-        else { return }
+        // A bundle-ID lookup can select a development copy with another signature.
+        let appURL = Bundle.main.bundleURL
 
         let configuration = NSWorkspace.OpenConfiguration()
         configuration.createsNewApplicationInstance = true

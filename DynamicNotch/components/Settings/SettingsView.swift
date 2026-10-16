@@ -360,7 +360,9 @@ struct HUD: View {
     @Default(.enableWindowSnapping) private var enableWindowSnapping
     @Default(.enableWindowSnapGhostAnimation) private var enableWindowSnapGhostAnimation
     @ObservedObject var coordinator = BoringViewCoordinator.shared
-    @State private var accessibilityAuthorized = false
+    @ObservedObject private var authorization = AccessibilityAuthorization.shared
+
+    private var accessibilityAuthorized: Bool { authorization.isAuthorized }
     
     var body: some View {
         Form {
@@ -415,18 +417,7 @@ struct HUD: View {
         .accentColor(.effectiveAccent)
         .navigationTitle("HUDs")
         .task {
-            accessibilityAuthorized = await XPCHelperClient.shared.isAccessibilityAuthorized()
-        }
-        .onAppear {
-            XPCHelperClient.shared.startMonitoringAccessibilityAuthorization()
-        }
-        .onDisappear {
-            XPCHelperClient.shared.stopMonitoringAccessibilityAuthorization()
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .accessibilityAuthorizationChanged)) { notification in
-            if let granted = notification.userInfo?["granted"] as? Bool {
-                accessibilityAuthorized = granted
-            }
+            authorization.refresh()
         }
         .onChange(of: enableWindowSnapGhostAnimation) {
             if !enableWindowSnapGhostAnimation { WindowSnapGhostAnimator.shared.dismiss() }

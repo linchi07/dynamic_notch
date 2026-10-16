@@ -274,6 +274,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        AccessibilityAuthorization.shared.startMonitoring()
         ExternalLiveActivityServer.shared.start()
         BluetoothActivityManager.shared.startMonitoring()
         Task {

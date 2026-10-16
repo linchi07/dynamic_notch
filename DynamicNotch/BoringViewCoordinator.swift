@@ -223,10 +223,12 @@ class BoringViewCoordinator: ObservableObject {
             forName: Notification.Name.accessibilityAuthorizationChanged,
             object: nil,
             queue: .main
-        ) { _ in
+        ) { notification in
             Task { @MainActor in
-                if Defaults[.hudReplacement] {
+                if notification.userInfo?["granted"] as? Bool == true, Defaults[.hudReplacement] {
                     await MediaKeyInterceptor.shared.start(promptIfNeeded: false)
+                } else {
+                    MediaKeyInterceptor.shared.stop()
                 }
             }
         }
@@ -242,14 +244,8 @@ class BoringViewCoordinator: ObservableObject {
 
                     if change.newValue {
                         self.hudEnableTask = Task { @MainActor in
-                            let granted = await XPCHelperClient.shared.ensureAccessibilityAuthorization(promptIfNeeded: true)
-                            if Task.isCancelled { return }
-
-                            if granted {
-                                await MediaKeyInterceptor.shared.start()
-                            } else {
-                                Defaults[.hudReplacement] = false
-                            }
+                            guard !Task.isCancelled else { return }
+                            await MediaKeyInterceptor.shared.start(promptIfNeeded: false)
                         }
                     } else {
                         MediaKeyInterceptor.shared.stop()
@@ -259,12 +255,7 @@ class BoringViewCoordinator: ObservableObject {
 
         Task { @MainActor in
             if Defaults[.hudReplacement] {
-                let authorized = await XPCHelperClient.shared.isAccessibilityAuthorized()
-                if !authorized {
-                    Defaults[.hudReplacement] = false
-                } else {
-                    await MediaKeyInterceptor.shared.start(promptIfNeeded: false)
-                }
+                await MediaKeyInterceptor.shared.start(promptIfNeeded: false)
             }
         }
     }

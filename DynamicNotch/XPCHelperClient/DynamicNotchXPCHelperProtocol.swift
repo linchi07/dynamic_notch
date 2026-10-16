@@ -9,9 +9,6 @@ import Foundation
 
 /// The protocol that this service will vend as its API. This protocol will also need to be visible to the process hosting the service.
 @objc protocol DynamicNotchXPCHelperProtocol {
-    func isAccessibilityAuthorized(with reply: @escaping (Bool) -> Void)
-    func requestAccessibilityAuthorization()
-    func ensureAccessibilityAuthorization(_ promptIfNeeded: Bool, with reply: @escaping (Bool) -> Void)
     func beginWindowDrag(_ processIdentifier: Int32, windowX: Double, windowY: Double, windowWidth: Double, windowHeight: Double, with reply: @escaping (Bool) -> Void)
     func capturedWindowHasMoved(with reply: @escaping (Bool) -> Void)
     func setCapturedWindowFrame(_ x: Double, y: Double, width: Double, height: Double, animated: Bool, with reply: @escaping (Bool) -> Void)
@@ -75,30 +72,6 @@ class DynamicNotchXPCHelper: NSObject, DynamicNotchXPCHelperProtocol {
         return (result == .success && id != 0) ? id : nil
     }
     
-    @objc func isAccessibilityAuthorized(with reply: @escaping (Bool) -> Void) {
-        reply(AXIsProcessTrusted())
-    }
-
-    @objc func requestAccessibilityAuthorization() {
-        let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
-        AXIsProcessTrustedWithOptions(options)
-    }
-
-    @objc func ensureAccessibilityAuthorization(_ promptIfNeeded: Bool, with reply: @escaping (Bool) -> Void) {
-        if AXIsProcessTrusted() {
-            reply(true)
-            return
-        }
-
-        if promptIfNeeded {
-            requestAccessibilityAuthorization()
-        }
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            reply(AXIsProcessTrusted())
-        }
-    }
-
     // MARK: - Window snapping
 
     @objc func beginWindowDrag(

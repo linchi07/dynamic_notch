@@ -5,80 +5,31 @@ final class XPCHelperClient: NSObject, @unchecked Sendable {
     nonisolated static let shared = XPCHelperClient()
     
     private let helper = DynamicNotchXPCHelper()
-    private var lastKnownAuthorization: Bool?
-    private var monitoringTask: Task<Void, Never>?
-    
-    deinit {
-        stopMonitoringAccessibilityAuthorization()
-    }
     
     @MainActor
     func shutdown() {
-        stopMonitoringAccessibilityAuthorization()
-    }
-    
-    @MainActor
-    private func notifyAuthorizationChange(_ granted: Bool) {
-        guard lastKnownAuthorization != granted else { return }
-        lastKnownAuthorization = granted
-        NotificationCenter.default.post(
-            name: .accessibilityAuthorizationChanged,
-            object: nil,
-            userInfo: ["granted": granted]
-        )
-    }
-
-    // MARK: - Monitoring
-    nonisolated func startMonitoringAccessibilityAuthorization(every interval: TimeInterval = 3.0) {
-        stopMonitoringAccessibilityAuthorization()
-        monitoringTask = Task.detached { [weak self] in
-            guard let self = self else { return }
-            while !Task.isCancelled {
-                _ = await self.isAccessibilityAuthorized()
-                do {
-                    try await Task.sleep(for: .seconds(interval))
-                } catch { break }
-            }
-        }
-    }
-
-    nonisolated func stopMonitoringAccessibilityAuthorization() {
-        monitoringTask?.cancel()
-        monitoringTask = nil
-    }
-
-    var isMonitoring: Bool {
-        return monitoringTask != nil
+        AccessibilityAuthorization.shared.stopMonitoring()
     }
     
     // MARK: - Accessibility
     
-    nonisolated func requestAccessibilityAuthorization() {
-        helper.requestAccessibilityAuthorization()
+    @MainActor
+    func requestAccessibilityAuthorization() {
+        AccessibilityAuthorization.shared.request()
     }
     
     nonisolated func isAccessibilityAuthorized() async -> Bool {
-        let result: Bool = await withCheckedContinuation { continuation in
-            helper.isAccessibilityAuthorized { authorized in
-                continuation.resume(returning: authorized)
-            }
-        }
-        await MainActor.run {
-            notifyAuthorizationChange(result)
-        }
-        return result
+        await AccessibilityAuthorization.shared.refresh()
     }
     
     nonisolated func ensureAccessibilityAuthorization(promptIfNeeded: Bool) async -> Bool {
-        let result: Bool = await withCheckedContinuation { continuation in
-            helper.ensureAccessibilityAuthorization(promptIfNeeded) { authorized in
-                continuation.resume(returning: authorized)
-            }
-        }
         await MainActor.run {
-            notifyAuthorizationChange(result)
+            let authorization = AccessibilityAuthorization.shared
+            if promptIfNeeded {
+                authorization.request()
+            }
+            return authorization.refresh()
         }
-        return result
     }
 
     // MARK: - Window snapping
@@ -265,8 +216,4 @@ final class XPCHelperClient: NSObject, @unchecked Sendable {
             }
         }
     }
-}
-
-extension Notification.Name {
-    static let accessibilityAuthorizationChanged = Notification.Name("accessibilityAuthorizationChanged")
 }
