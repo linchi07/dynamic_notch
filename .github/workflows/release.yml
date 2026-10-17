@@ -655,9 +655,6 @@ jobs:
             exit 0
           fi
           git commit -m "chore(appcast): DynamicNotch ${VERSION} (build ${BUILD})"
-          # Pushing with GITHUB_TOKEN does not trigger other workflows, which is
-          # why the Pages deploy is a separate job in this same run rather than
-          # a side effect of static.yml.
           git push origin "HEAD:${GITHUB_REF_NAME}"
 
       - name: Keep the notarized DMG as a workflow artifact
@@ -675,33 +672,3 @@ jobs:
           security delete-keychain "${{ steps.signing.outputs.keychain_path }}" 2>/dev/null
           rm -f "${RUNNER_TEMP}/asc_api_key.p8" "${RUNNER_TEMP}/sparkle-signature.txt" "${RUNNER_TEMP}/sig.txt"
           echo "Removed the temporary keychain and the notarization key."
-
-  publish-feed:
-    name: Publish the update feed
-    needs: release
-    if: ${{ inputs.dry_run == false }}
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    concurrency:
-      group: pages
-      cancel-in-progress: false
-    steps:
-      - name: Check out
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: main
-      - name: Configure Pages
-        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
-      - name: Upload the website and feed
-        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
-        with:
-          path: website/
-      - name: Deploy
-        id: deployment
-        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0

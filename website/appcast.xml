@@ -4,9 +4,6 @@
 
   This feed is hosted directly alongside the official website on Cloudflare Pages:
       https://notch.wejoinnwk.com/appcast.xml
-  Mirror copy may also be published to GitHub Pages:
-      https://linchi07.github.io/dynamic_notch/appcast.xml
-
   DO NOT HAND-EDIT THE item ELEMENTS. Every enclosure needs the exact byte
   length of the DMG and the EdDSA signature over those exact bytes; a mismatch
   makes every client reject the update silently. Items are appended by
