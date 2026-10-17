@@ -30,6 +30,34 @@
         <description>DynamicNotch release feed</description>
         <language>en</language>
         <item>
+            <title>10.1</title>
+            <pubDate>Sat, 17 Oct 2026 01:19:10 +0000</pubDate>
+            <link>https://github.com/linchi07/dynamic_notch/releases/tag/v10.1</link>
+            <sparkle:version>3</sparkle:version>
+            <sparkle:shortVersionString>10.1</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+<h2>DynamicNotch 10.1</h2>
+<ul>
+    <li>chore: prepare DynamicNotch 10.1 release</li>
+    <li>fix: preserve accessibility authorization across app launches</li>
+    <li>refactor(website): streamline download page to two options and fix i18n fallback</li>
+    <li>网站修一修</li>
+    <li>chore(appcast): DynamicNotch 10.0 (build 2)</li>
+</ul>
+]]></description>
+            <enclosure
+                url="https://download.wejoinnwk.com/DynamicNotch-10.1.dmg"
+                sparkle:version="3"
+                sparkle:shortVersionString="10.1"
+                length="9876357"
+                type="application/octet-stream"
+                sparkle:edSignature="ADBl+djEexnupJPCkQNR0nOdqYL3FgsRNyaJWYfneP7DMzZTFlEyL5Zf8meWjSBusfaIWRuQpzzrc7pjVa1dAA==" />
+            <sparkle:mirror
+                url="https://github.com/linchi07/dynamic_notch/releases/download/v10.1/DynamicNotch-10.1.dmg" />
+        </item>
+
+        <item>
             <title>10.0</title>
             <pubDate>Sun, 27 Sep 2026 09:10:05 +0000</pubDate>
             <link>https://github.com/linchi07/dynamic_notch/releases/tag/v10.0</link>
