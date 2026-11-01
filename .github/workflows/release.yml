@@ -40,12 +40,14 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Marketing version, must equal MARKETING_VERSION in project.pbxproj (e.g. 1.2)"
-        required: true
+        description: "Marketing version (empty = use MARKETING_VERSION from project.pbxproj, e.g. 10.1)"
+        required: false
+        default: ""
         type: string
       build:
-        description: "CFBundleVersion. Must be greater than every build already in the appcast."
-        required: true
+        description: "CFBundleVersion (empty = auto-increment highest build + 1)"
+        required: false
+        default: ""
         type: string
       min_system_version:
         description: "Sparkle minimumSystemVersion recorded for this item"
@@ -126,47 +128,26 @@ jobs:
             exit 1
           fi
 
-          if ! printf '%s' "${VERSION}" | grep -Eq '^[0-9]+(\.[0-9]+)*$'; then
-            echo "::error::version must be dotted digits, got '${VERSION}'"
-            exit 1
-          fi
-          if ! printf '%s' "${BUILD}" | grep -Eq '^[0-9]+$' || [ "${BUILD}" -lt 1 ]; then
-            echo "::error::build must be a positive integer, got '${BUILD}'"
-            exit 1
-          fi
+          # Auto-bump build ver and update project.pbxproj & website/download.html
+          python3 scripts/bump_version.py \
+            --pbxproj "${PROJECT}/project.pbxproj" \
+            --appcast website/appcast.xml \
+            --download-html website/download.html \
+            --version "${VERSION}" \
+            --build "${BUILD}" \
+            --write \
+            --github-output "${GITHUB_OUTPUT}"
 
-          # The binary and the appcast must not disagree about what this is.
-          for pair in "MARKETING_VERSION=${VERSION}" "CURRENT_PROJECT_VERSION=${BUILD}"; do
-            key="${pair%%=*}"
-            want="${pair#*=}"
-            found="$(grep -o "${key} = [^;]*" "${PROJECT}/project.pbxproj" \
-                     | sed "s/.*= //" | tr -d ' ' | sort -u | tr '\n' ' ')"
-            if [ "${found% }" != "${want}" ]; then
-              echo "::error::${key} in project.pbxproj is '${found% }' but this release says '${want}'."
-              echo "::error::Update project.pbxproj first, then re-run."
-              exit 1
-            fi
-          done
+          RESOLVED_VERSION="$(grep '^version=' "${GITHUB_OUTPUT}" | tail -1 | cut -d= -f2)"
+          RESOLVED_BUILD="$(grep '^build=' "${GITHUB_OUTPUT}" | tail -1 | cut -d= -f2)"
 
-          # Sparkle compares CFBundleVersion, so it must never move backwards.
-          highest="$( (grep -o '<sparkle:version>[^<]*</sparkle:version>' website/appcast.xml || true) \
-                     | sed 's/<[^>]*>//g' | sort -n | tail -1)"
-          highest="${highest:-0}"
-          if [ "${BUILD}" -le "${highest}" ]; then
-            echo "::error::build ${BUILD} is not greater than ${highest}, the highest build already in the feed."
-            echo "::error::Sparkle would never offer this update. Bump the build number."
+          if git rev-parse "v${RESOLVED_VERSION}" >/dev/null 2>&1; then
+            echo "::error::tag v${RESOLVED_VERSION} already exists."
+            echo "::error::Bump the marketing version (input 'version' e.g. 10.2), or delete the existing release and tag to re-cut it."
             exit 1
           fi
 
-          if git rev-parse "v${VERSION}" >/dev/null 2>&1; then
-            echo "::error::tag v${VERSION} already exists."
-            echo "::error::Bump the marketing version, or delete the existing release and tag to re-cut it."
-            exit 1
-          fi
-
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-          echo "build=${BUILD}" >> "$GITHUB_OUTPUT"
-          echo "Releasing DynamicNotch ${VERSION} (build ${BUILD}); highest published build is ${highest}."
+          echo "Releasing DynamicNotch ${RESOLVED_VERSION} (build ${RESOLVED_BUILD})."
 
       - name: Set up signing identity and notarization key
         id: signing
@@ -640,7 +621,7 @@ jobs:
           /usr/bin/xmllint --noout website/appcast.xml
           git --no-pager diff --stat -- website/appcast.xml
 
-      - name: Commit the appcast
+      - name: Commit changes (appcast, pbxproj, download)
         if: ${{ inputs.dry_run == false }}
         env:
           VERSION: ${{ steps.inputs.outputs.version }}
@@ -649,12 +630,12 @@ jobs:
           set -euo pipefail
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add website/appcast.xml updater/appcast.xml
+          git add website/appcast.xml updater/appcast.xml "${PROJECT}/project.pbxproj" website/download.html
           if git diff --cached --quiet; then
-            echo "appcast unchanged; nothing to commit"
+            echo "no changes to commit"
             exit 0
           fi
-          git commit -m "chore(appcast): DynamicNotch ${VERSION} (build ${BUILD})"
+          git commit -m "chore(release): bump DynamicNotch to ${VERSION} (build ${BUILD})"
           git push origin "HEAD:${GITHUB_REF_NAME}"
 
       - name: Keep the notarized DMG as a workflow artifact

@@ -162,7 +162,7 @@ const downloadHtmlContent = fs.readFileSync(downloadHtmlPath, 'utf8');
 
 assert(downloadHtmlContent.includes('id="directDownloadBtn"'), 'download.html 必须包含直接下载按钮 (directDownloadBtn)');
 assert(downloadHtmlContent.includes('id="githubReleaseBtn"'), 'download.html 必须包含 GitHub Releases 按钮 (githubReleaseBtn)');
-assert(downloadHtmlContent.includes('download.wejoinnwk.com/DynamicNotch-10.0.dmg'), 'download.html 直接下载链接应指向 CDN 域名');
+assert(/download\.wejoinnwk\.com\/DynamicNotch-\d+(\.\d+)*\.dmg/.test(downloadHtmlContent), 'download.html 直接下载链接应指向 CDN 域名');
 assert(downloadHtmlContent.includes('github.com/linchi07/dynamic_notch/releases/latest'), 'download.html 备用下载链接应指向 GitHub Releases');
 
 // 验证所有多余的小字描述已全部去掉
