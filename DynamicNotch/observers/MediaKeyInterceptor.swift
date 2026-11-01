@@ -12,6 +12,9 @@ import Defaults
 import AVFoundation
 
 private let SYSTEM_DEFINED_EVENT_TYPE_RAW: UInt32 = 14
+private let SYSTEM_DEFINED_EVENT_SUBTYPE_FIELD = CGEventField(rawValue: 83)
+private let SYSTEM_DEFINED_EVENT_DATA1_FIELD = CGEventField(rawValue: 149)
+private let SUBTYPE_AUX_CONTROL_BUTTONS: Int64 = 8
 private let DEFAULT_STEP: Float = 1.0 / 16.0
 private let WATCHDOG_INTERVAL_SECONDS: Double = 2.0
 private let MAX_RETRY_COUNT: Int = 3
@@ -315,7 +318,7 @@ final class MediaKeyInterceptor {
             return Unmanaged.passUnretained(cgEvent)
         }
 
-        // Strictly verify event type to prevent passing pseudo/corrupt events to NSEvent
+        // Strictly verify event type to prevent handling unrelated events
         guard type.rawValue == SYSTEM_DEFINED_EVENT_TYPE_RAW else {
             return Unmanaged.passUnretained(cgEvent)
         }
@@ -327,17 +330,23 @@ final class MediaKeyInterceptor {
         guard cgEvent.type != .null else {
             return Unmanaged.passUnretained(cgEvent)
         }
-        guard let nsEvent = NSEvent(cgEvent: cgEvent),
-              nsEvent.type == .systemDefined,
-              nsEvent.subtype.rawValue == 8 else {
+        
+        // Read subtype and data1 directly from CGEvent to avoid off-main-thread NSEvent initialization crashes
+        guard let subtypeField = SYSTEM_DEFINED_EVENT_SUBTYPE_FIELD,
+              let data1Field = SYSTEM_DEFINED_EVENT_DATA1_FIELD else {
             return Unmanaged.passUnretained(cgEvent)
         }
         
-        let data1 = nsEvent.data1
+        let subtype = cgEvent.getIntegerValueField(subtypeField)
+        guard subtype == SUBTYPE_AUX_CONTROL_BUTTONS else {
+            return Unmanaged.passUnretained(cgEvent)
+        }
+        
+        let data1 = cgEvent.getIntegerValueField(data1Field)
         let keyCode = (data1 & 0xFFFF_0000) >> 16
         let stateByte = ((data1 & 0xFF00) >> 8)
         
-        guard let keyType = NXKeyType(rawValue: keyCode) else {
+        guard let keyType = NXKeyType(rawValue: Int(keyCode)) else {
             return Unmanaged.passUnretained(cgEvent)
         }
         
