@@ -27,6 +27,33 @@
         <description>DynamicNotch release feed</description>
         <language>en</language>
         <item>
+            <title>10.2</title>
+            <pubDate>Sun, 01 Nov 2026 16:15:16 +0000</pubDate>
+            <link>https://github.com/linchi07/dynamic_notch/releases/tag/v10.2</link>
+            <sparkle:version>4</sparkle:version>
+            <sparkle:shortVersionString>10.2</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+<h2>DynamicNotch 10.2</h2>
+<ul>
+    <li>feat(ci): auto-increment build ver and sync pbxproj with release workflow</li>
+    <li>fix(interceptor): read CGEvent fields directly to prevent caps lock crash off main thread</li>
+    <li>chore: remove retired GitHub Pages deployment</li>
+    <li>chore(appcast): DynamicNotch 10.1 (build 3)</li>
+</ul>
+]]></description>
+            <enclosure
+                url="https://download.wejoinnwk.com/DynamicNotch-10.2.dmg"
+                sparkle:version="4"
+                sparkle:shortVersionString="10.2"
+                length="9876425"
+                type="application/octet-stream"
+                sparkle:edSignature="KohiWY2OLV8rwbdscliK9AMZT1OA+E1CYtk7aW1B4LS14Op7LZRCtdQH9uoeZKOygNaNr/lm2e5k2Ymjf5zSBQ==" />
+            <sparkle:mirror
+                url="https://github.com/linchi07/dynamic_notch/releases/download/v10.2/DynamicNotch-10.2.dmg" />
+        </item>
+
+        <item>
             <title>10.1</title>
             <pubDate>Sat, 17 Oct 2026 01:19:10 +0000</pubDate>
             <link>https://github.com/linchi07/dynamic_notch/releases/tag/v10.1</link>
@@ -54,6 +81,7 @@
                 url="https://github.com/linchi07/dynamic_notch/releases/download/v10.1/DynamicNotch-10.1.dmg" />
         </item>
 
+        
         <item>
             <title>10.0</title>
             <pubDate>Sun, 27 Sep 2026 09:10:05 +0000</pubDate>
