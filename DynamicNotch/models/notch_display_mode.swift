@@ -205,7 +205,7 @@ struct NotchComboActivity: Identifiable, Equatable {
 /// previews. The physical notch is never padded; only the two outer edges are.
 enum NotchLayoutMetrics {
     static let minimumVisualSize: CGFloat = 12
-    static let innerPadding: CGFloat = 0
+    static let innerPadding: CGFloat = 4
 
     static func effectiveOuterPadding(_ outerPadding: CGFloat) -> CGFloat {
         max(12, outerPadding)
@@ -222,11 +222,26 @@ enum NotchLayoutMetrics {
     static func visualWidth(for item: NotchActivityItem?, notchHeight: CGFloat) -> CGFloat {
         guard let item else { return visualSize(for: notchHeight) }
         switch item.visual {
-        case .text:
-            return max(38, visualSize(for: notchHeight))
+        case .text(let str):
+            // 11pt bold monospaced 每个字符约 6.8pt，加上 6pt 的文字内部余量，确保时间完整不被裁切
+            let measured = CGFloat(str.count) * 6.8 + 6.0
+            return max(measured, visualSize(for: notchHeight))
         default:
             return visualSize(for: notchHeight)
         }
+    }
+
+    /// 严格对称的两翼单侧宽度：取两翼所需视觉宽度的最大值，确保两翼对称展开，物理刘海绝对居中不偏移
+    static func symmetricWingWidth(
+        leading: NotchActivityItem?,
+        trailing: NotchActivityItem?,
+        notchHeight: CGFloat,
+        outerPadding: CGFloat
+    ) -> CGFloat {
+        let leadingVisualW = visualWidth(for: leading, notchHeight: notchHeight)
+        let trailingVisualW = visualWidth(for: trailing, notchHeight: notchHeight)
+        let maxVisualW = max(leadingVisualW, trailingVisualW)
+        return maxVisualW + effectiveOuterPadding(outerPadding) + innerPadding
     }
 
     static func singleWingWidth(for item: NotchActivityItem?, notchHeight: CGFloat, outerPadding: CGFloat) -> CGFloat {
@@ -242,8 +257,12 @@ enum NotchLayoutMetrics {
         guard let state else {
             return physicalNotchWidth + 2 * wingWidth(for: notchHeight, outerPadding: outerPadding)
         }
-        let leadingW = singleWingWidth(for: state.leadingItem, notchHeight: notchHeight, outerPadding: outerPadding)
-        let trailingW = singleWingWidth(for: state.trailingItem, notchHeight: notchHeight, outerPadding: outerPadding)
-        return physicalNotchWidth + leadingW + trailingW
+        let wingW = symmetricWingWidth(
+            leading: state.leadingItem,
+            trailing: state.trailingItem,
+            notchHeight: notchHeight,
+            outerPadding: outerPadding
+        )
+        return physicalNotchWidth + 2 * wingW
     }
 }

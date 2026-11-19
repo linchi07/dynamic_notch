@@ -26,8 +26,10 @@ struct NotchWingsContainer: View {
     }
 
     private var wingWidth: CGFloat {
-        NotchLayoutMetrics.wingWidth(
-            for: vm.effectiveClosedNotchHeight,
+        NotchLayoutMetrics.symmetricWingWidth(
+            leading: state.leadingItem,
+            trailing: state.trailingItem,
+            notchHeight: vm.effectiveClosedNotchHeight,
             outerPadding: effectiveOuterPadding
         )
     }
@@ -78,24 +80,20 @@ struct NotchWingsContainer: View {
     @ViewBuilder
     private func wing(item: NotchActivityItem?, edge: WingEdge) -> some View {
         let currentVisualWidth = NotchLayoutMetrics.visualWidth(for: item, notchHeight: vm.effectiveClosedNotchHeight)
-        let currentWingWidth = NotchLayoutMetrics.singleWingWidth(
-            for: item,
-            notchHeight: vm.effectiveClosedNotchHeight,
-            outerPadding: effectiveOuterPadding
-        )
 
-        ZStack(alignment: edge == .leading ? .trailing : .leading) {
+        ZStack {
             Color.black
 
             if let item {
                 activityVisual(item)
                     .frame(width: currentVisualWidth, height: visualSize)
+                    .frame(maxWidth: .infinity, alignment: .center)
                     .padding(edge.outerPaddingEdge, effectiveOuterPadding)
                     .padding(edge.innerPaddingEdge, NotchLayoutMetrics.innerPadding)
                     .accessibilityLabel(item.accessibilityLabel)
             }
         }
-        .frame(width: currentWingWidth, height: vm.effectiveClosedNotchHeight)
+        .frame(width: wingWidth, height: vm.effectiveClosedNotchHeight)
     }
 
     @ViewBuilder

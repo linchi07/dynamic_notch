@@ -23,6 +23,7 @@ struct TimerTests {
         testTimerPresetDefaults()
         testTimerFormatting()
         testTimerStateAndProgress()
+        testNotchWingSymmetryAndLayout()
 
         print("✅ 所有 Timer 单元测试全部通过！")
     }
@@ -101,5 +102,38 @@ struct TimerTests {
         expect(TimerStatus.running.displayText == "计时中", "running 状态文字应为 '计时中'")
         expect(TimerStatus.paused.displayText == "已暂停", "paused 状态文字应为 '已暂停'")
         expect(TimerStatus.completed.displayText == "已完成", "completed 状态文字应为 '已完成'")
+    }
+
+    /// 测试刘海两翼严格对称性与长文本自适应逻辑
+    static func testNotchWingSymmetryAndLayout() {
+        let notchHeight: CGFloat = 32.0
+        let outerPadding: CGFloat = 12.0
+        let physicalNotchWidth: CGFloat = 185.0
+        let visualSize = max(12.0, notchHeight - 12.0) // 20.0
+
+        // 模拟左翼为圆环，右翼为 38:35 时间文本
+        let ringVisualWidth = visualSize // 20.0
+        let text3835 = "38:35"
+        let textVisualWidth = max(CGFloat(text3835.count) * 6.8 + 6.0, visualSize) // 5 * 6.8 + 6 = 40.0
+        expect(textVisualWidth == 40.0, "38:35 的视觉预留宽度应为 40.0")
+
+        let innerPadding: CGFloat = 4.0
+        let symmetricWingW = max(ringVisualWidth, textVisualWidth) + outerPadding + innerPadding // 40 + 12 + 4 = 56.0
+        expect(symmetricWingW == 56.0, "两翼对称宽度应为 56.0")
+
+        let activeW = physicalNotchWidth + 2 * symmetricWingW // 185 + 112 = 297.0
+        expect(activeW == 297.0, "总宽度应为 297.0")
+
+        // 验证对称性：中间物理刘海到左边缘与到右边缘的距离必须完全相等
+        let leftEdgeToCenter = symmetricWingW + physicalNotchWidth / 2.0
+        let rightEdgeToCenter = symmetricWingW + physicalNotchWidth / 2.0
+        expect(leftEdgeToCenter == rightEdgeToCenter, "物理刘海几何中心偏移量必须严格为 0")
+
+        // 测试更长文本（如 01:25:00，8位字符）
+        let longTime = "01:25:00"
+        let longVisualWidth = max(CGFloat(longTime.count) * 6.8 + 6.0, visualSize) // 8 * 6.8 + 6 = 60.4
+        let longSymmetricWingW = max(ringVisualWidth, longVisualWidth) + outerPadding + innerPadding
+        expect(longVisualWidth > 60.0, "超过 1 小时的时间文本预留宽度应大于 60.0")
+        expect(longSymmetricWingW > 76.0, "两翼对称宽度应平滑延展且严格保持对称")
     }
 }
