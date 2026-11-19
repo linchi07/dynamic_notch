@@ -75,6 +75,8 @@ struct ContentView: View {
             (Defaults[.boringShelf] && (!shelfState.isEmpty || coordinator.alwaysShowTabs))
             || !scratchpadState.isEmpty
             || coordinator.currentView == .scratchpad
+            || coordinator.currentView == .timer
+            || Defaults[.TIMER_ENABLED]
         )
     }
 
@@ -96,11 +98,12 @@ struct ContentView: View {
     private var computedChinWidth: CGFloat {
         var chinWidth: CGFloat = vm.closedNotchSize.width
 
-        if case .active = effectiveDisplayMode, vm.notchState == .closed {
+        if case .active(let activeState) = effectiveDisplayMode, vm.notchState == .closed {
             chinWidth = NotchLayoutMetrics.activeWidth(
                 physicalNotchWidth: vm.closedNotchSize.width,
                 notchHeight: vm.effectiveClosedNotchHeight,
-                outerPadding: NotchLayoutMetrics.effectiveOuterPadding(notchOuterPadding)
+                outerPadding: NotchLayoutMetrics.effectiveOuterPadding(notchOuterPadding),
+                state: activeState
             )
         }
 

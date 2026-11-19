@@ -5,6 +5,7 @@
 //  Created by Hugo Persson on 2024-08-25.
 //
 
+import Defaults
 import SwiftUI
 
 struct TabModel: Identifiable {
@@ -16,16 +17,23 @@ struct TabModel: Identifiable {
 }
 
 enum TabRegistry {
-    static let entries = [
-        TabModel(label: "Home", icon: "waveform", view: .home),
-        TabModel(label: "Shelf", icon: "tray.fill", view: .shelf),
-        TabModel(label: "Notes", icon: "note.text", view: .scratchpad)
-    ]
+    static var entries: [TabModel] {
+        var items = [
+            TabModel(label: "Home", icon: "waveform", view: .home)
+        ]
+        if Defaults[.TIMER_ENABLED] {
+            items.append(TabModel(label: "Timer", icon: "timer", view: .timer))
+        }
+        items.append(TabModel(label: "Shelf", icon: "tray.fill", view: .shelf))
+        items.append(TabModel(label: "Notes", icon: "note.text", view: .scratchpad))
+        return items
+    }
 
     @ViewBuilder
     static func content(for view: NotchViews) -> some View {
         switch view {
         case .home: NotchHomeView()
+        case .timer: TimerPanelView()
         case .shelf: ShelfView()
         case .scratchpad: ScratchpadPanelView()
         case .dropLanding: DropLandingView()

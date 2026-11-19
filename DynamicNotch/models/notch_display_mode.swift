@@ -17,6 +17,8 @@ enum NotchActivityVisual: Equatable {
     case colorDot(color: Color)
     case audioVisualizer
     case progress(Double)
+    case circularTimer(progress: Double)
+    case text(String)
 }
 
 /// One side of a live activity. Active wings intentionally render only compact
@@ -217,11 +219,31 @@ enum NotchLayoutMetrics {
         visualSize(for: notchHeight) + effectiveOuterPadding(outerPadding) + innerPadding
     }
 
+    static func visualWidth(for item: NotchActivityItem?, notchHeight: CGFloat) -> CGFloat {
+        guard let item else { return visualSize(for: notchHeight) }
+        switch item.visual {
+        case .text:
+            return max(38, visualSize(for: notchHeight))
+        default:
+            return visualSize(for: notchHeight)
+        }
+    }
+
+    static func singleWingWidth(for item: NotchActivityItem?, notchHeight: CGFloat, outerPadding: CGFloat) -> CGFloat {
+        visualWidth(for: item, notchHeight: notchHeight) + effectiveOuterPadding(outerPadding) + innerPadding
+    }
+
     static func activeWidth(
         physicalNotchWidth: CGFloat,
         notchHeight: CGFloat,
-        outerPadding: CGFloat
+        outerPadding: CGFloat,
+        state: NotchActiveState? = nil
     ) -> CGFloat {
-        physicalNotchWidth + 2 * wingWidth(for: notchHeight, outerPadding: outerPadding)
+        guard let state else {
+            return physicalNotchWidth + 2 * wingWidth(for: notchHeight, outerPadding: outerPadding)
+        }
+        let leadingW = singleWingWidth(for: state.leadingItem, notchHeight: notchHeight, outerPadding: outerPadding)
+        let trailingW = singleWingWidth(for: state.trailingItem, notchHeight: notchHeight, outerPadding: outerPadding)
+        return physicalNotchWidth + leadingW + trailingW
     }
 }

@@ -277,6 +277,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         AccessibilityAuthorization.shared.startMonitoring()
         ExternalLiveActivityServer.shared.start()
         BluetoothActivityManager.shared.startMonitoring()
+        TimerManager.shared.startMonitoringShortcuts()
+
+        NotificationCenter.default.addObserver(
+            forName: Notification.Name("openDynamicNotch"),
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.vm.open()
+            }
+        }
         Task {
             await XPCHelperClient.shared.primeNativeWindowLayoutShortcuts()
         }

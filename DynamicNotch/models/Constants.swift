@@ -248,4 +248,13 @@ extension Defaults.Keys {
     )
 
     static let didClearLegacyURLCacheV1 = Key<Bool>("didClearLegacyURLCache_v1", default: false)
+
+    // MARK: Timer
+    static let TIMER_ENABLED = Key<Bool>("timer_enabled", default: true)
+    static let TIMER_LIVE_ACTIVITY_ENABLED = Key<Bool>("timer_live_activity_enabled", default: true)
+    static let TIMER_SOUND_ENABLED = Key<Bool>("timer_sound_enabled", default: true)
+    static let TIMER_SYSTEM_NOTIFICATION_ENABLED = Key<Bool>("timer_system_notification_enabled", default: true)
+    static let TIMER_NOTCH_NOTIFICATION_ENABLED = Key<Bool>("timer_notch_notification_enabled", default: true)
+    static let TIMER_PRESETS = Key<[TimerPreset]>("timer_presets", default: TimerPresetConstants.ALL_DEFAULT_PRESETS)
+    static let TIMER_AUTO_SUGGEST_BREAK = Key<Bool>("timer_auto_suggest_break", default: true)
 }

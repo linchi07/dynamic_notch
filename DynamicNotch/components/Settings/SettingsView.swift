@@ -62,6 +62,9 @@ struct SettingsView: View {
                 NavigationLink(value: "Shelf") {
                     Label("Shelf", systemImage: "books.vertical")
                 }
+                NavigationLink(value: "Timer") {
+                    Label("Timer", systemImage: "timer")
+                }
                 // NavigationLink(value: "Extensions") {
                 //     Label("Extensions", systemImage: "puzzlepiece.extension")
                 // }
@@ -97,6 +100,8 @@ struct SettingsView: View {
                     ExternalActivitySettings()
                 case "Shelf":
                     Shelf()
+                case "Timer":
+                    TimerSettingsView()
                 case "Extensions":
                     GeneralSettings()
                 case "Developer":

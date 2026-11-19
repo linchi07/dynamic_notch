@@ -126,6 +126,7 @@
 		B17266E52C6532560031BA0D /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = B17266E42C6532560031BA0D /* InfoPlist.xcstrings */; };
 		B172AAC02C95DA0B001623F1 /* InlineHUD.swift in Sources */ = {isa = PBXBuildFile; fileRef = B172AABF2C95DA0B001623F1 /* InlineHUD.swift */; };
 		B19016222CC15B3D00E3F12E /* Defaults in Frameworks */ = {isa = PBXBuildFile; productRef = B19016212CC15B3D00E3F12E /* Defaults */; };
+		B18654382C6F4990000B926A /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = B18654392C6F4990000B926A /* KeyboardShortcuts */; };
 		B19016242CC15B5000E3F12E /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = B19016232CC15B4D00E3F12E /* Constants.swift */; };
 		B1A78C822C8BA08100BD51B0 /* FullscreenMediaDetection.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1A78C812C8BA08100BD51B0 /* FullscreenMediaDetection.swift */; };
 		B1B112912C6A572100093D8F /* EditPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1B112902C6A572100093D8F /* EditPanelView.swift */; };
@@ -148,6 +149,14 @@
 		E7B000082D8A000100000008 /* scratchpad_editor_window_controller.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7A000082D8A000100000008 /* scratchpad_editor_window_controller.swift */; };
 		E7B000092D8A000100000009 /* drop_landing_view.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7A000092D8A000100000009 /* drop_landing_view.swift */; };
 		F38DE6482D8243E7008B5C6D /* BatteryActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F38DE6472D8243E2008B5C6D /* BatteryActivityManager.swift */; };
+		F8B000012D8A000100000001 /* timer_state.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8A000012D8A000100000001 /* timer_state.swift */; };
+		F8B000022D8A000100000002 /* timer_preset.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8A000022D8A000100000002 /* timer_preset.swift */; };
+		F8B000032D8A000100000003 /* timer_shortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8A000032D8A000100000003 /* timer_shortcuts.swift */; };
+		F8B000042D8A000100000004 /* timer_manager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8A000042D8A000100000004 /* timer_manager.swift */; };
+		F8B000052D8A000100000005 /* timer_circular_progress_view.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8A000052D8A000100000005 /* timer_circular_progress_view.swift */; };
+		F8B000062D8A000100000006 /* timer_panel_view.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8A000062D8A000100000006 /* timer_panel_view.swift */; };
+		F8B000072D8A000100000007 /* timer_settings_view.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8A000072D8A000100000007 /* timer_settings_view.swift */; };
+		F8B000082D8A000100000008 /* timer_shuttle_needle.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8A000082D8A000100000008 /* timer_shuttle_needle.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -303,6 +312,14 @@
 		E7A000082D8A000100000008 /* scratchpad_editor_window_controller.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = scratchpad_editor_window_controller.swift; sourceTree = "<group>"; };
 		E7A000092D8A000100000009 /* drop_landing_view.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = drop_landing_view.swift; sourceTree = "<group>"; };
 		F38DE6472D8243E2008B5C6D /* BatteryActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatteryActivityManager.swift; sourceTree = "<group>"; };
+		F8A000012D8A000100000001 /* timer_state.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = timer_state.swift; sourceTree = "<group>"; };
+		F8A000022D8A000100000002 /* timer_preset.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = timer_preset.swift; sourceTree = "<group>"; };
+		F8A000032D8A000100000003 /* timer_shortcuts.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = timer_shortcuts.swift; sourceTree = "<group>"; };
+		F8A000042D8A000100000004 /* timer_manager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = timer_manager.swift; sourceTree = "<group>"; };
+		F8A000052D8A000100000005 /* timer_circular_progress_view.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = timer_circular_progress_view.swift; sourceTree = "<group>"; };
+		F8A000062D8A000100000006 /* timer_panel_view.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = timer_panel_view.swift; sourceTree = "<group>"; };
+		F8A000072D8A000100000007 /* timer_settings_view.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = timer_settings_view.swift; sourceTree = "<group>"; };
+		F8A000082D8A000100000008 /* timer_shuttle_needle.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = timer_shuttle_needle.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -320,6 +337,7 @@
 				14D0321D2C68F3350096E6A1 /* Sparkle in Frameworks */,
 				14D0321A2C68F32E0096E6A1 /* LaunchAtLogin in Frameworks */,
 				B19016222CC15B3D00E3F12E /* Defaults in Frameworks */,
+				B18654382C6F4990000B926A /* KeyboardShortcuts in Frameworks */,
 				111BE95D2ECD71E10079DD4E /* AsyncXPCConnection in Frameworks */,
 				B1628B922CC260C0003D8DF3 /* SwiftUIIntrospect in Frameworks */,
 			);
@@ -452,6 +470,7 @@
 		1471639B2C5D362F0068B555 /* components */ = {
 			isa = PBXGroup;
 			children = (
+				F8C000002D8A000100000000 /* Timer */,
 				E7C000052D8A000100000005 /* Scratchpad */,
 				B141C23B2CA5F50900AC8CC8 /* Onboarding */,
 				B1C448992C97375A001F0858 /* Tips */,
@@ -745,6 +764,45 @@
 			path = Scratchpad;
 			sourceTree = "<group>";
 		};
+		F8C000012D8A000100000001 /* models */ = {
+			isa = PBXGroup;
+			children = (
+				F8A000012D8A000100000001 /* timer_state.swift */,
+				F8A000022D8A000100000002 /* timer_preset.swift */,
+				F8A000032D8A000100000003 /* timer_shortcuts.swift */,
+			);
+			path = models;
+			sourceTree = "<group>";
+		};
+		F8C000022D8A000100000002 /* managers */ = {
+			isa = PBXGroup;
+			children = (
+				F8A000042D8A000100000004 /* timer_manager.swift */,
+			);
+			path = managers;
+			sourceTree = "<group>";
+		};
+		F8C000032D8A000100000003 /* views */ = {
+			isa = PBXGroup;
+			children = (
+				F8A000052D8A000100000005 /* timer_circular_progress_view.swift */,
+				F8A000062D8A000100000006 /* timer_panel_view.swift */,
+				F8A000072D8A000100000007 /* timer_settings_view.swift */,
+				F8A000082D8A000100000008 /* timer_shuttle_needle.swift */,
+			);
+			path = views;
+			sourceTree = "<group>";
+		};
+		F8C000002D8A000100000000 /* Timer */ = {
+			isa = PBXGroup;
+			children = (
+				F8C000012D8A000100000001 /* models */,
+				F8C000022D8A000100000002 /* managers */,
+				F8C000032D8A000100000003 /* views */,
+			);
+			path = Timer;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -770,6 +828,7 @@
 				14D0321C2C68F3350096E6A1 /* Sparkle */,
 				9A987A0F2C73CA8D005CA465 /* Collections */,
 				B19016212CC15B3D00E3F12E /* Defaults */,
+				B18654392C6F4990000B926A /* KeyboardShortcuts */,
 				B1628B912CC260C0003D8DF3 /* SwiftUIIntrospect */,
 				1194E8842EA57D23009C82D6 /* SkyLightWindow */,
 				111BE95C2ECD71E10079DD4E /* AsyncXPCConnection */,
@@ -861,6 +920,14 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F8B000012D8A000100000001 /* timer_state.swift in Sources */,
+				F8B000022D8A000100000002 /* timer_preset.swift in Sources */,
+				F8B000032D8A000100000003 /* timer_shortcuts.swift in Sources */,
+				F8B000042D8A000100000004 /* timer_manager.swift in Sources */,
+				F8B000052D8A000100000005 /* timer_circular_progress_view.swift in Sources */,
+				F8B000062D8A000100000006 /* timer_panel_view.swift in Sources */,
+				F8B000072D8A000100000007 /* timer_settings_view.swift in Sources */,
+				F8B000082D8A000100000008 /* timer_shuttle_needle.swift in Sources */,
 				E7B000092D8A000100000009 /* drop_landing_view.swift in Sources */,
 				E7B000012D8A000100000001 /* scratchpad_item.swift in Sources */,
 				E7B000022D8A000100000002 /* scratchpad_persistence_service.swift in Sources */,
@@ -1351,6 +1418,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = B19016202CC15B3D00E3F12E /* XCRemoteSwiftPackageReference "Defaults" */;
 			productName = Defaults;
+		};
+		B18654392C6F4990000B926A /* KeyboardShortcuts */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B18654372C6F4990000B926A /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */;
+			productName = KeyboardShortcuts;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

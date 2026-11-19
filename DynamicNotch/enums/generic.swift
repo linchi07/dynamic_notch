@@ -29,6 +29,7 @@ public enum NotchViews: Int, CaseIterable, Identifiable, Hashable {
     case shelf = 1
     case scratchpad = 2
     case dropLanding = 3
+    case timer = 4
 
     public var id: Int { rawValue }
 }
@@ -42,6 +43,7 @@ enum SettingsEnum {
     case hud
     case shelf
     case extensions
+    case timer
 }
 
 enum DownloadIndicatorStyle: String, Defaults.Serializable {
